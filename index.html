@@ -163,18 +163,18 @@ body {
   font-size: 0.7rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
-  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  color: rgba(255,255,255,0.7);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.6);
 }
 .hero-scroll-line {
-  width: 1px;
+  width: 2px;
   height: 48px;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.35), transparent);
+  background: linear-gradient(to bottom, rgba(255,255,255,0.6), transparent);
   animation: scrollPulse 2s ease-in-out infinite;
 }
 @keyframes scrollPulse {
-  0%, 100% { opacity: 0.3; transform: scaleY(1); }
-  50% { opacity: 0.8; transform: scaleY(1.1); }
+  0%, 100% { opacity: 0.5; transform: scaleY(1); }
+  50% { opacity: 1; transform: scaleY(1.1); }
 }
 .biome-label {
   position: absolute;
