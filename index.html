@@ -464,7 +464,6 @@ body {
 @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 .js-ready .reveal-section { opacity: 1; transform: translateY(0); }
 @media (max-width: 768px) {
-  body { background: #0a1520; }
   .nav-inner { padding: 0 24px; }
   .nav-links { gap: 20px; }
   .nav { background: rgba(10, 21, 32, 0.95); }
@@ -474,19 +473,16 @@ body {
   .photo-ring { width: 180px; height: 180px; }
   .contact-card { padding: 40px 28px; max-width: 100%; }
   .biome-label { display: none; }
-  /* Disable heavy canvas on mobile */
-  #bg-canvas { display: none; }
+  #bg-canvas { contain: none; }
   /* Center and scale cube on mobile */
+  #projects { overflow: hidden; }
   .cube-viewport {
+    width: 560px;
+    margin-left: auto;
+    margin-right: auto;
     transform: scale(0.55);
     transform-origin: center top;
     margin-bottom: -80px;
-    margin-left: auto;
-    margin-right: auto;
-    width: 560px;
-    left: 50%;
-    position: relative;
-    transform: translateX(-50%) scale(0.55);
   }
   .heading-viewport {
     width: 140px;
@@ -515,7 +511,7 @@ body {
   .photo-ring { width: 150px; height: 150px; }
   .contact-card { padding: 32px 20px; max-width: 100%; }
   .cube-viewport {
-    transform: translateX(-50%) scale(0.45);
+    transform: scale(0.45);
     margin-bottom: -110px;
   }
   .chandelier-wire, .chandelier-wire-bottom { width: 4px; margin-left: -2px; }
@@ -748,7 +744,7 @@ try {
   'use strict';
 
   // Skip heavy canvas animation on mobile to prevent crashes and save battery
-  if (window.innerWidth <= 768) return;
+  // if (window.innerWidth <= 768) return;
 
   function mkRng(seed) {
     var s = seed >>> 0;
