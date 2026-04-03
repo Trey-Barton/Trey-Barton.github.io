@@ -468,21 +468,23 @@ body {
   .nav-links { gap: 20px; }
   .nav { background: rgba(10, 21, 32, 0.95); }
   .section { padding: 80px 24px; }
-  .about-card { grid-template-columns: 1fr; padding: 36px 28px; text-align: center; }
+  .about-card { grid-template-columns: 1fr; padding: 36px 20px; text-align: center; max-width: 85vw; margin: 0 auto; }
   .about-text h2 { text-align: center; }
-  .about-text p { text-align: left; }
+  .about-text p { text-align: left; font-size: 0.9rem; }
   .about-photo { justify-content: center; order: -1; }
   .skills { justify-content: center; }
   .photo-ring { width: 180px; height: 180px; }
   .contact-card { padding: 40px 28px; max-width: 100%; }
   .biome-label { display: none; }
   #bg-canvas { contain: none; }
-  /* Cube auto-scales via JS — just set centering and tall height */
+  /* Cube auto-scales via JS — center on screen */
+  #projects { position: relative; }
   .cube-viewport {
     height: 440px;
-    margin-left: auto;
-    margin-right: auto;
+    position: relative;
+    left: 50%;
     transform-origin: center top;
+    margin-left: -280px; /* half of 560px base width */
   }
   .heading-viewport {
     margin-left: auto;
