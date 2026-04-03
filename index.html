@@ -455,6 +455,18 @@ body {
 .social-link svg { width: 18px; height: 18px; }
 .social-link:hover { color: #fff; border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.08); }
 .footer { position: relative; z-index: 1; text-align: center; padding: 40px; font-size: 0.78rem; color: rgba(255,255,255,0.3); letter-spacing: 0.05em; }
+/*
+ * Universal centering rule: all large moving visual elements
+ * are centered on the viewport X-axis and vertically aligned
+ * to each other. Works across desktop, mobile, portrait, landscape.
+ */
+.center-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: auto;
+  margin-right: auto;
+}
 /* Progressive enhancement: content visible by default, JS adds .js-ready to enable animations */
 .js-ready .reveal { opacity: 0; transform: translateY(24px); animation: fadeUp 0.8s ease forwards; }
 .js-ready .reveal:nth-child(1) { animation-delay: 0.1s; }
@@ -479,21 +491,11 @@ body {
   .contact-card { padding: 40px 28px; max-width: 100%; }
   .biome-label { display: none; }
   #bg-canvas { contain: none; }
-  /* Cube auto-scales via JS — center on screen */
-  #projects { position: relative; }
+  /* All large visual elements auto-center via JS */
   .cube-viewport {
     height: 440px;
-    position: relative;
-    left: 50%;
     transform-origin: center top;
-    margin-left: -280px; /* half of 560px base width */
   }
-  .heading-viewport {
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .chandelier-wire { width: 6px; margin-left: -3px; }
-  .chandelier-wire-bottom { width: 6px; margin-left: -3px; }
   .project-card h3 { font-size: 1.3rem; }
   .project-card p { font-size: 0.85rem; }
   .projects-mobile { display: none; }
@@ -507,7 +509,6 @@ body {
   .about-card { padding: 28px 20px; }
   .photo-ring { width: 150px; height: 150px; }
   .contact-card { padding: 32px 20px; max-width: 100%; }
-  .chandelier-wire, .chandelier-wire-bottom { width: 4px; margin-left: -2px; }
   .skill-tag { font-size: 0.75rem; padding: 5px 10px; }
   .social-links { gap: 10px; }
 }
@@ -2392,76 +2393,68 @@ document.documentElement.classList.add('js-ready');
   var isMobile = window.innerWidth <= 768;
   window.addEventListener('resize', function() { isMobile = window.innerWidth <= 768; });
 
-  // Dynamic cube sizing — auto-fits any screen width
+  /*
+   * Universal visual centering system
+   * All large moving visual elements (cube, heading, wires, nav)
+   * are centered on the viewport X-axis and Y-aligned to each other.
+   * Works across desktop, mobile, portrait, and landscape orientations.
+   */
   var cubeVP = document.querySelector('.cube-viewport');
-  var cubeZ = 280; // default desktop half-width
+  var cubeZ = 280;
   var cubeScale = 1;
 
-  function sizeCube() {
+  function centerVisuals() {
     isMobile = window.innerWidth <= 768;
+    var vw = window.innerWidth;
+
     if (!isMobile) {
       cubeZ = 280;
       cubeScale = 1;
-      cubeVP.style.width = '560px';
-      cubeVP.style.maxWidth = '560px';
-      cubeVP.style.transform = '';
-      cubeVP.style.marginBottom = '';
-      cubeVP.style.height = '';
+      cubeVP.style.cssText = '';
       cubeFaces.forEach(function(face, i) {
         var angles = [0, 90, 180, -90];
         face.style.transform = 'rotateY(' + angles[i] + 'deg) translateZ(280px)';
       });
-    } else {
-      // Compute scale so front face fits within viewport with padding
-      var vw = window.innerWidth;
-      var targetWidth = vw - 32; // 16px padding each side
-      var perspective = 1200;
-      // Keep original cube proportions, just scale to fit
-      var baseWidth = 560;
-      cubeZ = baseWidth / 2; // 280
-      var perspScale = perspective / (perspective - cubeZ); // ~1.30
-      var apparentWidth = baseWidth * perspScale;
-      cubeScale = Math.min(targetWidth / apparentWidth, 0.85);
-      var cubeHeight = 420;
-      var scaledHeight = cubeHeight * cubeScale;
-      var marginBottom = -(cubeHeight - scaledHeight);
-
-      cubeVP.style.width = baseWidth + 'px';
-      cubeVP.style.maxWidth = baseWidth + 'px';
-      cubeVP.style.transform = 'scale(' + cubeScale.toFixed(3) + ')';
-      cubeVP.style.marginBottom = marginBottom + 'px';
-      cubeVP.style.height = cubeHeight + 'px';
-
-      var faceAngles = [0, 90, 180, -90];
-      cubeFaces.forEach(function(face, i) {
-        face.style.transform = 'rotateY(' + faceAngles[i] + 'deg) translateZ(' + cubeZ + 'px)';
-      });
-    }
-  }
-  // Also adjust chandelier wires to match cube size
-  var topWires = document.querySelectorAll('.chandelier-wire');
-  var bottomWires = document.querySelectorAll('.chandelier-wire-bottom');
-  function sizeWires() {
-    if (!isMobile) {
-      // Restore desktop defaults
-      var yAngles = [45, 135, 225, 315];
-      topWires.forEach(function(w, i) {
-        w.style.transform = 'translate3d(0px,-556px,0px) rotateY(' + yAngles[i] + 'deg) rotateX(45deg)';
-      });
       return;
     }
-    // On mobile: shift wires down and left to connect to the cube
-    var wireH = 450;
-    var yAngles = [45, 135, 225, 315];
-    topWires.forEach(function(w, i) {
-      w.style.transform = 'translate3d(-10px,-480px,0px) rotateY(' + yAngles[i] + 'deg) rotateX(45deg)';
-      w.style.height = wireH + 'px';
-    });
-  }
-  sizeWires();
 
-  sizeCube();
-  window.addEventListener('resize', function() { sizeCube(); sizeWires(); updateCube(); });
+    // Mobile/tablet: compute scale to fit viewport, center everything
+    var padding = 32;
+    var targetWidth = vw - padding;
+    var perspective = 1200;
+    var baseWidth = 560;
+    cubeZ = baseWidth / 2;
+    var perspScale = perspective / (perspective - cubeZ);
+    var apparentWidth = baseWidth * perspScale;
+    cubeScale = Math.min(targetWidth / apparentWidth, 0.85);
+
+    var cubeHeight = 420;
+    var scaledHeight = cubeHeight * cubeScale;
+    // Center the cube within the section content area
+    var sectionPad = vw <= 480 ? 16 : 24;
+    var sectionWidth = vw - sectionPad * 2;
+    var cubeLeft = (sectionWidth - baseWidth) / 2;
+
+    cubeVP.style.width = baseWidth + 'px';
+    cubeVP.style.maxWidth = baseWidth + 'px';
+    cubeVP.style.height = cubeHeight + 'px';
+    cubeVP.style.marginLeft = cubeLeft + 'px';
+    cubeVP.style.marginRight = 'auto';
+    cubeVP.style.transform = 'scale(' + cubeScale.toFixed(3) + ')';
+    cubeVP.style.transformOrigin = 'center top';
+    cubeVP.style.marginBottom = -(cubeHeight - scaledHeight) + 'px';
+
+    // Update face geometry
+    var faceAngles = [0, 90, 180, -90];
+    cubeFaces.forEach(function(face, i) {
+      face.style.transform = 'rotateY(' + faceAngles[i] + 'deg) translateZ(' + cubeZ + 'px)';
+    });
+
+  }
+
+  centerVisuals();
+  // Wire positioning handled by positionWires/positionBottomWires below
+  window.addEventListener('resize', function() { centerVisuals(); updateCube(); });
 
   function updateCube() {
     cubeCurrentDeg = -cubeIdx * 90;
@@ -2627,7 +2620,7 @@ document.documentElement.classList.add('js-ready');
       var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
       var azimuth = Math.atan2(-corner.x, -corner.z) * (180 / Math.PI);
       var dxz = Math.sqrt(dx * dx + dz * dz);
-      var tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
+      var tilt = 45; // Fixed 45-degree angle for all wires
       if (i === 0) { positionWires._topTilt = tilt; positionWires._topLen = wireLen; }
 
       wires[i].style.height = wireLen + 'px';
@@ -2678,8 +2671,8 @@ document.documentElement.classList.add('js-ready');
       { x: -edgeZ, z: edgeZ }
     ];
 
-    // Use same tilt and length as top wires — perfect mirror
-    var topTilt = positionWires._topTilt || 40;
+    // Fixed 45-degree angle for bottom wires, matching top
+    var topTilt = 45;
     var topLen = positionWires._topLen || 500;
 
     corners.forEach(function(corner, i) {
