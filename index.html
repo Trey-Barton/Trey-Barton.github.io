@@ -491,13 +491,16 @@ body {
   .contact-card { padding: 40px 28px; max-width: 100%; }
   .biome-label { display: none; }
   #bg-canvas { contain: none; }
-  /* All large visual elements auto-center via JS */
+  /* Center cube on viewport axis — left:50% + negative half-width */
   .cube-viewport {
     height: 440px;
     transform-origin: center top;
+    position: relative;
+    left: 50%;
+    margin-left: -280px;
   }
-  .project-card h3 { font-size: 1.3rem; }
-  .project-card p { font-size: 0.85rem; }
+  .project-card h3 { font-size: 1.5rem; }
+  .project-card p { font-size: 1rem; line-height: 1.6; }
   .projects-mobile { display: none; }
   .projects-heading-mobile { display: none; }
   #contact { margin-top: 120px; }
@@ -2430,18 +2433,12 @@ document.documentElement.classList.add('js-ready');
 
     var cubeHeight = 420;
     var scaledHeight = cubeHeight * cubeScale;
-    // Center the cube within the section content area
-    var sectionPad = vw <= 480 ? 16 : 24;
-    var sectionWidth = vw - sectionPad * 2;
-    var cubeLeft = (sectionWidth - baseWidth) / 2;
 
     cubeVP.style.width = baseWidth + 'px';
     cubeVP.style.maxWidth = baseWidth + 'px';
     cubeVP.style.height = cubeHeight + 'px';
-    cubeVP.style.marginLeft = cubeLeft + 'px';
-    cubeVP.style.marginRight = 'auto';
+    // CSS handles centering via left:50%; margin-left:-280px
     cubeVP.style.transform = 'scale(' + cubeScale.toFixed(3) + ')';
-    cubeVP.style.transformOrigin = 'center top';
     cubeVP.style.marginBottom = -(cubeHeight - scaledHeight) + 'px';
 
     // Update face geometry
