@@ -474,14 +474,16 @@ body {
   .contact-card { padding: 40px 28px; max-width: 100%; }
   .biome-label { display: none; }
   #bg-canvas { contain: none; }
-  /* Center and scale cube on mobile */
+  /* Center and scale cube on mobile — narrower, taller for text */
   .cube-viewport {
-    width: 560px;
+    width: 420px;
+    max-width: 420px;
+    height: 440px;
     margin-left: auto;
     margin-right: auto;
-    transform: scale(0.45);
+    transform: scale(0.55);
     transform-origin: center top;
-    margin-bottom: -100px;
+    margin-bottom: -120px;
   }
   .heading-viewport {
     width: 140px;
@@ -510,9 +512,8 @@ body {
   .photo-ring { width: 150px; height: 150px; }
   .contact-card { padding: 32px 20px; max-width: 100%; }
   .cube-viewport {
-    transform: scale(0.35);
-    margin-left: auto;
-    margin-bottom: -130px;
+    transform: scale(0.48);
+    margin-bottom: -140px;
   }
   .chandelier-wire, .chandelier-wire-bottom { width: 4px; margin-left: -2px; }
   .skill-tag { font-size: 0.75rem; padding: 5px 10px; }
@@ -2399,9 +2400,10 @@ document.documentElement.classList.add('js-ready');
   var isMobile = window.innerWidth <= 768;
   window.addEventListener('resize', function() { isMobile = window.innerWidth <= 768; });
 
+  var cubeZ = isMobile ? 210 : 280;
   function updateCube() {
     cubeCurrentDeg = -cubeIdx * 90;
-    cubeScene.style.transform = 'translateZ(-280px) rotateY(' + cubeCurrentDeg + 'deg)';
+    cubeScene.style.transform = 'translateZ(-' + cubeZ + 'px) rotateY(' + cubeCurrentDeg + 'deg)';
     var activeFace = ((cubeIdx % 4) + 4) % 4;
     cubeDots.forEach(function(dot, i) {
       dot.classList.toggle('active', i === activeFace);
@@ -2440,6 +2442,14 @@ document.documentElement.classList.add('js-ready');
       updateCube();
     });
   });
+
+  // On mobile, override cube face translateZ to match narrower viewport
+  if (isMobile) {
+    var faceAngles = [0, 90, 180, -90];
+    cubeFaces.forEach(function(face, i) {
+      face.style.transform = 'rotateY(' + faceAngles[i] + 'deg) translateZ(' + cubeZ + 'px)';
+    });
+  }
 
   updateCube();
 
