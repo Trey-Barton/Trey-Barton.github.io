@@ -218,6 +218,8 @@ body {
   pointer-events: none;
   will-change: transform;
 }
+.projects-heading-mobile { display: none; }
+.projects-mobile { display: none; }
 .projects-heading-face {
   position: absolute;
   width: 170px; height: 50px;
@@ -465,16 +467,17 @@ body {
   .nav-inner { padding: 0 24px; } .nav-links { gap: 20px; } .section { padding: 80px 24px; }
   .about-card { grid-template-columns: 1fr; padding: 36px 28px; }
   .about-photo { justify-content: center; } .contact-card { padding: 40px 28px; max-width: 90vw; } .biome-label { right: 24px; }
-  /* Scale the entire cube scene down proportionally — keeps all 3D geometry intact */
-  .cube-viewport { transform: scale(0.65); transform-origin: center top; margin-bottom: -60px; }
-  .chandelier-wire { width: 6px; margin-left: -3px; }
-  .chandelier-wire-bottom { width: 6px; margin-left: -3px; }
-  .heading-viewport { width: 140px; height: 42px; }
-  .projects-heading-scene, .projects-heading-face { width: 140px; height: 42px; }
-  .pf-front  { transform: rotateY(0deg) translateZ(70px); }
-  .pf-back   { transform: rotateY(180deg) translateZ(70px); }
-  .pf-right  { transform: rotateY(90deg) translateZ(70px); }
-  .pf-left   { transform: rotateY(-90deg) translateZ(70px); }
+  /* Hide 3D cube and show stacked cards on mobile */
+  .cube-viewport { display: none; }
+  .cube-nav { display: none; }
+  .heading-viewport { display: none; }
+  .projects-heading-mobile { display: block; }
+  .projects-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .projects-mobile .project-card { padding: 28px 24px; }
   .project-card h3 { font-size: 1.3rem; }
   .project-card p { font-size: 0.85rem; }
 }
@@ -483,8 +486,7 @@ body {
   .section { padding: 60px 16px; }
   .about-card { padding: 28px 20px; }
   .contact-card { padding: 32px 20px; max-width: 95vw; }
-  .cube-viewport { transform: scale(0.52); margin-bottom: -100px; }
-  .chandelier-wire, .chandelier-wire-bottom { width: 4px; margin-left: -2px; }
+  .projects-mobile .project-card { padding: 24px 18px; }
   .profile-bubble { width: clamp(100px, 28vw, 140px); height: clamp(100px, 28vw, 140px); }
   .skill-tags { gap: 6px; }
   .skill-tag { font-size: 0.75rem; padding: 5px 10px; }
@@ -642,6 +644,42 @@ body {
         <div class="cube-dot" data-face="3"></div>
       </div>
       <button class="cube-arrow" id="cube-next" aria-label="Next project">&#8594;</button>
+    </div>
+
+    <h2 class="section-heading projects-heading-mobile">Projects</h2>
+    <div class="projects-mobile">
+      <div class="glass-card project-card">
+        <div class="project-tag">AI + Creative Tech</div>
+        <h3>The Robot Art Collective</h3>
+        <p>An artist-facing AI feedback tool built with the ChatGPT API and hosted on AWS. Generates technique-level critiques for artists. Led a cross-functional team from concept through beta launch, overseeing UX design, branding, and web development.</p>
+        <div class="project-links">
+          <a href="https://www.youtube.com/watch?v=kcI8sUP5-xk&amp;t=10s" target="_blank" class="project-link">View Project &rarr;</a>
+        </div>
+      </div>
+      <div class="glass-card project-card">
+        <div class="project-tag">Digital Humanities</div>
+        <h3>The Aeneid Project</h3>
+        <p>An immersive 3D digital storytelling experience built in collaboration with Stanford PhD students and faculty. Integrates cartography, textual analysis, and interactive design into a publicly accessible resource.</p>
+        <div class="project-links">
+          <a href="https://theaeneidproject.com" target="_blank" class="project-link">Explore &rarr;</a>
+        </div>
+      </div>
+      <div class="glass-card project-card">
+        <div class="project-tag">Social Media + AI</div>
+        <h3>HelioCorp Growth Campaign</h3>
+        <p>Managed AI-driven social media campaigns across 7 retail locations using SOCi, driving a 247% average increase in audience engagement per quarter. Built reporting dashboards and standardized creative workflows for the franchise network.</p>
+        <div class="project-links">
+          <a href="#" class="project-link">Details &rarr;</a>
+        </div>
+      </div>
+      <div class="glass-card project-card">
+        <div class="project-tag">Full Profile</div>
+        <h3>LinkedIn</h3>
+        <p>View my full professional background, experience, education at Dartmouth College, and connect with me on LinkedIn.</p>
+        <div class="project-links">
+          <a href="https://www.linkedin.com/in/ralph-g-barton-iii/" target="_blank" class="project-link">View LinkedIn &rarr;</a>
+        </div>
+      </div>
     </div>
   </section>
 
