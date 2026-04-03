@@ -229,6 +229,26 @@ body {
   border-radius: 14px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
 }
+.heading-wire {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  margin-left: -4px;
+  height: 200px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.55));
+  transform-origin: center top;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+.heading-wire::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: inherit;
+  transform: rotateY(90deg);
+}
 .pf-front  { transform: rotateY(0deg) translateZ(85px); }
 .pf-back   { transform: rotateY(180deg) translateZ(85px); }
 .pf-right  { transform: rotateY(90deg) translateZ(85px); }
@@ -537,6 +557,10 @@ body {
     <!-- Spinning Projects heading mini cube with its own perspective -->
     <div class="heading-viewport">
       <div class="projects-heading-scene" id="projects-heading-scene">
+        <div class="heading-wire"></div>
+        <div class="heading-wire"></div>
+        <div class="heading-wire"></div>
+        <div class="heading-wire"></div>
         <div class="projects-heading-face pf-front">
           <h2 class="section-heading" style="margin-bottom: 0; font-size: 1.8rem;">Projects</h2>
         </div>
@@ -2253,7 +2277,7 @@ document.documentElement.classList.add('js-ready');
       if (target) {
         e.preventDefault();
         // Offset for #projects so the cube is centered in view
-        var offset = (link.getAttribute('href') === '#projects') ? -50 : 70;
+        var offset = (link.getAttribute('href') === '#projects') ? 50 : 70;
         var top = target.getBoundingClientRect().top + window.scrollY - offset;
         window.scrollTo({ top: top, behavior: 'smooth' });
       }
@@ -2381,6 +2405,51 @@ document.documentElement.classList.add('js-ready');
     }, { passive: true });
   })();
 
+  // Position heading wires: from heading cube corners UP to about section bottom center
+  function positionHeadingWires() {
+    var aboutCard = document.querySelector('.about-card');
+    var headingVP = document.querySelector('.heading-viewport');
+    var hWires = document.querySelectorAll('.heading-wire');
+    if (!aboutCard || !headingVP || hWires.length < 4) return;
+
+    var aboutRect = aboutCard.getBoundingClientRect();
+    var headingRect = headingVP.getBoundingClientRect();
+    var perspective = 800;
+    var headingZ = 85;
+
+    var cssScale = headingVP.offsetHeight > 0 ? headingRect.height / headingVP.offsetHeight : 1;
+
+    var headingCenterY = headingRect.top + headingRect.height / 2;
+    var pageDistToAbout = headingCenterY - aboutRect.bottom;
+
+    var scale = perspective / (perspective + headingZ);
+    var convY3D = -(pageDistToAbout / scale / cssScale);
+
+    var headingHalf = headingVP.offsetHeight / 2;
+    var borderRadius = 14;
+    var inset = borderRadius * Math.cos(Math.PI / 4);
+    var edgeZ = headingZ - inset;
+    var corners = [
+      { x: edgeZ, z: edgeZ },
+      { x: edgeZ, z: -edgeZ },
+      { x: -edgeZ, z: -edgeZ },
+      { x: -edgeZ, z: edgeZ }
+    ];
+
+    corners.forEach(function(corner, i) {
+      var dx = corner.x;
+      var dy = -headingHalf - convY3D;
+      var dz = corner.z;
+      var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      var azimuth = Math.atan2(-corner.x, -corner.z) * (180 / Math.PI);
+      var dxz = Math.sqrt(dx * dx + dz * dz);
+      var tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
+
+      hWires[i].style.height = wireLen + 'px';
+      hWires[i].style.transform = 'translate3d(0px,' + convY3D + 'px,0px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
+    });
+  }
+
   // Dynamically position chandelier wires from about-card bottom center to cube corners
   function positionWires() {
     var aboutCard = document.querySelector('.about-card');
@@ -2432,13 +2501,14 @@ document.documentElement.classList.add('js-ready');
     });
   }
 
+  positionHeadingWires();
   positionWires();
   positionBottomWires();
-  window.addEventListener('resize', function() { positionWires(); positionBottomWires(); });
+  window.addEventListener('resize', function() { positionHeadingWires(); positionWires(); positionBottomWires(); });
   // Re-position wires on scroll since wire angles depend on relative element positions
   var wireTicking = false;
   window.addEventListener('scroll', function() {
-    if (!wireTicking) { wireTicking = true; requestAnimationFrame(function() { positionWires(); positionBottomWires(); wireTicking = false; }); }
+    if (!wireTicking) { wireTicking = true; requestAnimationFrame(function() { positionHeadingWires(); positionWires(); positionBottomWires(); wireTicking = false; }); }
   }, { passive: true });
 
   // Position bottom wires: from cube bottom corners to contact card top
