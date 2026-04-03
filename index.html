@@ -464,9 +464,15 @@ body {
 @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 .js-ready .reveal-section { opacity: 1; transform: translateY(0); }
 @media (max-width: 768px) {
-  .nav-inner { padding: 0 24px; } .nav-links { gap: 20px; } .section { padding: 80px 24px; }
+  .nav-inner { padding: 0 24px; }
+  .nav-links { gap: 20px; }
+  .nav { background: rgba(20, 40, 50, 0.9); }
+  .section { padding: 80px 24px; }
   .about-card { grid-template-columns: 1fr; padding: 36px 28px; }
-  .about-photo { justify-content: center; } .contact-card { padding: 40px 28px; max-width: 90vw; } .biome-label { right: 24px; }
+  .about-photo { justify-content: center; }
+  .photo-ring { width: 180px; height: 180px; }
+  .contact-card { padding: 40px 28px; max-width: 100%; }
+  .biome-label { display: none; }
   /* Disable heavy canvas on mobile */
   #bg-canvas { display: none; }
   /* Hide 3D cube and show stacked cards on mobile */
@@ -484,13 +490,13 @@ body {
   .project-card p { font-size: 0.85rem; }
 }
 @media (max-width: 480px) {
-  .nav-links { gap: 14px; } .nav-links a { font-size: 0.78rem; }
+  .nav-links { gap: 14px; }
+  .nav-links a { font-size: 0.78rem; }
   .section { padding: 60px 16px; }
   .about-card { padding: 28px 20px; }
-  .contact-card { padding: 32px 20px; max-width: 95vw; }
+  .photo-ring { width: 150px; height: 150px; }
+  .contact-card { padding: 32px 20px; max-width: 100%; }
   .projects-mobile .project-card { padding: 24px 18px; }
-  .profile-bubble { width: clamp(100px, 28vw, 140px); height: clamp(100px, 28vw, 140px); }
-  .skill-tags { gap: 6px; }
   .skill-tag { font-size: 0.75rem; padding: 5px 10px; }
   .social-links { gap: 10px; }
 }
