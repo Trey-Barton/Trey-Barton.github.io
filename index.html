@@ -475,19 +475,36 @@ body {
   .biome-label { display: none; }
   /* Disable heavy canvas on mobile */
   #bg-canvas { display: none; }
-  /* Hide 3D cube and show stacked cards on mobile */
-  .cube-viewport { display: none; }
-  .cube-nav { display: none; }
-  .heading-viewport { display: none; }
-  .projects-heading-mobile { display: block; }
-  .projects-mobile {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  /* Center and scale cube on mobile */
+  .cube-viewport {
+    transform: scale(0.55);
+    transform-origin: center top;
+    margin-bottom: -80px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 560px;
+    left: 50%;
+    position: relative;
+    transform: translateX(-50%) scale(0.55);
   }
-  .projects-mobile .project-card { padding: 28px 24px; }
+  .heading-viewport {
+    width: 140px;
+    height: 42px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .projects-heading-scene, .projects-heading-face { width: 140px; height: 42px; }
+  .pf-front  { transform: rotateY(0deg) translateZ(70px); }
+  .pf-back   { transform: rotateY(180deg) translateZ(70px); }
+  .pf-right  { transform: rotateY(90deg) translateZ(70px); }
+  .pf-left   { transform: rotateY(-90deg) translateZ(70px); }
+  .chandelier-wire { width: 6px; margin-left: -3px; }
+  .chandelier-wire-bottom { width: 6px; margin-left: -3px; }
   .project-card h3 { font-size: 1.3rem; }
   .project-card p { font-size: 0.85rem; }
+  .projects-mobile { display: none; }
+  .projects-heading-mobile { display: none; }
+  #contact { margin-top: 120px; }
 }
 @media (max-width: 480px) {
   .nav-links { gap: 14px; }
@@ -496,7 +513,11 @@ body {
   .about-card { padding: 28px 20px; }
   .photo-ring { width: 150px; height: 150px; }
   .contact-card { padding: 32px 20px; max-width: 100%; }
-  .projects-mobile .project-card { padding: 24px 18px; }
+  .cube-viewport {
+    transform: translateX(-50%) scale(0.45);
+    margin-bottom: -110px;
+  }
+  .chandelier-wire, .chandelier-wire-bottom { width: 4px; margin-left: -2px; }
   .skill-tag { font-size: 0.75rem; padding: 5px 10px; }
   .social-links { gap: 10px; }
 }
