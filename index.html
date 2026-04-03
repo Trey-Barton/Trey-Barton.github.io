@@ -2409,20 +2409,21 @@ document.documentElement.classList.add('js-ready');
       var vw = window.innerWidth;
       var targetWidth = vw - 32; // 16px padding each side
       var perspective = 1200;
-      // Use a narrower cube on mobile (420px base)
-      var baseWidth = 420;
-      cubeZ = baseWidth / 2; // 210
-      var perspScale = perspective / (perspective - cubeZ); // ~1.21
+      // Keep original cube proportions, just scale to fit
+      var baseWidth = 560;
+      cubeZ = baseWidth / 2; // 280
+      var perspScale = perspective / (perspective - cubeZ); // ~1.30
       var apparentWidth = baseWidth * perspScale;
-      cubeScale = Math.min(targetWidth / apparentWidth, 0.7);
-      var scaledHeight = 440 * cubeScale;
-      var marginBottom = -(440 - scaledHeight);
+      cubeScale = Math.min(targetWidth / apparentWidth, 0.85);
+      var cubeHeight = 420;
+      var scaledHeight = cubeHeight * cubeScale;
+      var marginBottom = -(cubeHeight - scaledHeight);
 
       cubeVP.style.width = baseWidth + 'px';
       cubeVP.style.maxWidth = baseWidth + 'px';
       cubeVP.style.transform = 'scale(' + cubeScale.toFixed(3) + ')';
       cubeVP.style.marginBottom = marginBottom + 'px';
-      cubeVP.style.height = '440px';
+      cubeVP.style.height = cubeHeight + 'px';
 
       var faceAngles = [0, 90, 180, -90];
       cubeFaces.forEach(function(face, i) {
@@ -2442,13 +2443,11 @@ document.documentElement.classList.add('js-ready');
       });
       return;
     }
-    // On mobile: wires need steeper angle to reach the smaller cube corners
-    // atan(cubeZ / wireHeight) gives the angle; steeper = larger rotateX
-    var wireH = 400; // shorter wires on mobile
-    var xAngle = Math.round(Math.atan2(cubeZ, wireH) * 180 / Math.PI + 15); // steeper to touch corners
+    // On mobile: shift wires down and left to connect to the cube
+    var wireH = 450;
     var yAngles = [45, 135, 225, 315];
     topWires.forEach(function(w, i) {
-      w.style.transform = 'translate3d(0px,-' + wireH + 'px,0px) rotateY(' + yAngles[i] + 'deg) rotateX(' + xAngle + 'deg)';
+      w.style.transform = 'translate3d(-10px,-480px,0px) rotateY(' + yAngles[i] + 'deg) rotateX(45deg)';
       w.style.height = wireH + 'px';
     });
   }
