@@ -467,6 +467,8 @@ body {
   .nav-inner { padding: 0 24px; } .nav-links { gap: 20px; } .section { padding: 80px 24px; }
   .about-card { grid-template-columns: 1fr; padding: 36px 28px; }
   .about-photo { justify-content: center; } .contact-card { padding: 40px 28px; max-width: 90vw; } .biome-label { right: 24px; }
+  /* Disable heavy canvas on mobile */
+  #bg-canvas { display: none; }
   /* Hide 3D cube and show stacked cards on mobile */
   .cube-viewport { display: none; }
   .cube-nav { display: none; }
@@ -716,6 +718,9 @@ body {
 try {
 (function () {
   'use strict';
+
+  // Skip heavy canvas animation on mobile to prevent crashes and save battery
+  if (window.innerWidth <= 768) return;
 
   function mkRng(seed) {
     var s = seed >>> 0;
