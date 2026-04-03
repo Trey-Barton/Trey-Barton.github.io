@@ -474,28 +474,17 @@ body {
   .contact-card { padding: 40px 28px; max-width: 100%; }
   .biome-label { display: none; }
   #bg-canvas { contain: none; }
-  /* Center and scale cube on mobile — narrower, taller for text */
+  /* Cube auto-scales via JS — just set centering and tall height */
   .cube-viewport {
-    width: 420px;
-    max-width: 420px;
     height: 440px;
     margin-left: auto;
     margin-right: auto;
-    transform: scale(0.55);
     transform-origin: center top;
-    margin-bottom: -120px;
   }
   .heading-viewport {
-    width: 140px;
-    height: 42px;
     margin-left: auto;
     margin-right: auto;
   }
-  .projects-heading-scene, .projects-heading-face { width: 140px; height: 42px; }
-  .pf-front  { transform: rotateY(0deg) translateZ(70px); }
-  .pf-back   { transform: rotateY(180deg) translateZ(70px); }
-  .pf-right  { transform: rotateY(90deg) translateZ(70px); }
-  .pf-left   { transform: rotateY(-90deg) translateZ(70px); }
   .chandelier-wire { width: 6px; margin-left: -3px; }
   .chandelier-wire-bottom { width: 6px; margin-left: -3px; }
   .project-card h3 { font-size: 1.3rem; }
@@ -511,10 +500,6 @@ body {
   .about-card { padding: 28px 20px; }
   .photo-ring { width: 150px; height: 150px; }
   .contact-card { padding: 32px 20px; max-width: 100%; }
-  .cube-viewport {
-    transform: scale(0.48);
-    margin-bottom: -140px;
-  }
   .chandelier-wire, .chandelier-wire-bottom { width: 4px; margin-left: -2px; }
   .skill-tag { font-size: 0.75rem; padding: 5px 10px; }
   .social-links { gap: 10px; }
@@ -2400,7 +2385,78 @@ document.documentElement.classList.add('js-ready');
   var isMobile = window.innerWidth <= 768;
   window.addEventListener('resize', function() { isMobile = window.innerWidth <= 768; });
 
-  var cubeZ = isMobile ? 210 : 280;
+  // Dynamic cube sizing — auto-fits any screen width
+  var cubeVP = document.querySelector('.cube-viewport');
+  var cubeZ = 280; // default desktop half-width
+  var cubeScale = 1;
+
+  function sizeCube() {
+    isMobile = window.innerWidth <= 768;
+    if (!isMobile) {
+      cubeZ = 280;
+      cubeScale = 1;
+      cubeVP.style.width = '560px';
+      cubeVP.style.maxWidth = '560px';
+      cubeVP.style.transform = '';
+      cubeVP.style.marginBottom = '';
+      cubeVP.style.height = '';
+      cubeFaces.forEach(function(face, i) {
+        var angles = [0, 90, 180, -90];
+        face.style.transform = 'rotateY(' + angles[i] + 'deg) translateZ(280px)';
+      });
+    } else {
+      // Compute scale so front face fits within viewport with padding
+      var vw = window.innerWidth;
+      var targetWidth = vw - 32; // 16px padding each side
+      var perspective = 1200;
+      // Use a narrower cube on mobile (420px base)
+      var baseWidth = 420;
+      cubeZ = baseWidth / 2; // 210
+      var perspScale = perspective / (perspective - cubeZ); // ~1.21
+      var apparentWidth = baseWidth * perspScale;
+      cubeScale = Math.min(targetWidth / apparentWidth, 0.7);
+      var scaledHeight = 440 * cubeScale;
+      var marginBottom = -(440 - scaledHeight);
+
+      cubeVP.style.width = baseWidth + 'px';
+      cubeVP.style.maxWidth = baseWidth + 'px';
+      cubeVP.style.transform = 'scale(' + cubeScale.toFixed(3) + ')';
+      cubeVP.style.marginBottom = marginBottom + 'px';
+      cubeVP.style.height = '440px';
+
+      var faceAngles = [0, 90, 180, -90];
+      cubeFaces.forEach(function(face, i) {
+        face.style.transform = 'rotateY(' + faceAngles[i] + 'deg) translateZ(' + cubeZ + 'px)';
+      });
+    }
+  }
+  // Also adjust chandelier wires to match cube size
+  var topWires = document.querySelectorAll('.chandelier-wire');
+  var bottomWires = document.querySelectorAll('.chandelier-wire-bottom');
+  function sizeWires() {
+    if (!isMobile) {
+      // Restore desktop defaults
+      var yAngles = [45, 135, 225, 315];
+      topWires.forEach(function(w, i) {
+        w.style.transform = 'translate3d(0px,-556px,0px) rotateY(' + yAngles[i] + 'deg) rotateX(45deg)';
+      });
+      return;
+    }
+    // On mobile: wires need steeper angle to reach the smaller cube corners
+    // atan(cubeZ / wireHeight) gives the angle; steeper = larger rotateX
+    var wireH = 400; // shorter wires on mobile
+    var xAngle = Math.round(Math.atan2(cubeZ, wireH) * 180 / Math.PI + 15); // steeper to touch corners
+    var yAngles = [45, 135, 225, 315];
+    topWires.forEach(function(w, i) {
+      w.style.transform = 'translate3d(0px,-' + wireH + 'px,0px) rotateY(' + yAngles[i] + 'deg) rotateX(' + xAngle + 'deg)';
+      w.style.height = wireH + 'px';
+    });
+  }
+  sizeWires();
+
+  sizeCube();
+  window.addEventListener('resize', function() { sizeCube(); sizeWires(); updateCube(); });
+
   function updateCube() {
     cubeCurrentDeg = -cubeIdx * 90;
     cubeScene.style.transform = 'translateZ(-' + cubeZ + 'px) rotateY(' + cubeCurrentDeg + 'deg)';
@@ -2408,7 +2464,6 @@ document.documentElement.classList.add('js-ready');
     cubeDots.forEach(function(dot, i) {
       dot.classList.toggle('active', i === activeFace);
     });
-    // All faces stay visible — CSS backface-visibility: hidden handles hiding back-facing content
   }
 
   // Animate the Projects heading cube: simple spin to the right
@@ -2442,14 +2497,6 @@ document.documentElement.classList.add('js-ready');
       updateCube();
     });
   });
-
-  // On mobile, override cube face translateZ to match narrower viewport
-  if (isMobile) {
-    var faceAngles = [0, 90, 180, -90];
-    cubeFaces.forEach(function(face, i) {
-      face.style.transform = 'rotateY(' + faceAngles[i] + 'deg) translateZ(' + cubeZ + 'px)';
-    });
-  }
 
   updateCube();
 
