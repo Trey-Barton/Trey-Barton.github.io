@@ -2614,10 +2614,12 @@ document.documentElement.classList.add('js-ready');
       var dx = corner.x;
       var dy = -cubeHalf - convY3D;
       var dz = corner.z;
+      // Exact length from convergence point to corner
       var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      // Exact angles so wire ends precisely at the corner
       var azimuth = Math.atan2(-corner.x, -corner.z) * (180 / Math.PI);
       var dxz = Math.sqrt(dx * dx + dz * dz);
-      var tilt = 45; // Fixed 45-degree angle for all wires
+      var tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
       if (i === 0) { positionWires._topTilt = tilt; positionWires._topLen = wireLen; }
 
       wires[i].style.height = wireLen + 'px';
@@ -2668,17 +2670,19 @@ document.documentElement.classList.add('js-ready');
       { x: -edgeZ, z: edgeZ }
     ];
 
-    // Fixed 45-degree angle for bottom wires, matching top
-    var topTilt = 45;
-    var topLen = positionWires._topLen || 500;
-
     corners.forEach(function(corner, i) {
+      // Vector from corner to convergence point below
       var dx = -corner.x;
+      var dy = convY3D - cubeHalf; // distance from corner (at cubeHalf) down to convergence
       var dz = -corner.z;
+      // Exact length so wire ends precisely at convergence point
+      var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
       var azimuth = Math.atan2(dx, dz) * (180 / Math.PI);
+      var dxz = Math.sqrt(dx * dx + dz * dz);
+      var tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
 
-      bWires[i].style.height = topLen + 'px';
-      bWires[i].style.transform = 'translate3d(' + corner.x + 'px,' + cubeHalf + 'px,' + corner.z + 'px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + topTilt.toFixed(1) + 'deg)';
+      bWires[i].style.height = wireLen + 'px';
+      bWires[i].style.transform = 'translate3d(' + corner.x + 'px,' + cubeHalf + 'px,' + corner.z + 'px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
     });
   }
 
