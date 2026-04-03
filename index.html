@@ -2253,7 +2253,7 @@ document.documentElement.classList.add('js-ready');
       if (target) {
         e.preventDefault();
         // Offset for #projects so the cube is centered in view
-        var offset = (link.getAttribute('href') === '#projects') ? 150 : 70;
+        var offset = (link.getAttribute('href') === '#projects') ? -50 : 70;
         var top = target.getBoundingClientRect().top + window.scrollY - offset;
         window.scrollTo({ top: top, behavior: 'smooth' });
       }
