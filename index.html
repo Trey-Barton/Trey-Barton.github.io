@@ -202,7 +202,7 @@ body {
   text-align: center;
   text-shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
-#projects { text-align: center; margin-top: 33px; scroll-margin-top: 350px; }
+#projects { text-align: center; margin-top: 33px; }
 #contact { margin-top: -8px; position: relative; z-index: 2; }
 .heading-viewport {
   perspective: 800px;
@@ -2243,10 +2243,20 @@ document.documentElement.classList.add('js-ready');
     if (!navTicking) { navTicking = true; requestAnimationFrame(function() { updateNav(); navTicking = false; }); }
   }, { passive: true });
   updateNav();
+  // Always start at the top on page load
+  if (window.location.hash) { history.replaceState(null, '', window.location.pathname); }
+  window.scrollTo(0, 0);
+
   document.querySelectorAll('a[href^="#"]').forEach(function(link) {
     link.addEventListener('click', function(e) {
       var target = document.querySelector(link.getAttribute('href'));
-      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      if (target) {
+        e.preventDefault();
+        // Offset for #projects so the cube is centered in view
+        var offset = (link.getAttribute('href') === '#projects') ? 350 : 70;
+        var top = target.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top: top, behavior: 'smooth' });
+      }
     });
   });
   // Pause video when off-screen to save GPU/battery
