@@ -2427,9 +2427,8 @@ document.documentElement.classList.add('js-ready');
     var perspective = 1200;
     var baseWidth = 560;
     cubeZ = baseWidth / 2;
-    var perspScale = perspective / (perspective - cubeZ);
-    var apparentWidth = baseWidth * perspScale;
-    cubeScale = Math.min(targetWidth / apparentWidth, 1.0);
+    // Scale based on actual cube width, not perspective-inflated apparent width
+    cubeScale = Math.min(targetWidth / baseWidth, 1.0);
 
     var cubeHeight = 480;
     var scaledHeight = cubeHeight * cubeScale;
