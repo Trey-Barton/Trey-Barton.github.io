@@ -495,9 +495,6 @@ body {
   .cube-viewport {
     height: 480px;
     transform-origin: center top;
-    position: relative;
-    left: 50%;
-    margin-left: -280px;
   }
   .project-card h3 { font-size: 1.5rem; }
   .project-card p { font-size: 1rem; line-height: 1.6; }
@@ -2436,7 +2433,9 @@ document.documentElement.classList.add('js-ready');
     cubeVP.style.width = baseWidth + 'px';
     cubeVP.style.maxWidth = baseWidth + 'px';
     cubeVP.style.height = cubeHeight + 'px';
-    // CSS handles centering via left:50%; margin-left:-280px
+    cubeVP.style.position = 'relative';
+    cubeVP.style.left = '50%';
+    cubeVP.style.marginLeft = -(baseWidth / 2) + 'px';
     cubeVP.style.transform = 'scale(' + cubeScale.toFixed(3) + ')';
     cubeVP.style.marginBottom = -(cubeHeight - scaledHeight) + 'px';
 
