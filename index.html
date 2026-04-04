@@ -501,14 +501,14 @@ body {
   #bg-canvas { contain: none; }
   /* Center cube on viewport axis — left:50% + negative half-width */
   .cube-viewport {
-    height: 560px;
+    height: 640px;
     transform-origin: center top;
     margin-top: 20px;
   }
-  .project-card h3 { font-size: 2.2rem; }
-  .project-card p { font-size: 1.15rem; line-height: 1.75; }
-  .project-tag { font-size: 0.95rem; }
-  .project-link { font-size: 1rem; }
+  .project-card h3 { font-size: 1.4rem; }
+  .project-card p { font-size: 0.85rem; line-height: 1.7; }
+  .project-tag { font-size: 0.7rem; }
+  .project-link { font-size: 0.85rem; }
   .projects-mobile { display: none; }
   .projects-heading-mobile { display: none; }
   #contact { margin-top: 22px; }
@@ -2439,7 +2439,7 @@ document.documentElement.classList.add('js-ready');
     // Scale based on actual cube width, not perspective-inflated apparent width
     cubeScale = Math.min(targetWidth / baseWidth, 1.0);
 
-    var cubeHeight = 560;
+    var cubeHeight = 640;
     var scaledHeight = cubeHeight * cubeScale;
 
     cubeVP.style.width = baseWidth + 'px';
