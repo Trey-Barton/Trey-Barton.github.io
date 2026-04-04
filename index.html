@@ -29,6 +29,8 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+  min-height: -webkit-fill-available;
   pointer-events: none;
   will-change: contents;
   contain: strict;
@@ -1476,7 +1478,7 @@ try {
   var ctx = canvas.getContext('2d', { alpha: false });
   var time = 0, lastTs = null;
 
-  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; isMobile = window.innerWidth <= 768; MAX_PARTICLES = isMobile ? 150 : 400; }
+  function resize() { canvas.width = window.innerWidth; canvas.height = Math.max(window.innerHeight, document.documentElement.clientHeight, screen.height); isMobile = window.innerWidth <= 768; MAX_PARTICLES = isMobile ? 150 : 400; }
   var resizeTimer;
   window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 100); });
   resize();
