@@ -505,10 +505,7 @@ body {
     transform-origin: center top;
     margin-top: 20px;
   }
-  .project-card h3 { font-size: 1.4rem; }
-  .project-card p { font-size: 0.85rem; line-height: 1.7; }
-  .project-tag { font-size: 0.7rem; }
-  .project-link { font-size: 0.85rem; }
+  /* Project text sizes set dynamically by JS to match about/contact */
   .projects-mobile { display: none; }
   .projects-heading-mobile { display: none; }
   #contact { margin-top: 22px; }
@@ -2450,6 +2447,13 @@ document.documentElement.classList.add('js-ready');
     cubeVP.style.marginLeft = -(baseWidth / 2) + 'px';
     cubeVP.style.transform = 'scale(' + cubeScale.toFixed(3) + ')';
     cubeVP.style.marginBottom = -(cubeHeight - scaledHeight) + 'px';
+
+    // Compensate text size so it visually matches about/contact sections
+    var inv = 1 / cubeScale;
+    document.querySelectorAll('.project-card h3').forEach(function(el) { el.style.fontSize = (2.2 * inv).toFixed(2) + 'rem'; });
+    document.querySelectorAll('.project-card p').forEach(function(el) { el.style.fontSize = (1.15 * inv).toFixed(2) + 'rem'; el.style.lineHeight = '1.75'; });
+    document.querySelectorAll('.project-tag').forEach(function(el) { el.style.fontSize = (0.95 * inv).toFixed(2) + 'rem'; });
+    document.querySelectorAll('.project-link').forEach(function(el) { el.style.fontSize = (1.0 * inv).toFixed(2) + 'rem'; });
 
     // Update face geometry
     var faceAngles = [0, 90, 180, -90];
