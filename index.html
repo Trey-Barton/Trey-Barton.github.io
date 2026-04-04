@@ -2449,6 +2449,8 @@ document.documentElement.classList.add('js-ready');
   }
 
   centerVisuals();
+  // Force scroll to top after layout changes to prevent jumping to Projects
+  window.scrollTo(0, 0);
   // Wire positioning handled by positionWires/positionBottomWires below
   window.addEventListener('resize', function() { centerVisuals(); updateCube(); });
 
@@ -2609,6 +2611,8 @@ document.documentElement.classList.add('js-ready');
   positionHeadingWires();
   positionWires();
   positionBottomWires();
+  // Final scroll reset after all layout changes
+  requestAnimationFrame(function() { window.scrollTo(0, 0); });
   window.addEventListener('resize', function() { positionHeadingWires(); positionWires(); positionBottomWires(); });
   // Re-position wires on scroll since wire angles depend on relative element positions
   var wireTicking = false;
