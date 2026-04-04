@@ -2422,14 +2422,14 @@ document.documentElement.classList.add('js-ready');
     }
 
     // Mobile/tablet: compute scale to fit viewport, center everything
-    var padding = 32;
+    var padding = 16;
     var targetWidth = vw - padding;
     var perspective = 1200;
     var baseWidth = 560;
     cubeZ = baseWidth / 2;
     var perspScale = perspective / (perspective - cubeZ);
     var apparentWidth = baseWidth * perspScale;
-    cubeScale = Math.min(targetWidth / apparentWidth, 0.95);
+    cubeScale = Math.min(targetWidth / apparentWidth, 1.0);
 
     var cubeHeight = 480;
     var scaledHeight = cubeHeight * cubeScale;
