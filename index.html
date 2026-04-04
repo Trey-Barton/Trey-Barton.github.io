@@ -14,6 +14,28 @@
   <!-- Preload video -->
   <link rel="preload" href="bounce_loop.mp4" as="video" type="video/mp4" />
   <style>
+/*
+ * ════════ STYLE MAP ════════
+ * SECTIONS: #hero, #about, #projects, #contact, .footer
+ * 3D CUBE: .cube-viewport > .cube-scene > .cube-face (4x)
+ *   Wires: .chandelier-wire (top), .chandelier-wire-bottom (bottom)
+ *   Heading: .heading-viewport > .projects-heading-scene
+ * MOBILE SIZING: All text in :root CSS vars below. Cube geometry in JS.
+ * TO ADJUST: Text → :root vars. Cube → JS config constants. Wires → JS ratios.
+ */
+:root {
+  --card-h3: 1.4rem;
+  --card-body: 0.9rem;
+  --card-tag: 0.7rem;
+  --card-link: 0.85rem;
+  --card-pad-v: 36px;
+  --card-pad-h: 36px;
+  --card-gap: 14px;
+  --about-h2: 2rem;
+  --about-body: 1rem;
+  --contact-h2: 2.2rem;
+  --contact-body: 1rem;
+}
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
@@ -269,12 +291,12 @@ body {
 }
 .about-text h2 {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 2rem;
+  font-size: var(--about-h2);
   font-weight: 700;
   margin-bottom: 20px;
 }
 .about-text p {
-  font-size: 1rem;
+  font-size: var(--about-body);
   line-height: 1.75;
   color: rgba(255,255,255,0.75);
   margin-bottom: 16px;
@@ -422,8 +444,8 @@ body {
   transform: scale(1.35);
 }
 .project-card {
-  padding: 36px;
-  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding: var(--card-pad-v) var(--card-pad-h);
+  display: flex; flex-direction: column; align-items: center; gap: var(--card-gap);
   height: 100%;
   box-sizing: border-box;
   text-align: center;
@@ -433,16 +455,16 @@ body {
   contain: none;
 }
 /* All cube face text stays visible for 3D depth effect */
-.project-tag { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
-.project-card h3 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.4rem; font-weight: 700; }
-.project-card p { font-size: 0.9rem; line-height: 1.7; color: rgba(255,255,255,0.65); flex: 1; }
+.project-tag { font-size: var(--card-tag); font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+.project-card h3 { font-family: 'Playfair Display', Georgia, serif; font-size: var(--card-h3); font-weight: 700; }
+.project-card p { font-size: var(--card-body); line-height: 1.7; color: rgba(255,255,255,0.65); flex: 1; }
 .project-links { display: flex; justify-content: center; gap: 20px; margin-top: 4px; }
-.project-link { font-size: 0.85rem; font-weight: 500; color: rgba(255,255,255,0.85); text-decoration: none; transition: color 0.2s; }
+.project-link { font-size: var(--card-link); font-weight: 500; color: rgba(255,255,255,0.85); text-decoration: none; transition: color 0.2s; }
 .project-link.muted { color: rgba(255,255,255,0.35); }
 .project-link:hover { color: #fff; }
 .contact-card { padding: 64px; text-align: center; max-width: 480px; margin: 0 auto; background: rgba(15, 30, 40, 0.72); backdrop-filter: none; -webkit-backdrop-filter: none; }
-.contact-card h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 2.2rem; margin-bottom: 16px; }
-.contact-card p { font-size: 1rem; line-height: 1.7; color: rgba(255,255,255,0.65); margin-bottom: 32px; }
+.contact-card h2 { font-family: 'Playfair Display', Georgia, serif; font-size: var(--contact-h2); margin-bottom: 16px; }
+.contact-card p { font-size: var(--contact-body); line-height: 1.7; color: rgba(255,255,255,0.65); margin-bottom: 32px; }
 .contact-email {
   display: inline-block; font-size: 1.1rem; font-weight: 500; color: #fff; text-decoration: none;
   border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 4px; margin-bottom: 36px; transition: border-color 0.2s;
@@ -479,33 +501,43 @@ body {
 @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 .js-ready .reveal-section { opacity: 1; transform: translateY(0); }
 @media (max-width: 768px) {
+  :root {
+    /* ── Mobile text sizes — edit here to scale everything ── */
+    --card-h3: 0.85rem;
+    --card-body: 0.55rem;
+    --card-tag: 0.45rem;
+    --card-link: 0.55rem;
+    --card-pad-v: 14px;
+    --card-pad-h: 12px;
+    --card-gap: 6px;
+    --about-h2: 2.2rem;
+    --about-body: 1.15rem;
+    --contact-h2: 2.4rem;
+    --contact-body: 1.15rem;
+  }
   body { background: #1a3040; }
   .nav-inner { padding: 0 24px; }
   .nav-links { gap: 20px; }
   .nav { background: rgba(10, 21, 32, 0.95); }
+  .nav-links a { font-size: 1rem; }
   .footer { padding: 24px 16px 60px; }
   .section { padding: 80px 24px; }
   .about-card { grid-template-columns: 1fr; padding: 36px 20px; text-align: center; max-width: 85vw; margin: 0 auto; }
-  .about-text h2 { text-align: center; font-size: 2.2rem; }
-  .about-text p { text-align: left; font-size: 1.15rem; line-height: 1.75; }
+  .about-text h2 { text-align: center; }
+  .about-text p { text-align: left; line-height: 1.75; }
   .about-photo { justify-content: center; order: -1; }
   .skills { justify-content: center; }
   .skill-tag { font-size: 0.95rem; padding: 8px 18px; }
   .photo-ring { width: 180px; height: 180px; }
   .contact-card { padding: 40px 28px; max-width: 100%; }
-  .contact-card h2 { font-size: 2.4rem; }
-  .contact-card p { font-size: 1.15rem; }
   .contact-email { font-size: 1.25rem; }
-  .nav-links a { font-size: 1rem; }
   .biome-label { display: none; }
   #bg-canvas { contain: none; }
-  /* Center cube on viewport axis — left:50% + negative half-width */
   .cube-viewport { transform-origin: center top; margin-top: 20px; overflow: visible; }
-  .project-card h3 { font-size: 0.85rem; }
-  .project-card p { font-size: 0.65rem; line-height: 1.6; color: rgba(255,255,255,0.7); }
-  .project-tag { font-size: 0.5rem; }
-  .project-link { font-size: 0.6rem; }
-  .project-card { padding: 16px 14px; gap: 6px; }
+  .project-card p { line-height: 1.6; color: rgba(255,255,255,0.7); }
+  .project-tag { letter-spacing: 0.12em; }
+  /* Projects heading 3x larger on mobile */
+  .projects-heading-face .section-heading { font-size: 3.6rem !important; }
   .projects-mobile { display: none; }
   .projects-heading-mobile { display: none; }
   #contact { margin-top: 22px; }
@@ -2400,6 +2432,14 @@ document.documentElement.classList.add('js-ready');
   var headingSpinDeg = 0;
   var cubeCurrentDeg = 0;
   var isMobile = window.innerWidth <= 768;
+
+  // ── Cube & wire config (ratios relative to cubeZ) ──
+  var WIRE_CONVERGENCE_RATIO = 1.43;   // convergence distance / cubeZ
+  var WIRE_BORDER_INSET_RATIO = 0.107; // border-radius inset / cubeZ
+  var CUBE_HEIGHT_RATIO = 1.17;        // cubeHeight / baseWidth
+  var CUBE_HEIGHT_MAX = 520;           // max height cap (px)
+  var CUBE_PERSPECTIVE_RATIO = 2.2;    // perspective / baseWidth
+  var CUBE_PADDING = 48;               // total horizontal padding (px)
   window.addEventListener('resize', function() { isMobile = window.innerWidth <= 768; });
 
   /*
@@ -2428,13 +2468,12 @@ document.documentElement.classList.add('js-ready');
     }
 
     // Mobile/tablet: resize cube geometry to fit screen — no scale transform
-    var padding = 48; // 24px each side, matching .section padding
-    var baseWidth = vw - padding;
+    var baseWidth = vw - CUBE_PADDING;
     cubeZ = baseWidth / 2;
-    cubeScale = 1; // NO scaling — text stays at natural CSS sizes
+    cubeScale = 1;
 
-    var cubeHeight = Math.min(baseWidth * 1.17, 520);
-    var perspective = baseWidth * 2.2;
+    var cubeHeight = Math.min(baseWidth * CUBE_HEIGHT_RATIO, CUBE_HEIGHT_MAX);
+    var perspective = baseWidth * CUBE_PERSPECTIVE_RATIO;
 
     cubeVP.style.width = baseWidth + 'px';
     cubeVP.style.maxWidth = baseWidth + 'px';
@@ -2587,13 +2626,9 @@ document.documentElement.classList.add('js-ready');
     var wires = document.querySelectorAll('.chandelier-wire');
     if (!cubeViewport || wires.length < 4) return;
 
-    // cubeZ from outer scope (280 desktop, smaller on mobile)
     var cubeHalf = cubeViewport.offsetHeight / 2;
-    // Fixed convergence point above cube center
-    var convY = -cubeHalf - 400;
-    // Inset corners by border-radius so wires touch the visible rounded edge
-    var borderInset = 30; // 20px border-radius * cos(45°)
-    var edgeZ = cubeZ - borderInset;
+    var convY = -cubeHalf - cubeZ * WIRE_CONVERGENCE_RATIO;
+    var edgeZ = cubeZ - cubeZ * WIRE_BORDER_INSET_RATIO;
 
     var corners = [
       { x: edgeZ, z: edgeZ },
@@ -2635,12 +2670,9 @@ document.documentElement.classList.add('js-ready');
     var bWires = document.querySelectorAll('.chandelier-wire-bottom');
     if (!cubeViewport || bWires.length < 4) return;
 
-    // cubeZ from outer scope
     var cubeHalf = cubeViewport.offsetHeight / 2;
-    // Fixed convergence point below cube center — mirrors top
-    var convY = cubeHalf + 400;
-    var borderInset = 30;
-    var edgeZ = cubeZ - borderInset;
+    var convY = cubeHalf + cubeZ * WIRE_CONVERGENCE_RATIO;
+    var edgeZ = cubeZ - cubeZ * WIRE_BORDER_INSET_RATIO;
 
     var corners = [
       { x: edgeZ, z: edgeZ },
