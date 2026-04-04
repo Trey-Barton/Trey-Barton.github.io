@@ -2434,7 +2434,7 @@ document.documentElement.classList.add('js-ready');
   var isMobile = window.innerWidth <= 768;
 
   // ── Cube & wire config (ratios relative to cubeZ) ──
-  var WIRE_CONVERGENCE_RATIO = 0.7;    // convergence distance / cubeZ (lower = shorter/less steep)
+  var WIRE_CONVERGENCE_RATIO = 1.26;   // tuned for ~45° wire angle
   var WIRE_BORDER_INSET_RATIO = 0.107; // border-radius inset / cubeZ
   var CUBE_HEIGHT_RATIO = 1.17;        // cubeHeight / baseWidth
   var CUBE_HEIGHT_MAX = 520;           // max height cap (px)
