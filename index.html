@@ -501,14 +501,14 @@ body {
   #bg-canvas { contain: none; }
   /* Center cube on viewport axis — left:50% + negative half-width */
   .cube-viewport {
-    height: 480px;
+    height: 560px;
     transform-origin: center top;
     margin-top: 20px;
   }
-  .project-card h3 { font-size: 3.4rem; }
-  .project-card p { font-size: 1.8rem; line-height: 1.75; }
-  .project-tag { font-size: 1.4rem; }
-  .project-link { font-size: 1.6rem; }
+  .project-card h3 { font-size: 2.2rem; }
+  .project-card p { font-size: 1.15rem; line-height: 1.75; }
+  .project-tag { font-size: 0.95rem; }
+  .project-link { font-size: 1rem; }
   .projects-mobile { display: none; }
   .projects-heading-mobile { display: none; }
   #contact { margin-top: 22px; }
@@ -2439,7 +2439,7 @@ document.documentElement.classList.add('js-ready');
     // Scale based on actual cube width, not perspective-inflated apparent width
     cubeScale = Math.min(targetWidth / baseWidth, 1.0);
 
-    var cubeHeight = 480;
+    var cubeHeight = 560;
     var scaledHeight = cubeHeight * cubeScale;
 
     cubeVP.style.width = baseWidth + 'px';
@@ -2597,7 +2597,7 @@ document.documentElement.classList.add('js-ready');
     // Fixed convergence point above cube center
     var convY = -cubeHalf - 400;
     // Inset corners by border-radius so wires touch the visible rounded edge
-    var borderInset = 14; // 20px border-radius * cos(45°)
+    var borderInset = 30; // 20px border-radius * cos(45°)
     var edgeZ = cubeZ - borderInset;
 
     var corners = [
@@ -2644,7 +2644,7 @@ document.documentElement.classList.add('js-ready');
     var cubeHalf = cubeViewport.offsetHeight / 2;
     // Fixed convergence point below cube center — mirrors top
     var convY = cubeHalf + 400;
-    var borderInset = 14;
+    var borderInset = 30;
     var edgeZ = cubeZ - borderInset;
 
     var corners = [
