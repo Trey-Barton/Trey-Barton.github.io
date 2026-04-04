@@ -505,7 +505,10 @@ body {
     transform-origin: center top;
     margin-top: 20px;
   }
-  /* Project text sizes set dynamically by JS to match about/contact */
+  .project-card h3 { font-size: 3.4rem !important; }
+  .project-card p { font-size: 1.8rem !important; line-height: 1.75 !important; color: rgba(255,255,255,0.75) !important; }
+  .project-tag { font-size: 1.5rem !important; }
+  .project-link { font-size: 1.6rem !important; }
   .projects-mobile { display: none; }
   .projects-heading-mobile { display: none; }
   #contact { margin-top: 22px; }
@@ -2431,7 +2434,7 @@ document.documentElement.classList.add('js-ready');
     var padding = 16;
     var targetWidth = vw - padding;
     var perspective = 1200;
-    var baseWidth = 560;
+    var baseWidth = 548;
     cubeZ = baseWidth / 2;
     // Scale based on actual cube width, not perspective-inflated apparent width
     cubeScale = Math.min(targetWidth / baseWidth, 1.0);
