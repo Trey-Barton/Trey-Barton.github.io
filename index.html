@@ -493,7 +493,7 @@ body {
   #bg-canvas { contain: none; }
   /* Center cube on viewport axis — left:50% + negative half-width */
   .cube-viewport {
-    height: 440px;
+    height: 480px;
     transform-origin: center top;
     position: relative;
     left: 50%;
@@ -2429,9 +2429,9 @@ document.documentElement.classList.add('js-ready');
     cubeZ = baseWidth / 2;
     var perspScale = perspective / (perspective - cubeZ);
     var apparentWidth = baseWidth * perspScale;
-    cubeScale = Math.min(targetWidth / apparentWidth, 0.85);
+    cubeScale = Math.min(targetWidth / apparentWidth, 0.95);
 
-    var cubeHeight = 420;
+    var cubeHeight = 480;
     var scaledHeight = cubeHeight * cubeScale;
 
     cubeVP.style.width = baseWidth + 'px';
@@ -2576,54 +2576,34 @@ document.documentElement.classList.add('js-ready');
 
   // Dynamically position chandelier wires from about-card bottom center to cube corners
   function positionWires() {
-    var aboutCard = document.querySelector('.about-card');
     var cubeViewport = document.querySelector('.cube-viewport');
     var wires = document.querySelectorAll('.chandelier-wire');
-    if (!aboutCard || !cubeViewport || wires.length < 4) return;
+    if (!cubeViewport || wires.length < 4) return;
 
-    var aboutRect = aboutCard.getBoundingClientRect();
-    var cubeRect = cubeViewport.getBoundingClientRect();
-    var perspective = 1200;
     var cubeZ = 280;
-
-    // Detect CSS scale on the viewport (mobile uses transform: scale())
-    var cssScale = cubeViewport.offsetHeight > 0 ? cubeRect.height / cubeViewport.offsetHeight : 1;
-
-    var cubeCenterY = cubeRect.top + cubeRect.height / 2;
-    var pageDistToAbout = cubeCenterY - aboutRect.bottom;
-
-    // Reverse perspective scaling to get 3D convergence Y
-    // Divide by cssScale to convert screen pixels back to unscaled 3D coords
-    var scale = perspective / (perspective + cubeZ);
-    var convY3D = -(pageDistToAbout / scale / cssScale);
-
-    // Use unscaled cube half-height for 3D geometry
     var cubeHalf = cubeViewport.offsetHeight / 2;
-    var borderRadius = 20;
-    var inset = borderRadius * Math.cos(Math.PI / 4);
-    var edgeZ = cubeZ - inset;
+    // Fixed convergence point above cube center
+    var convY = -cubeHalf - 400;
+
     var corners = [
-      { x: edgeZ, z: edgeZ },
-      { x: edgeZ, z: -edgeZ },
-      { x: -edgeZ, z: -edgeZ },
-      { x: -edgeZ, z: edgeZ }
+      { x: cubeZ, z: cubeZ },
+      { x: cubeZ, z: -cubeZ },
+      { x: -cubeZ, z: -cubeZ },
+      { x: -cubeZ, z: cubeZ }
     ];
 
-    positionWires._topTilt = 0;
     corners.forEach(function(corner, i) {
       var dx = corner.x;
-      var dy = -cubeHalf - convY3D;
+      var dy = -cubeHalf - convY;
       var dz = corner.z;
-      // Exact length from convergence point to corner
       var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      // Exact angles so wire ends precisely at the corner
       var azimuth = Math.atan2(-corner.x, -corner.z) * (180 / Math.PI);
       var dxz = Math.sqrt(dx * dx + dz * dz);
       var tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
       if (i === 0) { positionWires._topTilt = tilt; positionWires._topLen = wireLen; }
 
       wires[i].style.height = wireLen + 'px';
-      wires[i].style.transform = 'translate3d(0px,' + convY3D + 'px,0px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
+      wires[i].style.transform = 'translate3d(0px,' + convY + 'px,0px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
     });
   }
 
@@ -2637,45 +2617,28 @@ document.documentElement.classList.add('js-ready');
     if (!wireTicking) { wireTicking = true; requestAnimationFrame(function() { positionHeadingWires(); positionWires(); positionBottomWires(); wireTicking = false; }); }
   }, { passive: true });
 
-  // Position bottom wires: from cube bottom corners to contact card top
+  // Position bottom wires: from cube bottom corners to convergence below
   function positionBottomWires() {
-    var contactCard = document.querySelector('.contact-card');
     var cubeViewport = document.querySelector('.cube-viewport');
     var bWires = document.querySelectorAll('.chandelier-wire-bottom');
-    if (!contactCard || !cubeViewport || bWires.length < 4) return;
+    if (!cubeViewport || bWires.length < 4) return;
 
-    var contactRect = contactCard.getBoundingClientRect();
-    var cubeRect = cubeViewport.getBoundingClientRect();
-    var perspective = 1200;
     var cubeZ = 280;
-
-    // Detect CSS scale on the viewport (mobile uses transform: scale())
-    var cssScale = cubeViewport.offsetHeight > 0 ? cubeRect.height / cubeViewport.offsetHeight : 1;
-
-    var cubeCenterY = cubeRect.top + cubeRect.height / 2;
-    var pageDistToContact = contactRect.top - cubeCenterY;
-
-    var scale = perspective / (perspective + cubeZ);
-    var convY3D = pageDistToContact / scale / cssScale;
-
-    // Use unscaled cube half-height for 3D geometry
     var cubeHalf = cubeViewport.offsetHeight / 2;
-    var borderRadius = 20;
-    var inset = borderRadius * Math.cos(Math.PI / 4);
-    var edgeZ = cubeZ - inset;
+    // Fixed convergence point below cube center — mirrors top
+    var convY = cubeHalf + 400;
+
     var corners = [
-      { x: edgeZ, z: edgeZ },
-      { x: edgeZ, z: -edgeZ },
-      { x: -edgeZ, z: -edgeZ },
-      { x: -edgeZ, z: edgeZ }
+      { x: cubeZ, z: cubeZ },
+      { x: cubeZ, z: -cubeZ },
+      { x: -cubeZ, z: -cubeZ },
+      { x: -cubeZ, z: cubeZ }
     ];
 
     corners.forEach(function(corner, i) {
-      // Vector from corner to convergence point below
       var dx = -corner.x;
-      var dy = convY3D - cubeHalf; // distance from corner (at cubeHalf) down to convergence
+      var dy = convY - cubeHalf;
       var dz = -corner.z;
-      // Exact length so wire ends precisely at convergence point
       var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
       var azimuth = Math.atan2(dx, dz) * (180 / Math.PI);
       var dxz = Math.sqrt(dx * dx + dz * dz);
