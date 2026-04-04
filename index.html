@@ -205,7 +205,7 @@ body {
   text-align: center;
   text-shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
-#projects { text-align: center; margin-top: 6px; }
+#projects { text-align: center; margin-top: 8px; }
 #contact { margin-top: 10px; position: relative; z-index: 3; }
 .heading-viewport {
   perspective: 800px;
@@ -2596,12 +2596,15 @@ document.documentElement.classList.add('js-ready');
     var cubeHalf = cubeViewport.offsetHeight / 2;
     // Fixed convergence point above cube center
     var convY = -cubeHalf - 400;
+    // Inset corners by border-radius so wires touch the visible rounded edge
+    var borderInset = 14; // 20px border-radius * cos(45°)
+    var edgeZ = cubeZ - borderInset;
 
     var corners = [
-      { x: cubeZ, z: cubeZ },
-      { x: cubeZ, z: -cubeZ },
-      { x: -cubeZ, z: -cubeZ },
-      { x: -cubeZ, z: cubeZ }
+      { x: edgeZ, z: edgeZ },
+      { x: edgeZ, z: -edgeZ },
+      { x: -edgeZ, z: -edgeZ },
+      { x: -edgeZ, z: edgeZ }
     ];
 
     corners.forEach(function(corner, i) {
@@ -2641,12 +2644,14 @@ document.documentElement.classList.add('js-ready');
     var cubeHalf = cubeViewport.offsetHeight / 2;
     // Fixed convergence point below cube center — mirrors top
     var convY = cubeHalf + 400;
+    var borderInset = 14;
+    var edgeZ = cubeZ - borderInset;
 
     var corners = [
-      { x: cubeZ, z: cubeZ },
-      { x: cubeZ, z: -cubeZ },
-      { x: -cubeZ, z: -cubeZ },
-      { x: -cubeZ, z: cubeZ }
+      { x: edgeZ, z: edgeZ },
+      { x: edgeZ, z: -edgeZ },
+      { x: -edgeZ, z: -edgeZ },
+      { x: -edgeZ, z: edgeZ }
     ];
 
     corners.forEach(function(corner, i) {
