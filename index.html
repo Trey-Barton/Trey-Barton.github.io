@@ -544,6 +544,7 @@ body {
       <h1 class="hero-name reveal">Trey Barton</h1>
       <p class="hero-title reveal">Media, Design &amp; Emerging Technology</p>
       <a href="#projects" class="hero-cta reveal">View My Work</a>
+      <a href="#about" class="hero-cta reveal">About Me</a>
     </div>
     <div class="hero-scroll">
       <span class="hero-scroll-text">Scroll</span>
@@ -2473,7 +2474,7 @@ document.documentElement.classList.add('js-ready');
   // Animate the Projects heading cube: simple spin to the right
   var headingZ = (window.innerWidth <= 768) ? 70 : 85;
   function animateHeading() {
-    headingSpinDeg += 0.15;
+    headingSpinDeg += 0.35;
     headingScene.style.transform = 'translateZ(-' + headingZ + 'px) rotateY(' + headingSpinDeg + 'deg)';
     requestAnimationFrame(animateHeading);
   }
