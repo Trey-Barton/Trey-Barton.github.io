@@ -30,7 +30,7 @@ body {
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 100;
-  padding: 20px 0;
+  padding: clamp(12px, 2vw, 20px) 0;
   transition: background 0.4s, backdrop-filter 0.4s, padding 0.3s;
 }
 .nav.scrolled {
@@ -94,13 +94,13 @@ body {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 700;
-  margin-bottom: 48px;
+  margin-bottom: clamp(32px, 4vw, 48px);
   text-align: center;
   text-shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
 
 /* Footer */
-.footer { position: relative; z-index: 1; text-align: center; padding: 40px; font-size: 0.78rem; color: rgba(255,255,255,0.3); letter-spacing: 0.05em; }
+.footer { position: relative; z-index: 1; text-align: center; padding: clamp(24px, 4vw, 40px); font-size: 0.78rem; color: rgba(255,255,255,0.3); letter-spacing: 0.05em; }
 
 /* Center visual */
 .center-visual {
