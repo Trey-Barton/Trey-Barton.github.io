@@ -1,30 +1,34 @@
-// Forest canvas render loop — orchestrates all Forest.* modules
+/**
+ * Forest main orchestrator -- canvas setup, resize, render loop
+ */
 window.Forest = window.Forest || {};
 
 try {
 (function () {
   'use strict';
 
-  var farTrees = Forest.farTrees;
-  var midTrees = Forest.midTrees;
-  var fgTrees = Forest.fgTrees;
-  /* ════════ CANVAS ════════ */
-
   var canvas = document.getElementById('bg-canvas');
   var ctx = canvas.getContext('2d', { alpha: false });
   var time = 0, lastTs = null;
 
-  function resize() { var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1.5 : 2);
-    canvas.width = window.innerWidth * dpr; canvas.height = Math.max(window.innerHeight, document.documentElement.clientHeight, screen.height) * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); Forest.isMobile = window.innerWidth <= 768; Forest.MAX_PARTICLES = Forest.isMobile ? 150 : 400; }
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1.5 : 2);
+    var w = window.innerWidth;
+    var h = Math.max(window.innerHeight, document.documentElement.clientHeight, screen.height);
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    Forest.isMobile = window.innerWidth <= 768;
+    Forest.MAX_PARTICLES = Forest.isMobile ? 150 : 400;
+  }
   var resizeTimer;
   window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 100); });
   resize();
 
-  // Wind variable — slowly oscillates for natural feel
   var windPhase = 0;
-
-  /* ════════ RENDER LOOP ════════ */
 
   function frame(ts) {
     if (!window._isPageVisible) { lastTs = null; requestAnimationFrame(frame); return; }
@@ -34,24 +38,25 @@ try {
     time += dt;
     windPhase += dt * 0.15;
 
-    var W = canvas.width, H = canvas.height;
+    var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1.5 : 2);
+    var W = canvas.width / dpr, H = canvas.height / dpr;
     var wind = Math.sin(windPhase) * 0.5 + Math.sin(windPhase * 2.3) * 0.2;
 
-    // ── Sky gradient (cached — only recreate on resize)
+    // Sky gradient (cached on resize)
     if (!frame._skyGrad || frame._skyW !== W || frame._skyH !== H) {
       frame._skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.72);
-      frame._skyGrad.addColorStop(0,    'Forest.rgb(28,48,68)');
-      frame._skyGrad.addColorStop(0.2,  'Forest.rgb(38,68,75)');
-      frame._skyGrad.addColorStop(0.4,  'Forest.rgb(65,100,68)');
-      frame._skyGrad.addColorStop(0.6,  'Forest.rgb(120,140,60)');
-      frame._skyGrad.addColorStop(0.8,  'Forest.rgb(175,170,70)');
-      frame._skyGrad.addColorStop(1,    'Forest.rgb(215,200,85)');
+      frame._skyGrad.addColorStop(0,    'rgb(28,48,68)');
+      frame._skyGrad.addColorStop(0.2,  'rgb(38,68,75)');
+      frame._skyGrad.addColorStop(0.4,  'rgb(65,100,68)');
+      frame._skyGrad.addColorStop(0.6,  'rgb(120,140,60)');
+      frame._skyGrad.addColorStop(0.8,  'rgb(175,170,70)');
+      frame._skyGrad.addColorStop(1,    'rgb(215,200,85)');
       frame._skyW = W; frame._skyH = H;
     }
     ctx.fillStyle = frame._skyGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // ── Stars (subtle)
+    // Stars (subtle)
     for (var i = 0; i < Forest.stars.length; i++) {
       var s = Forest.stars[i];
       ctx.beginPath();
@@ -60,7 +65,7 @@ try {
       ctx.fill();
     }
 
-    // ── Multiple horizon glows — strong warm backlight (cached on resize)
+    // Multiple horizon glows (cached on resize)
     if (!frame._horizonCache || frame._hcW !== W || frame._hcH !== H) {
       frame._cenGlow = ctx.createRadialGradient(W*0.5, H*0.44, 0, W*0.5, H*0.44, H*0.55);
       frame._cenGlow.addColorStop(0, 'rgba(250,220,85,0.3)');
@@ -82,11 +87,11 @@ try {
       frame._hBand.addColorStop(0.6, 'rgba(230,210,80,0.06)');
       frame._hBand.addColorStop(1, 'rgba(220,200,75,0)');
       frame._groundGrd = ctx.createLinearGradient(0, H * 0.58, 0, H);
-      frame._groundGrd.addColorStop(0,   'Forest.rgb(165,160,65)');
-      frame._groundGrd.addColorStop(0.15,'Forest.rgb(130,135,50)');
-      frame._groundGrd.addColorStop(0.35,'Forest.rgb(80,95,42)');
-      frame._groundGrd.addColorStop(0.6, 'Forest.rgb(50,65,35)');
-      frame._groundGrd.addColorStop(1,   'Forest.rgb(30,42,25)');
+      frame._groundGrd.addColorStop(0,   'rgb(165,160,65)');
+      frame._groundGrd.addColorStop(0.15,'rgb(130,135,50)');
+      frame._groundGrd.addColorStop(0.35,'rgb(80,95,42)');
+      frame._groundGrd.addColorStop(0.6, 'rgb(50,65,35)');
+      frame._groundGrd.addColorStop(1,   'rgb(30,42,25)');
       frame._horizonCache = true; frame._hcW = W; frame._hcH = H;
     }
     ctx.fillStyle = frame._cenGlow;
@@ -98,12 +103,12 @@ try {
     ctx.fillStyle = frame._hBand;
     ctx.fillRect(0, H * 0.38, W, H * 0.2);
 
-    // ── Ground
+    // Ground
     var gY = H * 0.58;
     ctx.fillStyle = frame._groundGrd;
     ctx.fillRect(0, gY, W, H - gY);
 
-    // ── Golden ground light patches (dappled sunlight — layered circles)
+    // Golden ground light patches
     for (var gi = 0; gi < 10; gi++) {
       var gx = W * (0.04 + gi * 0.1);
       var gy = gY + H * 0.01 + Math.sin(gi * 2.3) * H * 0.02;
@@ -119,13 +124,12 @@ try {
       ctx.fill();
     }
 
-    // ── Ground texture — rich forest floor detail (static parts cached to offscreen canvas)
+    // Ground texture (static parts cached to offscreen canvas)
     var gRng = Forest.mkRng(999);
     var gBottom = H;
     var gDepth = gBottom - gY;
     var earthR = 95, earthG = 78, earthB = 45;
 
-    // Cache static ground to offscreen canvas (regenerate only on resize)
     if (!frame._groundCache || frame._gcW !== W || frame._gcH !== H || frame._gcGY !== Math.round(gY)) {
       var gc = document.createElement('canvas');
       gc.width = W; gc.height = H;
@@ -252,16 +256,16 @@ try {
     // Draw cached static ground
     ctx.drawImage(frame._groundCache, 0, 0);
 
-    // Advance gRng to stay in sync for any code that follows
+    // gRng skip loop eliminated -- ground is cached to offscreen canvas
 
-    // Animated grass tufts — only these need per-frame rendering (sway animation)
+    // Animated grass tufts
     for (var gti = 0; gti < 70; gti++) {
       var gtx = gRng() * W;
       var gty = gY + gRng() * gDepth;
       var gtH = 8 + gRng() * 20;
       var gtBl = 4 + Math.floor(gRng() * 5);
       var gtSw = Math.sin(time * 0.6 + gti * 1.3) * 1.0;
-      var gtC = Forest.FERN_COLORS[Math.floor(gRng() * FERN_COLORS.length)];
+      var gtC = Forest.FERN_COLORS[Math.floor(gRng() * Forest.FERN_COLORS.length)];
       for (var gb = 0; gb < gtBl; gb++) {
         var gbx = gtx + (gb - gtBl / 2) * 2.5;
         var gba = (gb - gtBl / 2) * 0.14 + gtSw * 0.06;
@@ -274,15 +278,13 @@ try {
       }
     }
 
-    // (Flowers cached in offscreen ground canvas)
-
-    // ── Distant hills / rolling terrain silhouettes (cached on resize)
+    // Distant hills / rolling terrain silhouettes (cached on resize)
     if (!frame._hillCache || frame._hillW !== W || frame._hillH !== H) {
       var hc = document.createElement('canvas');
       hc.width = W; hc.height = H;
       var hctx = hc.getContext('2d');
       var hillRng = Forest.mkRng(7777);
-      // Layer 1: furthest hills (blue-green, very muted)
+      // Layer 1: furthest hills
       hctx.beginPath();
       hctx.moveTo(0, gY + 2);
       for (var hx = 0; hx <= W; hx += 8) {
@@ -304,31 +306,29 @@ try {
       hctx.closePath();
       hctx.fillStyle = 'rgba(80,100,55,0.3)';
       hctx.fill();
-      // Distant tree line silhouette along horizon
+      // Distant tree line silhouette
       for (var dti = 0; dti < 120; dti++) {
         var dtx = hillRng() * W;
         var dty = gY - H * 0.01 - hillRng() * H * 0.04;
         var dth = H * (0.015 + hillRng() * 0.03);
         var dtw = H * (0.004 + hillRng() * 0.006);
-        // Tiny tree trunk
         hctx.fillStyle = 'rgba(50,40,30,' + (0.15 + hillRng() * 0.15).toFixed(3) + ')';
         hctx.fillRect(dtx - dtw * 0.3, dty, dtw * 0.6, dth);
-        // Tiny canopy blob
         var dcr = dtw * (1.5 + hillRng() * 2);
         hctx.beginPath();
         hctx.arc(dtx, dty - dcr * 0.3, dcr, 0, 6.28);
-        var dtcol = Forest.CANOPY[Math.floor(hillRng() * CANOPY.length)];
+        var dtcol = Forest.CANOPY[Math.floor(hillRng() * Forest.CANOPY.length)];
         hctx.fillStyle = Forest.rgb(Forest.mix(dtcol, [50, 70, 40], 0.5), 0.25 + hillRng() * 0.15);
         hctx.fill();
       }
-      // Scattered distant bushes along horizon
+      // Scattered distant bushes
       for (var dbi = 0; dbi < 40; dbi++) {
         var dbx = hillRng() * W;
         var dby = gY + hillRng() * H * 0.03;
         var dbr = H * (0.005 + hillRng() * 0.012);
         hctx.beginPath();
         hctx.ellipse(dbx, dby, dbr * 1.8, dbr, 0, 0, 6.28);
-        var dbcol = Forest.CANOPY[Math.floor(hillRng() * CANOPY.length)];
+        var dbcol = Forest.CANOPY[Math.floor(hillRng() * Forest.CANOPY.length)];
         hctx.fillStyle = Forest.rgb(Forest.mix(dbcol, [60, 80, 45], 0.4), 0.2 + hillRng() * 0.15);
         hctx.fill();
       }
@@ -337,24 +337,24 @@ try {
     }
     ctx.drawImage(frame._hillCache, 0, 0);
 
-    // ── FAR undergrowth
+    // FAR undergrowth
     Forest.drawUndergrowth(ctx, W, H, time, 'far');
 
-    // ── FAR TREES (thin left third) — single position calc, two draw passes
+    // FAR TREES
     var _farPos = [];
-    for (var i = 0; i < farTrees.length; i++) {
-      var t = farTrees[i];
+    for (var i = 0; i < Forest.farTrees.length; i++) {
+      var t = Forest.farTrees[i];
       var tx = ((t.nx * 1.5 - 0.25) * W + W * 3) % (W * 1.5) - W * 0.25;
       if (tx < W * 0.33 && (i % 3 === 0)) { _farPos.push(null); continue; }
       _farPos.push(tx);
       Forest.drawTrunk(ctx, t, tx, W, H, time);
     }
-    for (var i = 0; i < farTrees.length; i++) {
+    for (var i = 0; i < Forest.farTrees.length; i++) {
       if (_farPos[i] === null) continue;
-      Forest.drawCanopy(ctx, farTrees[i], _farPos[i], W, H, time, 0.65);
+      Forest.drawCanopy(ctx, Forest.farTrees[i], _farPos[i], W, H, time, 0.65);
     }
 
-    // ── Atmospheric haze — warm golden between layers (cached on resize)
+    // Atmospheric haze (cached on resize)
     if (!frame._hazeG || frame._hazeW !== W || frame._hazeH !== H) {
       frame._hazeG = ctx.createLinearGradient(0, H * 0.15, 0, H * 0.7);
       frame._hazeG.addColorStop(0, 'rgba(90,110,60,0.07)');
@@ -367,7 +367,7 @@ try {
     ctx.fillStyle = frame._hazeG;
     ctx.fillRect(0, 0, W, H);
 
-    // Golden glow spots between far and mid layers (simplified: layered circles)
+    // Golden glow spots between far and mid layers
     for (var gli = 0; gli < 5; gli++) {
       var glx = W * (0.1 + gli * 0.2);
       var gly = H * (0.4 + Math.sin(time * 0.1 + gli * 1.5) * 0.03);
@@ -383,24 +383,24 @@ try {
       ctx.fill();
     }
 
-    // ── MID undergrowth
+    // MID undergrowth
     Forest.drawUndergrowth(ctx, W, H, time, 'mid');
 
-    // ── MID TREES (thin left third) — single position calc, two draw passes
+    // MID TREES
     var _midPos = [];
-    for (var i = 0; i < midTrees.length; i++) {
-      var t = midTrees[i];
+    for (var i = 0; i < Forest.midTrees.length; i++) {
+      var t = Forest.midTrees[i];
       var tx = ((t.nx * 1.4 - 0.2) * W + W * 3) % (W * 1.4) - W * 0.2;
       if (tx < W * 0.33 && (i % 3 === 0)) { _midPos.push(null); continue; }
       _midPos.push(tx);
       Forest.drawTrunk(ctx, t, tx, W, H, time);
     }
-    for (var i = 0; i < midTrees.length; i++) {
+    for (var i = 0; i < Forest.midTrees.length; i++) {
       if (_midPos[i] === null) continue;
-      Forest.drawCanopy(ctx, midTrees[i], _midPos[i], W, H, time, 0.82);
+      Forest.drawCanopy(ctx, Forest.midTrees[i], _midPos[i], W, H, time, 0.82);
     }
 
-    // ── Golden atmosphere between mid and fg (cached on resize)
+    // Golden atmosphere between mid and fg (cached on resize)
     if (!frame._midGlow || frame._mgW !== W || frame._mgH !== H) {
       frame._midGlow = ctx.createLinearGradient(0, H * 0.35, 0, H * 0.65);
       frame._midGlow.addColorStop(0, 'rgba(180,170,60,0)');
@@ -416,31 +416,28 @@ try {
     ctx.fillRect(0, H * 0.35, W, H * 0.3);
     ctx.restore();
 
-    // ── Mist puffs — drifting slowly (simplified: layered circles instead of per-frame gradients)
+    // Mist puffs
     for (var mi = 0; mi < Forest.mistPuffs.length; mi++) {
       var mp = Forest.mistPuffs[mi];
       var mx = ((mp.nx + time * mp.speed) % 1.8 - 0.2) * W;
       var my = mp.ny * H + Math.sin(time * 0.2 + mp.phase) * 10;
       var mr = mp.r * H * 1.2;
       var mAlpha = mp.alpha * (0.75 + Math.sin(time * 0.12 + mp.phase) * 0.25);
-      // Core
       ctx.beginPath();
       ctx.arc(mx, my, mr * 0.4, 0, 6.28);
       ctx.fillStyle = 'rgba(185,180,85,' + (mAlpha * 0.7).toFixed(3) + ')';
       ctx.fill();
-      // Mid ring
       ctx.beginPath();
       ctx.arc(mx, my, mr * 0.7, 0, 6.28);
       ctx.fillStyle = 'rgba(170,165,75,' + (mAlpha * 0.25).toFixed(3) + ')';
       ctx.fill();
-      // Outer ring
       ctx.beginPath();
       ctx.arc(mx, my, mr, 0, 6.28);
       ctx.fillStyle = 'rgba(155,150,65,' + (mAlpha * 0.08).toFixed(3) + ')';
       ctx.fill();
     }
 
-    // ── Ground fog band — thicker, more layered (cached on resize)
+    // Ground fog band (cached on resize)
     if (!frame._fogG || frame._fogW !== W || frame._fogH !== H) {
       frame._fogG = ctx.createLinearGradient(0, gY - 50, 0, gY + 70);
       frame._fogG.addColorStop(0, 'rgba(175,170,72,0)');
@@ -454,7 +451,7 @@ try {
     ctx.fillStyle = frame._fogG;
     ctx.fillRect(0, gY - 50, W, 120);
 
-    // Moving fog wisps at ground level — use simple solid circles instead of gradients
+    // Moving fog wisps
     for (var fi = 0; fi < 6; fi++) {
       var fx = ((fi * 0.18 + time * 0.008 * (1 + fi * 0.3)) % 1.4 - 0.2) * W;
       var fy = gY + H * 0.01;
@@ -465,11 +462,10 @@ try {
       ctx.fill();
     }
 
-    // ── FG undergrowth
+    // FG undergrowth
     Forest.drawUndergrowth(ctx, W, H, time, 'fg');
 
-    // ── Depth-sorted FG scene: trees + undergrowth sorted by Y
-    // Cache undergrowth items (only depend on W/H, regenerate on resize)
+    // Depth-sorted FG scene: trees + undergrowth
     if (!frame._fgUG || frame._fgUGW !== W || frame._fgUGH !== H) {
       frame._fgUG = [];
       var fgU = Forest.mkRng(8888);
@@ -482,7 +478,7 @@ try {
         var depthT = (uby - ugZoneTop) / ugRange;
         frame._fgUG.push({ type: 'bush', x: fgU() * W, y: uby, depth: depthT,
           sz: H * (0.012 + depthT * 0.03 + fgU() * 0.015),
-          col: Forest.CANOPY[Math.floor(fgU() * CANOPY.length)], seed: fgU() * 9999 });
+          col: Forest.CANOPY[Math.floor(fgU() * Forest.CANOPY.length)], seed: fgU() * 9999 });
       }
       // Grass tufts
       for (var ugi = 0; ugi < 74; ugi++) {
@@ -490,7 +486,7 @@ try {
         var depthT = (ugy - ugZoneTop) / ugRange;
         frame._fgUG.push({ type: 'grass', x: fgU() * W, y: ugy, depth: depthT,
           h: (6 + depthT * 18 + fgU() * 8), blades: 3 + Math.floor(fgU() * 4 + depthT * 2),
-          col: Forest.FERN_COLORS[Math.floor(fgU() * FERN_COLORS.length)], idx: ugi });
+          col: Forest.FERN_COLORS[Math.floor(fgU() * Forest.FERN_COLORS.length)], idx: ugi });
       }
       // Sticks
       for (var usi = 0; usi < 25; usi++) {
@@ -506,7 +502,7 @@ try {
         var depthT = (uly - ugZoneTop) / ugRange;
         frame._fgUG.push({ type: 'leaf', x: fgU() * W, y: uly, depth: depthT,
           sz: (2 + depthT * 6 + fgU() * 4), rot: fgU() * 6.28,
-          col: Forest.LEAF_COLORS[Math.floor(fgU() * LEAF_COLORS.length)] });
+          col: Forest.LEAF_COLORS[Math.floor(fgU() * Forest.LEAF_COLORS.length)] });
       }
       // Rocks
       for (var uri = 0; uri < 15; uri++) {
@@ -523,25 +519,23 @@ try {
         frame._fgUG.push({ type: 'flower', x: fgU() * W, y: ufy, depth: depthT,
           sz: (2 + depthT * 3 + fgU() * 2), petalCol: pC });
       }
-      // Pre-sort undergrowth by Y (stable across frames)
       frame._fgUG.sort(function(a, b) { return a.y - b.y; });
       frame._fgUGW = W; frame._fgUGH = H;
     }
 
-    // Collect FG tree positions (thin left third)
+    // Collect FG tree positions
     var _fgTreeItems = [];
-    for (var i = 0; i < fgTrees.length; i++) {
-      var t = fgTrees[i];
+    for (var i = 0; i < Forest.fgTrees.length; i++) {
+      var t = Forest.fgTrees[i];
       var tx = ((t.nx * 1.6 - 0.3) * W + W * 3) % (W * 1.6) - W * 0.3;
       if (tx < W * 0.33 && (i % 3 === 0)) continue;
       _fgTreeItems.push({ tree: t, tx: tx, y: gY + t.nx * H * 0.03 });
     }
     _fgTreeItems.sort(function(a, b) { return a.y - b.y; });
 
-    // Draw undergrowth first (sorted), then trees on top (sorted)
     var fgUG = frame._fgUG;
 
-    // Draw undergrowth in depth order (cached), then trees on top
+    // Draw undergrowth in depth order
     for (var fi = 0; fi < fgUG.length; fi++) {
       var item = fgUG[fi];
 
@@ -632,22 +626,23 @@ try {
         ctx.fill();
       }
     }
-    // Draw FG trees on top of undergrowth (sorted by Y)
+
+    // Draw FG trees on top of undergrowth
     for (var fi = 0; fi < _fgTreeItems.length; fi++) {
       var ti = _fgTreeItems[fi];
       Forest.drawTrunk(ctx, ti.tree, ti.tx, W, H, time);
       Forest.drawCanopy(ctx, ti.tree, ti.tx, W, H, time, 1.0);
     }
 
-    // ── Dense canopy fill across the top — multiple overlapping passes
+    // Dense canopy fill across the top
     var cR = Forest.mkRng(333);
-    // Pass 1: large background blobs for solid coverage
+    // Pass 1: large background blobs
     for (var ci = 0; ci < 30; ci++) {
       var cx = cR() * W * 1.3 - W * 0.15;
       var cy = cR() * H * 0.18 - H * 0.04;
       var cr = H * (0.06 + cR() * 0.09);
-      var col = Forest.CANOPY[Math.floor(cR() * CANOPY.length)];
-      col = Forest.mix(col, [35, 60, 35], 0.2); // darker base layer
+      var col = Forest.CANOPY[Math.floor(cR() * Forest.CANOPY.length)];
+      col = Forest.mix(col, [35, 60, 35], 0.2);
       var sway = Math.sin(time * 0.25 + ci * 0.9) * 1.2 + wind * 1.5;
       ctx.beginPath();
       ctx.ellipse(cx + sway, cy, cr * (1.0 + cR() * 0.4), cr * (0.6 + cR() * 0.3), (cR()-0.5)*0.4, 0, 6.28);
@@ -660,9 +655,9 @@ try {
       var cx = cR() * W * 1.3 - W * 0.15;
       var cy = cR() * H * 0.22 - H * 0.02;
       var cr = H * (0.03 + cR() * 0.06);
-      var col = Forest.CANOPY[Math.floor(cR() * CANOPY.length)];
+      var col = Forest.CANOPY[Math.floor(cR() * Forest.CANOPY.length)];
       var isAcc = cR() < 0.07;
-      if (isAcc) col = Forest.CANOPY_ACCENT[Math.floor(cR() * CANOPY_ACCENT.length)];
+      if (isAcc) col = Forest.CANOPY_ACCENT[Math.floor(cR() * Forest.CANOPY_ACCENT.length)];
       var sway = Math.sin(time * 0.3 + ci * 0.7) * 1.8 + wind * 2;
       ctx.beginPath();
       ctx.ellipse(cx + sway, cy, cr * (0.85 + cR() * 0.35), cr * (0.55 + cR() * 0.35), (cR()-0.5)*0.5, 0, 6.28);
@@ -679,13 +674,13 @@ try {
       ctx.fillStyle = Forest.rgb(Forest.mix(col, [18, 30, 15], 0.35), 0.28);
       ctx.fill();
     }
-    // Pass 3: small top detail blobs for bumpy organic edge
+    // Pass 3: small top detail blobs
     cR = Forest.mkRng(555);
     for (var ci = 0; ci < 35; ci++) {
       var cx = cR() * W * 1.2 - W * 0.1;
       var cy = cR() * H * 0.12 - H * 0.01;
       var cr = H * (0.015 + cR() * 0.035);
-      var col = Forest.CANOPY[Math.floor(cR() * CANOPY.length)];
+      var col = Forest.CANOPY[Math.floor(cR() * Forest.CANOPY.length)];
       var sway = Math.sin(time * 0.35 + ci * 1.1) * 1.2 + wind * 1.5;
       ctx.beginPath();
       ctx.arc(cx + sway, cy, cr, 0, 6.28);
@@ -693,13 +688,13 @@ try {
       ctx.fill();
     }
 
-    // ── Hanging canopy drips (small downward extensions)
+    // Hanging canopy drips
     cR = Forest.mkRng(666);
     for (var di = 0; di < 20; di++) {
       var dx = cR() * W;
       var dy = H * (0.12 + cR() * 0.15);
       var dLen = H * (0.02 + cR() * 0.05);
-      var col = Forest.CANOPY[Math.floor(cR() * CANOPY.length)];
+      var col = Forest.CANOPY[Math.floor(cR() * Forest.CANOPY.length)];
       var sway = Math.sin(time * 0.4 + di * 1.3) * 1.5 + wind;
       ctx.beginPath();
       ctx.moveTo(dx + sway - 4, dy);
@@ -708,7 +703,7 @@ try {
       ctx.fill();
     }
 
-    // ── Volumetric light rays (simplified: alpha triangles, no per-frame gradient alloc)
+    // Volumetric light rays
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
     for (var ri = 0; ri < 8; ri++) {
@@ -717,7 +712,6 @@ try {
       var ra = 0.02 + rPulse * 0.015;
       if (ra < 0.005) continue;
       var rayW = W * (0.025 + Math.abs(rPulse) * 0.015);
-      // Upper bright portion
       ctx.beginPath();
       ctx.moveTo(rx - rayW * 0.3, 0);
       ctx.lineTo(rx + rayW * 0.3, H * 0.25);
@@ -725,7 +719,6 @@ try {
       ctx.closePath();
       ctx.fillStyle = 'rgba(255,240,130,' + ra.toFixed(3) + ')';
       ctx.fill();
-      // Lower fading portion
       ctx.beginPath();
       ctx.moveTo(rx - rayW * 0.5, H * 0.25);
       ctx.lineTo(rx + rayW * 1.5, H * 0.7);
@@ -736,14 +729,14 @@ try {
     }
     ctx.restore();
 
-    // ── Warm color grading — golden hour wash
+    // Warm color grading
     ctx.save();
     ctx.globalCompositeOperation = 'overlay';
     ctx.fillStyle = 'rgba(180,160,60,0.03)';
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
 
-    // ── Vignette — stronger for depth (cached on resize)
+    // Vignette (cached on resize)
     if (!frame._vig || frame._vigW !== W || frame._vigH !== H) {
       frame._vig = ctx.createRadialGradient(W/2, H*0.38, H*0.12, W/2, H*0.38, H*0.95);
       frame._vig.addColorStop(0, 'rgba(0,0,0,0)');
@@ -755,7 +748,7 @@ try {
     ctx.fillStyle = frame._vig;
     ctx.fillRect(0, 0, W, H);
 
-    // ── Particles — spawn rates scaled for mobile
+    // Particles -- spawn rates scaled for mobile
     var spawnMul = Forest.isMobile ? 0.4 : 1;
     if (Math.random() < 0.05 * spawnMul) Forest.spawnP('firefly', W, H);
     if (Math.random() < 0.1 * spawnMul) Forest.spawnP('spore', W, H);
@@ -777,7 +770,6 @@ try {
         p.vy += (Math.random()-0.5)*0.008;
         p.x += p.vx; p.y += p.vy;
         var fl = 0.25+Math.sin(p.ph)*0.6;
-        // Glow via shadowBlur (GPU-accelerated, no gradient alloc)
         ctx.save();
         ctx.shadowColor = 'rgba(200,255,100,' + (a*fl*0.6).toFixed(3) + ')';
         ctx.shadowBlur = p.r * 12;
@@ -786,7 +778,6 @@ try {
         ctx.fill();
         ctx.shadowBlur = 0;
         ctx.restore();
-        // Core bright dot
         ctx.beginPath(); ctx.arc(p.x,p.y,p.r*0.8,0,6.28);
         ctx.fillStyle = 'rgba(240,255,180,'+(a*fl*0.9).toFixed(3)+')'; ctx.fill();
       } else if (p.type === 'spore') {
@@ -795,7 +786,6 @@ try {
         ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.28);
         ctx.fillStyle = 'rgba(225,225,180,'+(a*0.35).toFixed(3)+')'; ctx.fill();
       } else if (p.type === 'leaf') {
-        // Realistic leaf flutter: oscillating horizontal drift + tumble
         p.vx += wind * 0.008;
         p.x += p.vx + Math.sin(time * p.flutterSpeed + p.ph) * p.flutter;
         p.y += p.vy + Math.sin(time * 0.3 + p.ph * 2) * 0.15;
@@ -805,12 +795,10 @@ try {
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rot);
         if (p.leafType === 0) {
-          // Oval leaf
           ctx.beginPath();
           ctx.ellipse(0, 0, p.sz, p.sz * 0.4, 0, 0, 6.28);
           ctx.fillStyle = Forest.rgb(p.c, a * 0.75);
           ctx.fill();
-          // Vein
           ctx.beginPath();
           ctx.moveTo(-p.sz * 0.7, 0);
           ctx.lineTo(p.sz * 0.7, 0);
@@ -818,7 +806,6 @@ try {
           ctx.strokeStyle = Forest.rgb(Forest.mix(p.c, [255,255,200], 0.3), a * 0.3);
           ctx.stroke();
         } else if (p.leafType === 1) {
-          // Pointed leaf
           ctx.beginPath();
           ctx.moveTo(-p.sz, 0);
           ctx.quadraticCurveTo(-p.sz * 0.3, -p.sz * 0.45, p.sz, 0);
@@ -826,7 +813,6 @@ try {
           ctx.fillStyle = Forest.rgb(p.c, a * 0.75);
           ctx.fill();
         } else {
-          // Round leaf
           ctx.beginPath();
           ctx.arc(0, 0, p.sz * 0.5, 0, 6.28);
           ctx.fillStyle = Forest.rgb(p.c, a * 0.7);
@@ -861,3 +847,4 @@ try {
   requestAnimationFrame(frame);
 })();
 } catch(e) { console.warn('Canvas animation error:', e); }
+
