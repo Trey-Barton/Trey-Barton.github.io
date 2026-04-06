@@ -177,10 +177,12 @@
     corners.forEach(function(corner, i) {
       var dx, dy, dz;
       if (side === 'top') {
-        dx = corner.x;
-        dy = -(cubeHalf + ys) - convY;
-        dz = corner.z;
+        // Mirror of bottom: originate from cube top corners, go UP to convergence
+        dx = -corner.x;
+        dy = -(convY - (-(cubeHalf + ys)));  // distance from top corner up to convergence
+        dz = -corner.z;
       } else {
+        // Originate from cube bottom corners, go DOWN to convergence
         dx = -corner.x;
         dy = convY - (cubeHalf + ys);
         dz = -corner.z;
@@ -188,16 +190,15 @@
 
       var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
       var dxz = Math.sqrt(dx * dx + dz * dz);
-      var azimuth, tilt;
+      var azimuth = Math.atan2(dx, dz) * (180 / Math.PI);
+      var tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
 
       if (side === 'top') {
-        azimuth = Math.atan2(-corner.x, -corner.z) * (180 / Math.PI);
-        tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
+        // Place wire at cube top corner, pointing upward
         wires[i].style.height = wireLen + 'px';
-        wires[i].style.transform = 'translate3d(0px,' + convY + 'px,0px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
+        wires[i].style.transform = 'translate3d(' + corner.x + 'px,' + (-(cubeHalf + ys)) + 'px,' + corner.z + 'px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
       } else {
-        azimuth = Math.atan2(dx, dz) * (180 / Math.PI);
-        tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
+        // Place wire at cube bottom corner, pointing downward
         wires[i].style.height = wireLen + 'px';
         wires[i].style.transform = 'translate3d(' + corner.x + 'px,' + (cubeHalf + ys) + 'px,' + corner.z + 'px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
       }
