@@ -141,10 +141,12 @@
    * Change any 2-letter code to move that wire's endpoint.
    */
   var WIRE_CONFIG = {
-    topWires:     { from: 'bc', on: '.about-card'   },  // about bottom-center → cube top corners
-    bottomWires:  { to:   'tc', on: '.contact-card'  },  // cube bottom corners → contact top-center
-    headingWires: { from: 'bc', on: '.about-card'   },  // about bottom-center → heading cube corners
+    topWires:     { from: 'bc', on: '.about-card',   cornerSpread: 13, cornerYShift: 5  },
+    bottomWires:  { to:   'tc', on: '.contact-card',  cornerSpread: 13, cornerYShift: -5 },
+    headingWires: { from: 'bc', on: '.about-card'   },  // keep as-is
   };
+  // cornerSpread: px to push corners outward from center (positive = wider)
+  // cornerYShift: px to shift corners vertically (positive = down, negative = up)
 
   // Convert a 2D page-space target point into cube-scene 3D local Y
   function pagePointToCubeY(targetPoint, cubeViewport) {
@@ -158,30 +160,30 @@
   }
 
   // Position 4 wires from a convergence point to cube corners (top or bottom)
-  function positionWireSet(wires, convY, side) {
+  // spread: extra px outward from center per corner, yShift: vertical px offset on corners
+  function positionWireSet(wires, convY, side, spread, yShift) {
     var cubeHalf = cubeVP.offsetHeight / 2;
     var edgeZ = cubeZ - cubeZ * WIRE_BORDER_INSET_RATIO;
+    var sp = spread || 0;
+    var ys = yShift || 0;
+    // Push corners outward by sp pixels (diagonal direction)
     var corners = [
-      { x: edgeZ, z: edgeZ },
-      { x: edgeZ, z: -edgeZ },
-      { x: -edgeZ, z: -edgeZ },
-      { x: -edgeZ, z: edgeZ }
+      { x: edgeZ + sp, z: edgeZ + sp },
+      { x: edgeZ + sp, z: -(edgeZ + sp) },
+      { x: -(edgeZ + sp), z: -(edgeZ + sp) },
+      { x: -(edgeZ + sp), z: edgeZ + sp }
     ];
 
     corners.forEach(function(corner, i) {
-      var dx, dy, dz, originY;
+      var dx, dy, dz;
       if (side === 'top') {
-        // Wires go from convergence point above down to cube top corners
         dx = corner.x;
-        dy = -cubeHalf - convY;
+        dy = -(cubeHalf + ys) - convY;
         dz = corner.z;
-        originY = convY;
       } else {
-        // Wires go from cube bottom corners down to convergence point below
         dx = -corner.x;
-        dy = convY - cubeHalf;
+        dy = convY - (cubeHalf + ys);
         dz = -corner.z;
-        originY = cubeHalf;
       }
 
       var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -197,7 +199,7 @@
         azimuth = Math.atan2(dx, dz) * (180 / Math.PI);
         tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
         wires[i].style.height = wireLen + 'px';
-        wires[i].style.transform = 'translate3d(' + corner.x + 'px,' + cubeHalf + 'px,' + corner.z + 'px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
+        wires[i].style.transform = 'translate3d(' + corner.x + 'px,' + (cubeHalf + ys) + 'px,' + corner.z + 'px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
       }
     });
   }
@@ -213,7 +215,7 @@
     if (!cubeVP || !srcEl || wires.length < 4) return;
     var attachPt = getAttachPoint(srcEl, cfg.from);
     var convY = pagePointToCubeY(attachPt, cubeVP);
-    positionWireSet(wires, convY, 'top');
+    positionWireSet(wires, convY, 'top', cfg.cornerSpread || 0, cfg.cornerYShift || 0);
   }
 
   // Bottom wires: cube bottom corners → WIRE_CONFIG.bottomWires.on attachment
@@ -230,7 +232,7 @@
     var pageDist = attachPt.y - cubeCenterY;
     var scale = perspective / (perspective + cubeZ);
     var bottomConvY = pageDist / scale / cssScale;
-    positionWireSet(bWires, bottomConvY, 'bottom');
+    positionWireSet(bWires, bottomConvY, 'bottom', cfg.cornerSpread || 0, cfg.cornerYShift || 0);
   }
 
   // Heading wires: WIRE_CONFIG.headingWires.on attachment → heading cube corners
