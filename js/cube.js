@@ -41,8 +41,8 @@
 
   // ── Cube & wire config ──
   var WIRE_BORDER_INSET_RATIO = 0.083;
-  var CUBE_HEIGHT_RATIO = 1.2;
-  var CUBE_HEIGHT_MAX = 700;
+  var CUBE_HEIGHT_RATIO = 0.9;
+  var CUBE_HEIGHT_MAX = 500;
   var CUBE_PERSPECTIVE_RATIO = 2.2;
 
   var cubeVP = document.querySelector('.cube-viewport');
