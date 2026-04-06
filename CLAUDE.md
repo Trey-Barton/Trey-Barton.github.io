@@ -30,14 +30,14 @@ All files use the `window.Forest` namespace.
 - `forest-main.js` — Canvas init, resize, render loop. Orchestrates all Forest.* modules.
 
 ### JS — UI (js/)
-- `cube.js` — 3D cube carousel, wire positioning, swipe gestures, dot navigation. Config constants at top.
+- `cube.js` — 3D cube carousel, wire attachment point system, swipe gestures, dot navigation. WIRE_CONFIG at top defines where wires attach (2-letter codes: tl/tc/tr/ml/mc/mr/bl/bc/br).
 - `ui.js` — Nav scroll, smooth scrolling, year, video observer, reveal animations.
 
 ## Common Tasks
 - **Change text sizes**: Edit `clamp()` values in `css/variables.css`
 - **Change colors**: Edit color variables in `css/variables.css`
 - **Adjust cube geometry**: Edit constants at top of `js/cube.js` (WIRE_CONVERGENCE_RATIO, CUBE_HEIGHT_RATIO, etc.)
-- **Adjust wire angles**: Edit WIRE_CONVERGENCE_RATIO in `js/cube.js`
+- **Move wire attachment points**: Edit `WIRE_CONFIG` at top of `js/cube.js` — change the 2-letter codes (tl/tc/tr/ml/mc/mr/bl/bc/br)
 - **Modify forest appearance**: Edit palette arrays in `js/forest/palette.js`
 - **Add a project card**: Add a `.cube-face` div in `index.html` inside `#cube-scene`, update dot count
 - **Fix mobile layout**: Check `css/responsive.css` for structural issues, `css/variables.css` for sizing
