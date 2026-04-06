@@ -61,10 +61,14 @@
     });
   }
 
-  // Animate the Projects heading cube: simple spin to the right
+  // Animate the Projects heading cube: time-based spin for consistent speed
   var headingZ = Math.min(85, window.innerWidth * 0.12);
-  function animateHeading() {
-    headingSpinDeg += 0.35;
+  var lastHeadingTs = null;
+  function animateHeading(ts) {
+    if (lastHeadingTs === null) lastHeadingTs = ts;
+    var dt = (ts - lastHeadingTs) / 1000;
+    lastHeadingTs = ts;
+    headingSpinDeg += dt * 21; // 21 degrees per second (smooth)
     headingScene.style.transform = 'translateZ(-' + headingZ + 'px) rotateY(' + headingSpinDeg + 'deg)';
     requestAnimationFrame(animateHeading);
   }
@@ -173,14 +177,22 @@
     });
   }
 
-  // Dynamically position chandelier wires from convergence point above cube to corners
+  // Position top wires: from cube corners UP to about-card bottom edge
   function positionWires() {
     var cubeViewport = document.querySelector('.cube-viewport');
+    var aboutCard = document.querySelector('.about-card');
     var wires = document.querySelectorAll('.chandelier-wire');
-    if (!cubeViewport || wires.length < 4) return;
+    if (!cubeViewport || !aboutCard || wires.length < 4) return;
 
+    var cubeRect = cubeViewport.getBoundingClientRect();
+    var aboutRect = aboutCard.getBoundingClientRect();
     var cubeHalf = cubeViewport.offsetHeight / 2;
-    var convY = -cubeHalf - cubeZ * WIRE_CONVERGENCE_RATIO;
+    var cubeCenterY = cubeRect.top + cubeRect.height / 2;
+    var perspective = parseFloat(cubeViewport.style.perspective) || 1200;
+    var cssScale = cubeViewport.offsetHeight > 0 ? cubeRect.height / cubeViewport.offsetHeight : 1;
+    var pageDistToAbout = cubeCenterY - aboutRect.bottom;
+    var scale = perspective / (perspective + cubeZ);
+    var convY = -(pageDistToAbout / scale / cssScale);
     var edgeZ = cubeZ - cubeZ * WIRE_BORDER_INSET_RATIO;
 
     var corners = [
@@ -205,14 +217,22 @@
     });
   }
 
-  // Position bottom wires: from cube bottom corners to convergence below
+  // Position bottom wires: from cube corners DOWN to contact-card top edge
   function positionBottomWires() {
     var cubeViewport = document.querySelector('.cube-viewport');
+    var contactCard = document.querySelector('.contact-card');
     var bWires = document.querySelectorAll('.chandelier-wire-bottom');
-    if (!cubeViewport || bWires.length < 4) return;
+    if (!cubeViewport || !contactCard || bWires.length < 4) return;
 
+    var cubeRect = cubeViewport.getBoundingClientRect();
+    var contactRect = contactCard.getBoundingClientRect();
     var cubeHalf = cubeViewport.offsetHeight / 2;
-    var convY = cubeHalf + cubeZ * WIRE_CONVERGENCE_RATIO;
+    var cubeCenterY = cubeRect.top + cubeRect.height / 2;
+    var perspective = parseFloat(cubeViewport.style.perspective) || 1200;
+    var cssScale = cubeViewport.offsetHeight > 0 ? cubeRect.height / cubeViewport.offsetHeight : 1;
+    var pageDistToContact = contactRect.top - cubeCenterY;
+    var scale = perspective / (perspective + cubeZ);
+    var convY = pageDistToContact / scale / cssScale;
     var edgeZ = cubeZ - cubeZ * WIRE_BORDER_INSET_RATIO;
 
     var corners = [
