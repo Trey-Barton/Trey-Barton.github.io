@@ -141,8 +141,8 @@
    * Change any 2-letter code to move that wire's endpoint.
    */
   var WIRE_CONFIG = {
-    topWires:     { from: 'bc', on: '.about-card',   cornerSpread: 13, cornerYShift: 5  },
-    bottomWires:  { to:   'tc', on: '.contact-card',  cornerSpread: 13, cornerYShift: -5 },
+    topWires:     { from: 'bc', on: '.about-card',   cornerSpread: 28, cornerYShift: 5  },
+    bottomWires:  { to:   'tc', on: '.contact-card',  cornerSpread: 28, cornerYShift: -5 },
     headingWires: { from: 'bc', on: '.about-card'   },  // keep as-is
   };
   // cornerSpread: px to push corners outward from center (positive = wider)
