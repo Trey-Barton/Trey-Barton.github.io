@@ -49,5 +49,6 @@
   object-fit: cover;
   object-position: 62% 42%;
   display: block;
-  transform: scale(0.87);
+  transform: scale(0.87) translateZ(0);
+  will-change: transform;
 }
