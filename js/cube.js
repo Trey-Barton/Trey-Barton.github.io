@@ -127,18 +127,24 @@
     }, { passive: true });
   })();
 
-  /* ═══════ WIRE POSITIONING VIA ATTACHMENT POINTS ═══════
+  /* ═══════ WIRE CONNECTION CONFIG ═══════
    *
-   * All wires connect between attachment points on sections.
-   * The 3D cube has 4 top corners and 4 bottom corners.
-   * Top wires: about-card "bc" → cube top corners
-   * Bottom wires: cube bottom corners → contact-card "tc"
-   * Heading wires: about-card "bc" → heading cube corners
+   * Edit these to change where wires attach on each box.
+   * Each box has 9 attachment points:
    *
-   * The cube corners exist in 3D space, so we project them
-   * using the cube's perspective to find the convergence point
-   * in the cube-scene's local coordinate system.
+   *   tl ── tc ── tr
+   *   │           │
+   *   ml    mc    mr
+   *   │           │
+   *   bl ── bc ── br
+   *
+   * Change any 2-letter code to move that wire's endpoint.
    */
+  var WIRE_CONFIG = {
+    topWires:     { from: 'bc', on: '.about-card'   },  // about bottom-center → cube top corners
+    bottomWires:  { to:   'tc', on: '.contact-card'  },  // cube bottom corners → contact top-center
+    headingWires: { from: 'bc', on: '.about-card'   },  // about bottom-center → heading cube corners
+  };
 
   // Convert a 2D page-space target point into cube-scene 3D local Y
   function pagePointToCubeY(targetPoint, cubeViewport) {
@@ -196,27 +202,27 @@
     });
   }
 
-  // ── Section elements for attachment ──
-  var aboutCard = document.querySelector('.about-card');
-  var contactCard = document.querySelector('.contact-card');
+  // ── Section elements ──
   var headingVP = document.querySelector('.heading-viewport');
 
-  // Top wires: about-card bottom-center → cube top corners
+  // Top wires: WIRE_CONFIG.topWires.on attachment → cube top corners
   function positionTopWires() {
     var wires = document.querySelectorAll('.chandelier-wire');
-    if (!cubeVP || !aboutCard || wires.length < 4) return;
-    var attachPt = getAttachPoint(aboutCard, 'bc');
+    var cfg = WIRE_CONFIG.topWires;
+    var srcEl = document.querySelector(cfg.on);
+    if (!cubeVP || !srcEl || wires.length < 4) return;
+    var attachPt = getAttachPoint(srcEl, cfg.from);
     var convY = pagePointToCubeY(attachPt, cubeVP);
     positionWireSet(wires, convY, 'top');
   }
 
-  // Bottom wires: cube bottom corners → contact-card top-center
+  // Bottom wires: cube bottom corners → WIRE_CONFIG.bottomWires.on attachment
   function positionBottomWires() {
     var bWires = document.querySelectorAll('.chandelier-wire-bottom');
-    if (!cubeVP || !contactCard || bWires.length < 4) return;
-    var attachPt = getAttachPoint(contactCard, 'tc');
-    var convY = pagePointToCubeY({ x: attachPt.x, y: attachPt.y }, cubeVP);
-    // For bottom, convY needs to be flipped (it's below cube center)
+    var cfg = WIRE_CONFIG.bottomWires;
+    var destEl = document.querySelector(cfg.on);
+    if (!cubeVP || !destEl || bWires.length < 4) return;
+    var attachPt = getAttachPoint(destEl, cfg.to);
     var cubeRect = cubeVP.getBoundingClientRect();
     var cubeCenterY = cubeRect.top + cubeRect.height / 2;
     var perspective = parseFloat(cubeVP.style.perspective) || 1200;
@@ -227,12 +233,14 @@
     positionWireSet(bWires, bottomConvY, 'bottom');
   }
 
-  // Heading wires: about-card bottom-center → heading cube corners
+  // Heading wires: WIRE_CONFIG.headingWires.on attachment → heading cube corners
   function positionHeadingWires() {
     var hWires = document.querySelectorAll('.heading-wire');
-    if (!aboutCard || !headingVP || hWires.length < 4) return;
+    var cfg = WIRE_CONFIG.headingWires;
+    var srcEl = document.querySelector(cfg.on);
+    if (!srcEl || !headingVP || hWires.length < 4) return;
 
-    var attachPt = getAttachPoint(aboutCard, 'bc');
+    var attachPt = getAttachPoint(srcEl, cfg.from);
     var headingRect = headingVP.getBoundingClientRect();
     var perspective = 800;
 
