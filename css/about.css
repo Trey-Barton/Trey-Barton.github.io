@@ -1,8 +1,8 @@
 .about-card {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 48px;
-  padding: 52px 56px;
+  gap: clamp(24px, 5vw, 48px);
+  padding: clamp(28px, 4vw, 52px) clamp(24px, 5vw, 56px);
   background: rgba(15, 30, 40, 0.72);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;

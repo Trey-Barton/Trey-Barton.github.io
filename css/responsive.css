@@ -1,14 +1,11 @@
 @media (max-width: 768px) {
   body { background: #1a3040; }
   .nav { background: rgba(10, 21, 32, 0.95); }
-  .nav-inner { padding: 0 24px; }
-  .footer { padding: 24px 16px 60px; }
-  .about-card { grid-template-columns: 1fr; text-align: center; max-width: 85vw; margin: 0 auto; }
+  .about-card { grid-template-columns: 1fr; text-align: center; max-width: min(90vw, 400px); margin: 0 auto; }
   .about-text h2 { text-align: center; }
   .about-text p { text-align: left; line-height: 1.75; }
   .about-photo { justify-content: center; order: -1; }
   .skills { justify-content: center; }
-  .contact-card { max-width: 100%; }
   .biome-label { display: none; }
   #bg-canvas { contain: none; }
   .cube-viewport { transform-origin: center top; margin-top: 5px; overflow: visible; }
@@ -18,9 +15,4 @@
   .projects-mobile { display: none; }
   .projects-heading-mobile { display: none; }
   #contact { margin-top: 22px; }
-}
-
-@media (max-width: 480px) {
-  .about-card { padding: 28px 20px; }
-  .social-links { gap: 10px; }
 }

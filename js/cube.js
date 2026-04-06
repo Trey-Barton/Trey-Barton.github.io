@@ -16,7 +16,7 @@
   // ── Cube & wire config (ratios relative to cubeZ) ──
   var WIRE_CONVERGENCE_RATIO = 0.35;   // 75° from vertical — nearly horizontal spread
   var WIRE_BORDER_INSET_RATIO = 0.083; // border-radius inset / cubeZ (4px longer toward cube)
-  var CUBE_HEIGHT_RATIO = 1.5;         // cubeHeight / baseWidth
+  var CUBE_HEIGHT_RATIO = 1.2;         // cubeHeight / baseWidth (shorter projects section)
   var CUBE_HEIGHT_MAX = 700;           // max height cap (px)
   var CUBE_PERSPECTIVE_RATIO = 2.2;    // perspective / baseWidth
 
