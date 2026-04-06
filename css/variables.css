@@ -1,0 +1,35 @@
+:root {
+  /* Card typography */
+  --card-h3:    clamp(0.95rem, 0.7rem + 1.2vw, 1.4rem);
+  --card-body:  clamp(0.75rem, 0.6rem + 0.7vw, 0.9rem);
+  --card-tag:   clamp(0.5rem,  0.4rem + 0.5vw, 0.7rem);
+  --card-link:  clamp(0.7rem,  0.55rem + 0.6vw, 0.85rem);
+  --card-pad-v: clamp(20px, 16px + 1.5vw, 36px);
+  --card-pad-h: clamp(16px, 12px + 1.5vw, 36px);
+  --card-gap:   clamp(8px,  6px + 0.8vw, 14px);
+
+  /* About section */
+  --about-h2:   clamp(1.8rem, 1.4rem + 1.5vw, 2.2rem);
+  --about-body:  clamp(0.9rem, 0.75rem + 0.5vw, 1.15rem);
+
+  /* Contact section */
+  --contact-h2:  clamp(1.8rem, 1.4rem + 1.5vw, 2.4rem);
+  --contact-body: clamp(0.9rem, 0.75rem + 0.5vw, 1.15rem);
+
+  /* Spacing tokens */
+  --section-pad-v: clamp(60px, 40px + 5vw, 100px);
+  --section-pad-h: clamp(16px, 8px + 3vw, 40px);
+  --nav-pad-h:     clamp(16px, 8px + 3vw, 40px);
+  --nav-gap:       clamp(14px, 8px + 2vw, 36px);
+  --nav-font:      clamp(0.8rem, 0.7rem + 0.5vw, 1rem);
+
+  /* Photo ring */
+  --photo-ring-size: clamp(140px, 100px + 12vw, 260px);
+
+  /* Colors */
+  --bg-primary: #1a3040;
+  --glass-bg: rgba(15, 30, 40, 0.65);
+  --glass-border: rgba(255,255,255,0.12);
+  --text-primary: #fff;
+  --text-muted: rgba(255,255,255,0.75);
+}
