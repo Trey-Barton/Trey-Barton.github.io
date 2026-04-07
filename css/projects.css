@@ -58,7 +58,8 @@
   max-width: 560px;
   margin-left: auto;
   margin-right: auto;
-  height: 320px;
+  height: auto;
+  min-height: 200px;
   overflow: visible;
 }
 .cube-scene {
