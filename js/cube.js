@@ -41,8 +41,8 @@
 
   // ── Cube & wire config ──
   var WIRE_BORDER_INSET_RATIO = 0.083;
-  var CUBE_HEIGHT_RATIO = 0.6;
-  var CUBE_HEIGHT_MAX = 333;
+  var CUBE_HEIGHT_RATIO = 0.85;
+  var CUBE_HEIGHT_MAX = 480;
   var CUBE_PERSPECTIVE_RATIO = 2.2;
 
   var cubeVP = document.querySelector('.cube-viewport');
@@ -175,33 +175,36 @@
     ];
 
     corners.forEach(function(corner, i) {
-      var dx, dy, dz;
+      var cornerY, dx, dy, dz;
+
       if (side === 'top') {
-        // Mirror of bottom: originate from cube top corners, go UP to convergence
+        // Wire originates at cube top corner, extends UP to convergence point
+        cornerY = -(cubeHalf + ys);
+        // Vector from corner to convergence (convY is negative, above center)
         dx = -corner.x;
-        dy = -(convY - (-(cubeHalf + ys)));  // distance from top corner up to convergence
+        dy = convY - cornerY;  // negative = upward
         dz = -corner.z;
       } else {
-        // Originate from cube bottom corners, go DOWN to convergence
+        // Wire originates at cube bottom corner, extends DOWN to convergence point
+        cornerY = cubeHalf + ys;
         dx = -corner.x;
-        dy = convY - (cubeHalf + ys);
+        dy = convY - cornerY;  // positive = downward
         dz = -corner.z;
       }
 
       var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
       var dxz = Math.sqrt(dx * dx + dz * dz);
       var azimuth = Math.atan2(dx, dz) * (180 / Math.PI);
-      var tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
+      var tilt = Math.atan2(dxz, Math.abs(dy)) * (180 / Math.PI);
 
+      // Wire hangs from transform-origin: center top
+      // For top wires pointing up, flip tilt so wire extends upward
       if (side === 'top') {
-        // Place wire at cube top corner, pointing upward
-        wires[i].style.height = wireLen + 'px';
-        wires[i].style.transform = 'translate3d(' + corner.x + 'px,' + (-(cubeHalf + ys)) + 'px,' + corner.z + 'px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
-      } else {
-        // Place wire at cube bottom corner, pointing downward
-        wires[i].style.height = wireLen + 'px';
-        wires[i].style.transform = 'translate3d(' + corner.x + 'px,' + (cubeHalf + ys) + 'px,' + corner.z + 'px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
+        tilt = -tilt;
       }
+
+      wires[i].style.height = wireLen + 'px';
+      wires[i].style.transform = 'translate3d(' + corner.x + 'px,' + cornerY + 'px,' + corner.z + 'px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
     });
   }
 
