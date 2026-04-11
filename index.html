@@ -527,7 +527,7 @@ body {
   .about-photo { justify-content: center; order: -1; }
   .skills { justify-content: center; }
   .biome-label { display: none; }
-  #bg-canvas { display: none; }
+  #bg-canvas { contain: none; }
   .cube-viewport { transform-origin: center top; margin-top: 5px; overflow: visible; }
   .project-card p { line-height: 1.6; color: rgba(255,255,255,0.7); }
   .project-tag { letter-spacing: 0.12em; }
@@ -1548,8 +1548,8 @@ try {
 (function () {
   'use strict';
 
-  // Skip heavy canvas animation on mobile/tablet to prevent lag
-  if (window.innerWidth <= 1024) return;
+  // On mobile: render one static frame then stop (no animation loop)
+  var mobileStatic = window.innerWidth <= 1024;
 
   var canvas = document.getElementById('bg-canvas');
   var ctx = canvas.getContext('2d', { alpha: false });
@@ -2293,7 +2293,8 @@ try {
     ctx.fillRect(0, 0, W, H);
 
     // Particles -- spawn rates scaled for mobile
-    var spawnMul = Forest.isMobile ? 0.2 : 1;
+    if (mobileStatic) { /* skip particles on static render */ }
+    var spawnMul = mobileStatic ? 0 : (Forest.isMobile ? 0.2 : 1);
     if (Math.random() < 0.03 * spawnMul) Forest.spawnP('firefly', W, H);
     if (Math.random() < 0.06 * spawnMul) Forest.spawnP('spore', W, H);
     if (Math.random() < 0.12 * spawnMul) Forest.spawnP('leaf', W, H);
@@ -2394,7 +2395,7 @@ try {
       }
     }
 
-    requestAnimationFrame(frame);
+    if (!mobileStatic) requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 })();
