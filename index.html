@@ -59,8 +59,9 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   pointer-events: none;
   will-change: contents;
   contain: strict;
@@ -1557,8 +1558,8 @@ try {
     Forest.isMobile = window.innerWidth <= 768;
     Forest.MAX_PARTICLES = Forest.isMobile ? 80 : 400;
     var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1 : 2);
-    var w = canvas.clientWidth || window.innerWidth;
-    var h = canvas.clientHeight || window.innerHeight;
+    var w = window.innerWidth;
+    var h = window.innerHeight;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
