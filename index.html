@@ -59,10 +59,8 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  min-height: -webkit-fill-available;
+  right: 0;
+  bottom: 0;
   pointer-events: none;
   will-change: contents;
   contain: strict;
@@ -1556,17 +1554,15 @@ try {
   var time = 0, lastTs = null;
 
   function resize() {
-    var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1 : 2);
-    var w = window.innerWidth;
-    var h = Math.max(window.innerHeight, document.documentElement.clientHeight, screen.height);
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
     Forest.isMobile = window.innerWidth <= 768;
     Forest.MAX_PARTICLES = Forest.isMobile ? 80 : 400;
+    var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1 : 2);
+    var w = canvas.clientWidth || window.innerWidth;
+    var h = canvas.clientHeight || window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
   }
   var resizeTimer;
   window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 100); });
