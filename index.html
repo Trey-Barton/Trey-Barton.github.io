@@ -526,7 +526,7 @@ body {
   .about-photo { justify-content: center; order: -1; }
   .skills { justify-content: center; }
   .biome-label { display: none; }
-  #bg-canvas { contain: none; }
+  #bg-canvas { contain: none; position: absolute; height: 100%; }
   .cube-viewport { transform-origin: center top; margin-top: 5px; overflow: visible; }
   .project-card p { line-height: 1.6; color: rgba(255,255,255,0.7); }
   .project-tag { letter-spacing: 0.12em; }
@@ -1559,7 +1559,9 @@ try {
     Forest.MAX_PARTICLES = Forest.isMobile ? 80 : 400;
     var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1 : 2);
     var w = window.innerWidth;
-    var h = Math.max(window.innerHeight, screen.height);
+    var h = Forest.isMobile
+      ? Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, window.innerHeight)
+      : window.innerHeight;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2393,14 +2395,7 @@ try {
     }
 
     if (mobileStatic) {
-      // Convert canvas to a static background image so iOS can't discard it
-      try {
-        var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        canvas.style.backgroundImage = 'url(' + dataUrl + ')';
-        canvas.style.backgroundSize = 'cover';
-        canvas.width = 1;
-        canvas.height = 1;
-      } catch(e) {}
+      // Keep canvas as static rendered image — no loop, no resize
     } else {
       requestAnimationFrame(frame);
     }
