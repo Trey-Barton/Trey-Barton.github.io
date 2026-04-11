@@ -534,6 +534,10 @@ body {
   .projects-heading-face .section-heading { font-size: 1rem !important; }
   #contact { margin-top: 22px; }
 }
+@keyframes headingSpin {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
   </style>
 </head>
 <body>
@@ -1544,6 +1548,9 @@ try {
 (function () {
   'use strict';
 
+  // Skip heavy canvas animation on mobile to prevent lag
+  if (window.innerWidth <= 768) return;
+
   var canvas = document.getElementById('bg-canvas');
   var ctx = canvas.getContext('2d', { alpha: false });
   var time = 0, lastTs = null;
@@ -2537,18 +2544,10 @@ document.documentElement.classList.add('js-ready');
     });
   }
 
-  // ── Heading spin (time-based) ──
+  // ── Heading spin — CSS animation (GPU-accelerated, no JS loop) ──
   var headingZ = Math.min(85, window.innerWidth * 0.12);
-  var lastHeadingTs = null;
-  function animateHeading(ts) {
-    if (lastHeadingTs === null) lastHeadingTs = ts;
-    var dt = (ts - lastHeadingTs) / 1000;
-    lastHeadingTs = ts;
-    headingSpinDeg += dt * 21;
-    headingScene.style.transform = 'translateZ(-' + headingZ + 'px) rotateY(' + headingSpinDeg + 'deg)';
-    requestAnimationFrame(animateHeading);
-  }
-  requestAnimationFrame(animateHeading);
+  headingScene.style.animation = 'headingSpin 17s linear infinite';
+  headingScene.style.transformOrigin = 'center center -' + headingZ + 'px';
 
   // ── Cube navigation ──
   if (cubePrev) cubePrev.addEventListener('click', function() { cubeIdx--; updateCube(); });
@@ -2749,13 +2748,16 @@ document.documentElement.classList.add('js-ready');
   requestAnimationFrame(function() { window.scrollTo(0, 0); });
 
   window.addEventListener('resize', updateAllWires);
-  var wireTicking = false;
-  window.addEventListener('scroll', function() {
-    if (!wireTicking) {
-      wireTicking = true;
-      requestAnimationFrame(function() { updateAllWires(); wireTicking = false; });
-    }
-  }, { passive: true });
+  // Only reposition wires on scroll for desktop — mobile skips for performance
+  if (window.innerWidth > 768) {
+    var wireTicking = false;
+    window.addEventListener('scroll', function() {
+      if (!wireTicking) {
+        wireTicking = true;
+        requestAnimationFrame(function() { updateAllWires(); wireTicking = false; });
+      }
+    }, { passive: true });
+  }
 })();
   </script>
 </body>
