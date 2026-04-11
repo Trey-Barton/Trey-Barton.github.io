@@ -2393,8 +2393,14 @@ try {
     }
 
     if (mobileStatic) {
-      // Redraw at low framerate to prevent iOS from discarding canvas content
-      setTimeout(function() { requestAnimationFrame(frame); }, 500);
+      // Convert canvas to a static background image so iOS can't discard it
+      try {
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        canvas.style.backgroundImage = 'url(' + dataUrl + ')';
+        canvas.style.backgroundSize = 'cover';
+        canvas.width = 1;
+        canvas.height = 1;
+      } catch(e) {}
     } else {
       requestAnimationFrame(frame);
     }
@@ -2535,7 +2541,6 @@ document.documentElement.classList.add('js-ready');
   }
 
   centerVisuals();
-  window.scrollTo(0, 0);
   window.addEventListener('resize', function() { centerVisuals(); updateCube(); });
 
   function updateCube() {
@@ -2748,7 +2753,6 @@ document.documentElement.classList.add('js-ready');
   }
 
   updateAllWires();
-  requestAnimationFrame(function() { window.scrollTo(0, 0); });
 
   window.addEventListener('resize', updateAllWires);
   // Only reposition wires on scroll for desktop — mobile skips for performance
