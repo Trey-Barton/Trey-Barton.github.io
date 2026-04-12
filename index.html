@@ -533,10 +533,6 @@ body {
   .projects-heading-face .section-heading { font-size: 1rem !important; }
   #contact { margin-top: 22px; }
 }
-@keyframes headingSpin {
-  from { transform: rotateY(0deg); }
-  to { transform: rotateY(360deg); }
-}
   </style>
 </head>
 <body>
@@ -2540,10 +2536,18 @@ document.documentElement.classList.add('js-ready');
     });
   }
 
-  // ── Heading spin — CSS animation (GPU-accelerated, no JS loop) ──
+  // ── Heading spin (time-based) ──
   var headingZ = Math.min(85, window.innerWidth * 0.12);
-  headingScene.style.animation = 'headingSpin 17s linear infinite';
-  headingScene.style.transformOrigin = 'center center -' + headingZ + 'px';
+  var lastHeadingTs = null;
+  function animateHeading(ts) {
+    if (lastHeadingTs === null) lastHeadingTs = ts;
+    var dt = (ts - lastHeadingTs) / 1000;
+    lastHeadingTs = ts;
+    headingSpinDeg += dt * 21;
+    headingScene.style.transform = 'translateZ(-' + headingZ + 'px) rotateY(' + headingSpinDeg + 'deg)';
+    requestAnimationFrame(animateHeading);
+  }
+  requestAnimationFrame(animateHeading);
 
   // ── Cube navigation ──
   if (cubePrev) cubePrev.addEventListener('click', function() { cubeIdx--; updateCube(); });
