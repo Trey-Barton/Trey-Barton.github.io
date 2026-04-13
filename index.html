@@ -1454,7 +1454,7 @@ window.Forest = window.Forest || {};
   Forest.isMobile = window.innerWidth <= 768;
 
   var particles = [];
-  var MAX_PARTICLES = Forest.isMobile ? 150 : 400;
+  var MAX_PARTICLES = Forest.isMobile ? 60 : 150;
 
   window._isPageVisible = true;
   document.addEventListener('visibilitychange', function() { window._isPageVisible = !document.hidden; });
@@ -1530,9 +1530,9 @@ window.Forest = window.Forest || {};
 (function () {
   'use strict';
 
-  Forest.farTrees  = Forest.genLayer(45, 'far', 42);
-  Forest.midTrees  = Forest.genLayer(24, 'mid', 137);
-  Forest.fgTrees   = Forest.genLayer(14, 'fg', 99);
+  Forest.farTrees  = Forest.genLayer(20, 'far', 42);
+  Forest.midTrees  = Forest.genLayer(12, 'mid', 137);
+  Forest.fgTrees   = Forest.genLayer(7, 'fg', 99);
 })();
 /**
  * Forest main orchestrator -- canvas setup, resize, render loop
@@ -1552,7 +1552,7 @@ try {
 
   function resize() {
     Forest.isMobile = window.innerWidth <= 768;
-    Forest.MAX_PARTICLES = Forest.isMobile ? 80 : 400;
+    Forest.MAX_PARTICLES = Forest.isMobile ? 60 : 150;
     var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1 : 2);
     var w = window.innerWidth;
     var h = window.innerHeight;
@@ -2286,13 +2286,11 @@ try {
     ctx.fillRect(0, 0, W, H);
 
     // Particles -- spawn rates scaled for mobile
-    var spawnMul = Forest.isMobile ? 0.5 : 1;
-    if (Math.random() < 0.03 * spawnMul) Forest.spawnP('firefly', W, H);
-    if (Math.random() < 0.06 * spawnMul) Forest.spawnP('spore', W, H);
-    if (Math.random() < 0.12 * spawnMul) Forest.spawnP('leaf', W, H);
-    if (!Forest.isMobile && Math.random() < 0.12) Forest.spawnP('leaf', W, H);
-    if (Math.random() < 0.03 * spawnMul) Forest.spawnP('petal', W, H);
-    if (Math.random() < 0.05 * spawnMul) Forest.spawnP('dust', W, H);
+    if (Math.random() < 0.08) Forest.spawnP('firefly', W, H);
+    if (Math.random() < 0.10) Forest.spawnP('spore', W, H);
+    if (Math.random() < 0.15) Forest.spawnP('leaf', W, H);
+    if (Math.random() < 0.06) Forest.spawnP('petal', W, H);
+    if (Math.random() < 0.08) Forest.spawnP('dust', W, H);
 
     for (var i = Forest.particles.length - 1; i >= 0; i--) {
       var p = Forest.particles[i];
@@ -2307,22 +2305,10 @@ try {
         p.vy += (Math.random()-0.5)*0.008;
         p.x += p.vx; p.y += p.vy;
         var fl = 0.25+Math.sin(p.ph)*0.6;
-        if (!Forest.isMobile) {
-          // Glow via shadowBlur — expensive, skip on mobile
-          ctx.save();
-          ctx.shadowColor = 'rgba(200,255,100,' + (a*fl*0.6).toFixed(3) + ')';
-          ctx.shadowBlur = p.r * 12;
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 1.5, 0, 6.28);
-          ctx.fillStyle = 'rgba(200,255,100,' + (a*fl*0.5).toFixed(3) + ')';
-          ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.restore();
-        } else {
-          // Cheaper glow on mobile — larger circle, no blur
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3, 0, 6.28);
-          ctx.fillStyle = 'rgba(200,255,100,' + (a*fl*0.15).toFixed(3) + ')';
-          ctx.fill();
-        }
+        // Cheap glow — large soft circle + bright core (no shadowBlur)
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 4, 0, 6.28);
+        ctx.fillStyle = 'rgba(200,255,100,' + (a*fl*0.12).toFixed(3) + ')';
+        ctx.fill();
         ctx.beginPath(); ctx.arc(p.x,p.y,p.r*0.8,0,6.28);
         ctx.fillStyle = 'rgba(240,255,180,'+(a*fl*0.9).toFixed(3)+')'; ctx.fill();
       } else if (p.type === 'spore') {
@@ -2391,7 +2377,7 @@ try {
   }
   requestAnimationFrame(frame);
 })();
-} catch(e) { console.error('Canvas animation error:', e); document.title = 'ERROR: ' + e.message; }
+} catch(e) { console.warn('Canvas animation error:', e); }
 
   </script>
 
