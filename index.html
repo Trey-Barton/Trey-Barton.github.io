@@ -1553,7 +1553,7 @@ try {
   function resize() {
     Forest.isMobile = window.innerWidth <= 768;
     Forest.MAX_PARTICLES = Forest.isMobile ? 150 : 400;
-    var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1 : 2);
+    var dpr = 1; // Canvas doesn't need Retina — 1x is sharp enough for background art
     var w = window.innerWidth;
     var h = window.innerHeight;
     canvas.width = w * dpr;
@@ -1575,7 +1575,7 @@ try {
     time += dt;
     windPhase += dt * 0.15;
 
-    var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1 : 2);
+    var dpr = 1; // Canvas doesn't need Retina — 1x is sharp enough for background art
     var W = canvas.width / dpr, H = canvas.height / dpr;
     var wind = Math.sin(windPhase) * 0.5 + Math.sin(windPhase * 2.3) * 0.2;
 
