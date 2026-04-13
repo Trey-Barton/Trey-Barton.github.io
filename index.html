@@ -2014,8 +2014,15 @@ try {
       ctx.fill();
     }
 
+    // FG layer: undergrowth + depth-sorted scene + trees (cached once)
+    if (!frame._fgCache || frame._fgCW !== W || frame._fgCH !== H) {
+      var fgc = frame._fgCache || document.createElement('canvas');
+      fgc.width = W; fgc.height = H;
+      var fgctx = fgc.getContext('2d');
+      fgctx.clearRect(0, 0, W, H);
+
     // FG undergrowth
-    Forest.drawUndergrowth(ctx, W, H, time, 'fg');
+    Forest.drawUndergrowth(fgctx, W, H, time, 'fg');
 
     // Depth-sorted FG scene: trees + undergrowth
     if (!frame._fgUG || frame._fgUGW !== W || frame._fgUGH !== H) {
@@ -2098,10 +2105,10 @@ try {
           var bcx = item.x + (bR2() - 0.5) * item.sz * 2.8;
           var bcy = item.y + (bR2() - 0.5) * item.sz * 0.6 - item.sz * 0.4;
           var bcr = item.sz * (0.45 + bR2() * 0.55);
-          ctx.beginPath();
-          ctx.arc(bcx, bcy, bcr, 0, 6.28);
-          ctx.fillStyle = Forest.rgb(Forest.mix(bDark, item.col, bR2() * 0.5), 0.55 + item.depth * 0.25);
-          ctx.fill();
+          fgctx.beginPath();
+          fgctx.arc(bcx, bcy, bcr, 0, 6.28);
+          fgctx.fillStyle = Forest.rgb(Forest.mix(bDark, item.col, bR2() * 0.5), 0.55 + item.depth * 0.25);
+          fgctx.fill();
         }
 
       } else if (item.type === 'grass') {
@@ -2109,82 +2116,86 @@ try {
         for (var gb = 0; gb < item.blades; gb++) {
           var gbx = item.x + (gb - item.blades / 2) * (2 + item.depth * 1.5);
           var gba = (gb - item.blades / 2) * 0.15 + gSw * 0.07;
-          ctx.beginPath();
-          ctx.moveTo(gbx, item.y);
-          ctx.quadraticCurveTo(gbx + gba * 4, item.y - item.h * 0.6, gbx + Math.sin(gba) * item.h * 0.5, item.y - item.h);
-          ctx.lineWidth = 0.8 + item.depth * 0.8;
-          ctx.strokeStyle = Forest.rgb(item.col, 0.5 + item.depth * 0.25);
-          ctx.stroke();
+          fgctx.beginPath();
+          fgctx.moveTo(gbx, item.y);
+          fgctx.quadraticCurveTo(gbx + gba * 4, item.y - item.h * 0.6, gbx + Math.sin(gba) * item.h * 0.5, item.y - item.h);
+          fgctx.lineWidth = 0.8 + item.depth * 0.8;
+          fgctx.strokeStyle = Forest.rgb(item.col, 0.5 + item.depth * 0.25);
+          fgctx.stroke();
         }
 
       } else if (item.type === 'stick') {
         var stEx = item.x + Math.cos(item.angle) * item.len;
         var stEy = item.y + Math.sin(item.angle) * item.len * 0.2;
-        ctx.beginPath();
-        ctx.moveTo(item.x, item.y);
-        ctx.lineTo(stEx, stEy);
-        ctx.lineWidth = item.lw;
-        ctx.strokeStyle = 'rgba(75,58,32,' + (0.3 + item.depth * 0.3).toFixed(3) + ')';
-        ctx.stroke();
+        fgctx.beginPath();
+        fgctx.moveTo(item.x, item.y);
+        fgctx.lineTo(stEx, stEy);
+        fgctx.lineWidth = item.lw;
+        fgctx.strokeStyle = 'rgba(75,58,32,' + (0.3 + item.depth * 0.3).toFixed(3) + ')';
+        fgctx.stroke();
         if (item.fork) {
           var fkx = item.x + (stEx - item.x) * 0.55;
           var fky = item.y + (stEy - item.y) * 0.55;
-          ctx.beginPath();
-          ctx.moveTo(fkx, fky);
-          ctx.lineTo(fkx + Math.cos(item.fAngle + item.angle) * item.len * 0.4, fky + Math.sin(item.fAngle + item.angle) * item.len * 0.1);
-          ctx.lineWidth = item.lw * 0.6;
-          ctx.strokeStyle = 'rgba(68,52,30,' + (0.25 + item.depth * 0.25).toFixed(3) + ')';
-          ctx.stroke();
+          fgctx.beginPath();
+          fgctx.moveTo(fkx, fky);
+          fgctx.lineTo(fkx + Math.cos(item.fAngle + item.angle) * item.len * 0.4, fky + Math.sin(item.fAngle + item.angle) * item.len * 0.1);
+          fgctx.lineWidth = item.lw * 0.6;
+          fgctx.strokeStyle = 'rgba(68,52,30,' + (0.25 + item.depth * 0.25).toFixed(3) + ')';
+          fgctx.stroke();
         }
 
       } else if (item.type === 'leaf') {
-        ctx.save();
-        ctx.translate(item.x, item.y);
-        ctx.rotate(item.rot);
-        ctx.beginPath();
-        ctx.ellipse(0, 0, item.sz, item.sz * 0.4, 0, 0, 6.28);
-        ctx.fillStyle = Forest.rgb(Forest.mix(item.col, [35, 45, 22], 0.2), 0.4 + item.depth * 0.25);
-        ctx.fill();
-        ctx.restore();
+        fgctx.save();
+        fgctx.translate(item.x, item.y);
+        fgctx.rotate(item.rot);
+        fgctx.beginPath();
+        fgctx.ellipse(0, 0, item.sz, item.sz * 0.4, 0, 0, 6.28);
+        fgctx.fillStyle = Forest.rgb(Forest.mix(item.col, [35, 45, 22], 0.2), 0.4 + item.depth * 0.25);
+        fgctx.fill();
+        fgctx.restore();
 
       } else if (item.type === 'rock') {
-        ctx.beginPath();
-        ctx.ellipse(item.x, item.y, item.sz, item.sz * item.aspect, item.rot, 0, 6.28);
-        ctx.fillStyle = 'rgba(80,74,52,' + (0.3 + item.depth * 0.3).toFixed(3) + ')';
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(item.x - item.sz * 0.2, item.y - item.sz * 0.2, item.sz * 0.3, 0, 6.28);
-        ctx.fillStyle = 'rgba(125,118,88,0.15)';
-        ctx.fill();
+        fgctx.beginPath();
+        fgctx.ellipse(item.x, item.y, item.sz, item.sz * item.aspect, item.rot, 0, 6.28);
+        fgctx.fillStyle = 'rgba(80,74,52,' + (0.3 + item.depth * 0.3).toFixed(3) + ')';
+        fgctx.fill();
+        fgctx.beginPath();
+        fgctx.arc(item.x - item.sz * 0.2, item.y - item.sz * 0.2, item.sz * 0.3, 0, 6.28);
+        fgctx.fillStyle = 'rgba(125,118,88,0.15)';
+        fgctx.fill();
 
       } else if (item.type === 'flower') {
-        ctx.beginPath();
-        ctx.moveTo(item.x, item.y);
-        ctx.lineTo(item.x, item.y - item.sz * 4);
-        ctx.lineWidth = 0.6 + item.depth * 0.4;
-        ctx.strokeStyle = 'rgba(50,90,30,0.5)';
-        ctx.stroke();
+        fgctx.beginPath();
+        fgctx.moveTo(item.x, item.y);
+        fgctx.lineTo(item.x, item.y - item.sz * 4);
+        fgctx.lineWidth = 0.6 + item.depth * 0.4;
+        fgctx.strokeStyle = 'rgba(50,90,30,0.5)';
+        fgctx.stroke();
         var fpy = item.y - item.sz * 4;
         for (var fp = 0; fp < 5; fp++) {
           var pa = fp * 1.256;
-          ctx.beginPath();
-          ctx.arc(item.x + Math.cos(pa) * item.sz * 0.6, fpy + Math.sin(pa) * item.sz * 0.6, item.sz * 0.5, 0, 6.28);
-          ctx.fillStyle = 'rgba(' + item.petalCol[0] + ',' + item.petalCol[1] + ',' + item.petalCol[2] + ',' + (0.35 + item.depth * 0.25).toFixed(3) + ')';
-          ctx.fill();
+          fgctx.beginPath();
+          fgctx.arc(item.x + Math.cos(pa) * item.sz * 0.6, fpy + Math.sin(pa) * item.sz * 0.6, item.sz * 0.5, 0, 6.28);
+          fgctx.fillStyle = 'rgba(' + item.petalCol[0] + ',' + item.petalCol[1] + ',' + item.petalCol[2] + ',' + (0.35 + item.depth * 0.25).toFixed(3) + ')';
+          fgctx.fill();
         }
-        ctx.beginPath();
-        ctx.arc(item.x, fpy, item.sz * 0.35, 0, 6.28);
-        ctx.fillStyle = 'rgba(240,230,105,0.45)';
-        ctx.fill();
+        fgctx.beginPath();
+        fgctx.arc(item.x, fpy, item.sz * 0.35, 0, 6.28);
+        fgctx.fillStyle = 'rgba(240,230,105,0.45)';
+        fgctx.fill();
       }
     }
 
     // Draw FG trees on top of undergrowth
     for (var fi = 0; fi < _fgTreeItems.length; fi++) {
       var ti = _fgTreeItems[fi];
-      Forest.drawTrunk(ctx, ti.tree, ti.tx, W, H, time);
-      Forest.drawCanopy(ctx, ti.tree, ti.tx, W, H, time, 1.0);
+      Forest.drawTrunk(fgctx, ti.tree, ti.tx, W, H, time);
+      Forest.drawCanopy(fgctx, ti.tree, ti.tx, W, H, time, 1.0);
     }
+
+      frame._fgCache = fgc; frame._fgCW = W; frame._fgCH = H;
+    }
+    ctx.drawImage(frame._fgCache, 0, 0);
 
     // Dense canopy fill + hanging drips (cached, refreshed every 2s)
     if (!frame._canopyCache || frame._canopyW !== W || frame._canopyH !== H || !frame._canopyTime) {
