@@ -2391,7 +2391,7 @@ try {
   }
   requestAnimationFrame(frame);
 })();
-} catch(e) { console.warn('Canvas animation error:', e); }
+} catch(e) { console.error('Canvas animation error:', e); document.title = 'ERROR: ' + e.message; }
 
   </script>
 
