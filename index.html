@@ -135,6 +135,8 @@ body {
   max-width: 1100px;
   margin: 0 auto;
   padding: var(--section-pad-v) var(--section-pad-h);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 800px;
 }
 .section-heading {
   font-family: 'Playfair Display', Georgia, serif;
@@ -2568,10 +2570,17 @@ document.documentElement.classList.add('js-ready');
     });
   }
 
-  // ── Heading spin (time-based) ──
+  // ── Heading spin (time-based, pauses when offscreen) ──
   var headingZ = Math.min(85, window.innerWidth * 0.12);
   var lastHeadingTs = null;
+  var headingVisible = false;
+  var headingObs = new IntersectionObserver(function(entries) {
+    headingVisible = entries[0].isIntersecting;
+    if (headingVisible) lastHeadingTs = null; // reset timing on re-enter
+  }, { threshold: 0 });
+  headingObs.observe(document.querySelector('.heading-viewport'));
   function animateHeading(ts) {
+    if (!headingVisible) { requestAnimationFrame(animateHeading); return; }
     if (lastHeadingTs === null) lastHeadingTs = ts;
     var dt = (ts - lastHeadingTs) / 1000;
     lastHeadingTs = ts;
