@@ -1567,12 +1567,9 @@ try {
 
   var windPhase = 0;
 
-  var frameBudget = 1000 / 30; // Target 30fps for smooth performance
   function frame(ts) {
     if (!window._isPageVisible) { lastTs = null; requestAnimationFrame(frame); return; }
     if (lastTs === null) lastTs = ts;
-    // Skip frame if less than frameBudget ms since last render
-    if (ts - lastTs < frameBudget) { requestAnimationFrame(frame); return; }
     var dt = Math.min((ts - lastTs) / 1000, 0.05);
     lastTs = ts;
     time += dt;
