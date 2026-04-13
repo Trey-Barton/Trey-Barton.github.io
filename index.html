@@ -1579,9 +1579,15 @@ try {
     var W = canvas.width / dpr, H = canvas.height / dpr;
     var wind = Math.sin(windPhase) * 0.5 + Math.sin(windPhase * 2.3) * 0.2;
 
+    // ═══ FULL SCENE CACHE: render everything except particles once ═══
+    if (!frame._sceneCache || frame._sceneW !== W || frame._sceneH !== H) {
+      var sc = frame._sceneCache || document.createElement('canvas');
+      sc.width = W; sc.height = H;
+      var sctx = sc.getContext('2d');
+
     // Sky gradient (cached on resize)
     if (!frame._skyGrad || frame._skyW !== W || frame._skyH !== H) {
-      frame._skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.72);
+      frame._skyGrad = sctx.createLinearGradient(0, 0, 0, H * 0.72);
       frame._skyGrad.addColorStop(0,    'rgb(28,48,68)');
       frame._skyGrad.addColorStop(0.2,  'rgb(38,68,75)');
       frame._skyGrad.addColorStop(0.4,  'rgb(65,100,68)');
@@ -1590,21 +1596,21 @@ try {
       frame._skyGrad.addColorStop(1,    'rgb(215,200,85)');
       frame._skyW = W; frame._skyH = H;
     }
-    ctx.fillStyle = frame._skyGrad;
-    ctx.fillRect(0, 0, W, H);
+    sctx.fillStyle = frame._skyGrad;
+    sctx.fillRect(0, 0, W, H);
 
     // Stars (subtle)
     for (var i = 0; i < Forest.stars.length; i++) {
       var s = Forest.stars[i];
-      ctx.beginPath();
-      ctx.arc(s.nx*W, s.ny*H, s.sz, 0, 6.28);
-      ctx.fillStyle = 'rgba(210,225,255,'+(0.12+Math.sin(time*0.5+s.ph)*0.08).toFixed(3)+')';
-      ctx.fill();
+      sctx.beginPath();
+      sctx.arc(s.nx*W, s.ny*H, s.sz, 0, 6.28);
+      sctx.fillStyle = 'rgba(210,225,255,'+(0.12+Math.sin(time*0.5+s.ph)*0.08).toFixed(3)+')';
+      sctx.fill();
     }
 
     // Multiple horizon glows (cached on resize)
     if (!frame._horizonCache || frame._hcW !== W || frame._hcH !== H) {
-      frame._cenGlow = ctx.createRadialGradient(W*0.5, H*0.44, 0, W*0.5, H*0.44, H*0.55);
+      frame._cenGlow = sctx.createRadialGradient(W*0.5, H*0.44, 0, W*0.5, H*0.44, H*0.55);
       frame._cenGlow.addColorStop(0, 'rgba(250,220,85,0.3)');
       frame._cenGlow.addColorStop(0.25, 'rgba(240,210,75,0.15)');
       frame._cenGlow.addColorStop(0.5, 'rgba(220,195,65,0.06)');
@@ -1612,18 +1618,18 @@ try {
       frame._sideGlows = [];
       for (var gi = 0; gi < 4; gi++) {
         var gx = W * (0.15 + gi * 0.23);
-        var sg = ctx.createRadialGradient(gx, H*0.47, 0, gx, H*0.47, H*0.4);
+        var sg = sctx.createRadialGradient(gx, H*0.47, 0, gx, H*0.47, H*0.4);
         sg.addColorStop(0, 'rgba(245,215,80,0.18)');
         sg.addColorStop(0.3, 'rgba(225,200,65,0.07)');
         sg.addColorStop(1, 'rgba(180,150,50,0)');
         frame._sideGlows.push(sg);
       }
-      frame._hBand = ctx.createLinearGradient(0, H * 0.38, 0, H * 0.58);
+      frame._hBand = sctx.createLinearGradient(0, H * 0.38, 0, H * 0.58);
       frame._hBand.addColorStop(0, 'rgba(230,210,80,0)');
       frame._hBand.addColorStop(0.4, 'rgba(235,215,85,0.08)');
       frame._hBand.addColorStop(0.6, 'rgba(230,210,80,0.06)');
       frame._hBand.addColorStop(1, 'rgba(220,200,75,0)');
-      frame._groundGrd = ctx.createLinearGradient(0, H * 0.58, 0, H);
+      frame._groundGrd = sctx.createLinearGradient(0, H * 0.58, 0, H);
       frame._groundGrd.addColorStop(0,   'rgb(165,160,65)');
       frame._groundGrd.addColorStop(0.15,'rgb(130,135,50)');
       frame._groundGrd.addColorStop(0.35,'rgb(80,95,42)');
@@ -1631,19 +1637,19 @@ try {
       frame._groundGrd.addColorStop(1,   'rgb(30,42,25)');
       frame._horizonCache = true; frame._hcW = W; frame._hcH = H;
     }
-    ctx.fillStyle = frame._cenGlow;
-    ctx.fillRect(0, 0, W, H);
+    sctx.fillStyle = frame._cenGlow;
+    sctx.fillRect(0, 0, W, H);
     for (var gi = 0; gi < 4; gi++) {
-      ctx.fillStyle = frame._sideGlows[gi];
-      ctx.fillRect(0, 0, W, H);
+      sctx.fillStyle = frame._sideGlows[gi];
+      sctx.fillRect(0, 0, W, H);
     }
-    ctx.fillStyle = frame._hBand;
-    ctx.fillRect(0, H * 0.38, W, H * 0.2);
+    sctx.fillStyle = frame._hBand;
+    sctx.fillRect(0, H * 0.38, W, H * 0.2);
 
     // Ground
     var gY = H * 0.58;
-    ctx.fillStyle = frame._groundGrd;
-    ctx.fillRect(0, gY, W, H - gY);
+    sctx.fillStyle = frame._groundGrd;
+    sctx.fillRect(0, gY, W, H - gY);
 
     // Golden ground light patches
     for (var gi = 0; gi < 10; gi++) {
@@ -1651,14 +1657,14 @@ try {
       var gy = gY + H * 0.01 + Math.sin(gi * 2.3) * H * 0.02;
       var gpulse = 0.14 + Math.sin(time * 0.25 + gi * 1.8) * 0.05;
       var gRadius = H * (0.05 + Math.sin(gi * 1.1) * 0.02);
-      ctx.beginPath();
-      ctx.arc(gx, gy, gRadius * 0.5, 0, 6.28);
-      ctx.fillStyle = 'rgba(220,210,95,' + (gpulse * 0.7).toFixed(3) + ')';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(gx, gy, gRadius, 0, 6.28);
-      ctx.fillStyle = 'rgba(210,200,85,' + (gpulse * 0.2).toFixed(3) + ')';
-      ctx.fill();
+      sctx.beginPath();
+      sctx.arc(gx, gy, gRadius * 0.5, 0, 6.28);
+      sctx.fillStyle = 'rgba(220,210,95,' + (gpulse * 0.7).toFixed(3) + ')';
+      sctx.fill();
+      sctx.beginPath();
+      sctx.arc(gx, gy, gRadius, 0, 6.28);
+      sctx.fillStyle = 'rgba(210,200,85,' + (gpulse * 0.2).toFixed(3) + ')';
+      sctx.fill();
     }
 
     // Ground texture (static parts cached to offscreen canvas)
@@ -1791,7 +1797,7 @@ try {
       }
     }
     // Draw cached static ground
-    ctx.drawImage(frame._groundCache, 0, 0);
+    sctx.drawImage(frame._groundCache, 0, 0);
 
     // gRng skip loop eliminated -- ground is cached to offscreen canvas
 
@@ -1806,12 +1812,12 @@ try {
       for (var gb = 0; gb < gtBl; gb++) {
         var gbx = gtx + (gb - gtBl / 2) * 2.5;
         var gba = (gb - gtBl / 2) * 0.14 + gtSw * 0.06;
-        ctx.beginPath();
-        ctx.moveTo(gbx, gty);
-        ctx.quadraticCurveTo(gbx + gba * 4, gty - gtH * 0.6, gbx + Math.sin(gba) * gtH * 0.45, gty - gtH);
-        ctx.lineWidth = 1.2;
-        ctx.strokeStyle = Forest.rgb(gtC, 0.55 + gRng() * 0.2);
-        ctx.stroke();
+        sctx.beginPath();
+        sctx.moveTo(gbx, gty);
+        sctx.quadraticCurveTo(gbx + gba * 4, gty - gtH * 0.6, gbx + Math.sin(gba) * gtH * 0.45, gty - gtH);
+        sctx.lineWidth = 1.2;
+        sctx.strokeStyle = Forest.rgb(gtC, 0.55 + gRng() * 0.2);
+        sctx.stroke();
       }
     }
 
@@ -1872,7 +1878,7 @@ try {
       frame._hillCache = hc;
       frame._hillW = W; frame._hillH = H;
     }
-    ctx.drawImage(frame._hillCache, 0, 0);
+    sctx.drawImage(frame._hillCache, 0, 0);
 
     // FAR undergrowth + trees (cached to offscreen canvas, refreshed every 2s)
     if (!frame._farCache || frame._farW !== W || frame._farH !== H || !frame._farTime) {
@@ -1895,11 +1901,11 @@ try {
       }
       frame._farCache = fc; frame._farW = W; frame._farH = H; frame._farTime = time;
     }
-    ctx.drawImage(frame._farCache, 0, 0);
+    sctx.drawImage(frame._farCache, 0, 0);
 
     // Atmospheric haze (cached on resize)
     if (!frame._hazeG || frame._hazeW !== W || frame._hazeH !== H) {
-      frame._hazeG = ctx.createLinearGradient(0, H * 0.15, 0, H * 0.7);
+      frame._hazeG = sctx.createLinearGradient(0, H * 0.15, 0, H * 0.7);
       frame._hazeG.addColorStop(0, 'rgba(90,110,60,0.07)');
       frame._hazeG.addColorStop(0.3, 'rgba(140,140,60,0.1)');
       frame._hazeG.addColorStop(0.5, 'rgba(170,160,65,0.08)');
@@ -1907,8 +1913,8 @@ try {
       frame._hazeG.addColorStop(1, 'rgba(90,100,50,0.03)');
       frame._hazeW = W; frame._hazeH = H;
     }
-    ctx.fillStyle = frame._hazeG;
-    ctx.fillRect(0, 0, W, H);
+    sctx.fillStyle = frame._hazeG;
+    sctx.fillRect(0, 0, W, H);
 
     // Golden glow spots between far and mid layers
     for (var gli = 0; gli < 5; gli++) {
@@ -1916,14 +1922,14 @@ try {
       var gly = H * (0.4 + Math.sin(time * 0.1 + gli * 1.5) * 0.03);
       var glr = H * 0.12;
       var glAlpha = 0.06 + Math.sin(time * 0.2 + gli * 2) * 0.02;
-      ctx.beginPath();
-      ctx.arc(glx, gly, glr * 0.5, 0, 6.28);
-      ctx.fillStyle = 'rgba(220,200,80,' + (glAlpha * 0.7).toFixed(3) + ')';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(glx, gly, glr, 0, 6.28);
-      ctx.fillStyle = 'rgba(200,185,70,' + (glAlpha * 0.2).toFixed(3) + ')';
-      ctx.fill();
+      sctx.beginPath();
+      sctx.arc(glx, gly, glr * 0.5, 0, 6.28);
+      sctx.fillStyle = 'rgba(220,200,80,' + (glAlpha * 0.7).toFixed(3) + ')';
+      sctx.fill();
+      sctx.beginPath();
+      sctx.arc(glx, gly, glr, 0, 6.28);
+      sctx.fillStyle = 'rgba(200,185,70,' + (glAlpha * 0.2).toFixed(3) + ')';
+      sctx.fill();
     }
 
     // MID undergrowth + trees (cached, refreshed every 2s)
@@ -1947,11 +1953,11 @@ try {
       }
       frame._midCache = mc; frame._midW = W; frame._midH = H; frame._midTime = time;
     }
-    ctx.drawImage(frame._midCache, 0, 0);
+    sctx.drawImage(frame._midCache, 0, 0);
 
     // Golden atmosphere between mid and fg (cached on resize)
     if (!frame._midGlow || frame._mgW !== W || frame._mgH !== H) {
-      frame._midGlow = ctx.createLinearGradient(0, H * 0.35, 0, H * 0.65);
+      frame._midGlow = sctx.createLinearGradient(0, H * 0.35, 0, H * 0.65);
       frame._midGlow.addColorStop(0, 'rgba(180,170,60,0)');
       frame._midGlow.addColorStop(0.3, 'rgba(200,185,65,0.04)');
       frame._midGlow.addColorStop(0.5, 'rgba(210,195,70,0.06)');
@@ -1959,11 +1965,11 @@ try {
       frame._midGlow.addColorStop(1, 'rgba(180,170,60,0)');
       frame._mgW = W; frame._mgH = H;
     }
-    ctx.save();
-    ctx.globalCompositeOperation = 'screen';
-    ctx.fillStyle = frame._midGlow;
-    ctx.fillRect(0, H * 0.35, W, H * 0.3);
-    ctx.restore();
+    sctx.save();
+    sctx.globalCompositeOperation = 'screen';
+    sctx.fillStyle = frame._midGlow;
+    sctx.fillRect(0, H * 0.35, W, H * 0.3);
+    sctx.restore();
 
     // Mist puffs
     for (var mi = 0; mi < Forest.mistPuffs.length; mi++) {
@@ -1972,23 +1978,23 @@ try {
       var my = mp.ny * H + Math.sin(time * 0.2 + mp.phase) * 10;
       var mr = mp.r * H * 1.2;
       var mAlpha = mp.alpha * (0.75 + Math.sin(time * 0.12 + mp.phase) * 0.25);
-      ctx.beginPath();
-      ctx.arc(mx, my, mr * 0.4, 0, 6.28);
-      ctx.fillStyle = 'rgba(185,180,85,' + (mAlpha * 0.7).toFixed(3) + ')';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(mx, my, mr * 0.7, 0, 6.28);
-      ctx.fillStyle = 'rgba(170,165,75,' + (mAlpha * 0.25).toFixed(3) + ')';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(mx, my, mr, 0, 6.28);
-      ctx.fillStyle = 'rgba(155,150,65,' + (mAlpha * 0.08).toFixed(3) + ')';
-      ctx.fill();
+      sctx.beginPath();
+      sctx.arc(mx, my, mr * 0.4, 0, 6.28);
+      sctx.fillStyle = 'rgba(185,180,85,' + (mAlpha * 0.7).toFixed(3) + ')';
+      sctx.fill();
+      sctx.beginPath();
+      sctx.arc(mx, my, mr * 0.7, 0, 6.28);
+      sctx.fillStyle = 'rgba(170,165,75,' + (mAlpha * 0.25).toFixed(3) + ')';
+      sctx.fill();
+      sctx.beginPath();
+      sctx.arc(mx, my, mr, 0, 6.28);
+      sctx.fillStyle = 'rgba(155,150,65,' + (mAlpha * 0.08).toFixed(3) + ')';
+      sctx.fill();
     }
 
     // Ground fog band (cached on resize)
     if (!frame._fogG || frame._fogW !== W || frame._fogH !== H) {
-      frame._fogG = ctx.createLinearGradient(0, gY - 50, 0, gY + 70);
+      frame._fogG = sctx.createLinearGradient(0, gY - 50, 0, gY + 70);
       frame._fogG.addColorStop(0, 'rgba(175,170,72,0)');
       frame._fogG.addColorStop(0.2, 'rgba(180,175,75,0.06)');
       frame._fogG.addColorStop(0.4, 'rgba(185,180,78,0.14)');
@@ -1997,18 +2003,18 @@ try {
       frame._fogG.addColorStop(1, 'rgba(150,148,60,0)');
       frame._fogW = W; frame._fogH = H;
     }
-    ctx.fillStyle = frame._fogG;
-    ctx.fillRect(0, gY - 50, W, 120);
+    sctx.fillStyle = frame._fogG;
+    sctx.fillRect(0, gY - 50, W, 120);
 
     // Moving fog wisps
     for (var fi = 0; fi < 6; fi++) {
       var fx = ((fi * 0.18 + time * 0.008 * (1 + fi * 0.3)) % 1.4 - 0.2) * W;
       var fy = gY + H * 0.01;
       var fr = H * (0.04 + fi * 0.01);
-      ctx.beginPath();
-      ctx.arc(fx, fy, fr, 0, 6.28);
-      ctx.fillStyle = 'rgba(185,180,80,0.04)';
-      ctx.fill();
+      sctx.beginPath();
+      sctx.arc(fx, fy, fr, 0, 6.28);
+      sctx.fillStyle = 'rgba(185,180,80,0.04)';
+      sctx.fill();
     }
 
     // FG layer: undergrowth + depth-sorted scene + trees (cached once)
@@ -2192,7 +2198,7 @@ try {
 
       frame._fgCache = fgc; frame._fgCW = W; frame._fgCH = H;
     }
-    ctx.drawImage(frame._fgCache, 0, 0);
+    sctx.drawImage(frame._fgCache, 0, 0);
 
     // Dense canopy fill + hanging drips (cached, refreshed every 2s)
     if (!frame._canopyCache || frame._canopyW !== W || frame._canopyH !== H || !frame._canopyTime) {
@@ -2262,52 +2268,57 @@ try {
       }
       frame._canopyCache = cc; frame._canopyW = W; frame._canopyH = H; frame._canopyTime = time;
     }
-    ctx.drawImage(frame._canopyCache, 0, 0);
+    sctx.drawImage(frame._canopyCache, 0, 0);
 
     // Volumetric light rays
-    ctx.save();
-    ctx.globalCompositeOperation = 'screen';
+    sctx.save();
+    sctx.globalCompositeOperation = 'screen';
     for (var ri = 0; ri < 8; ri++) {
       var rx = W * (0.05 + ri * 0.13);
       var rPulse = Math.sin(time * 0.15 + ri * 2.1);
       var ra = 0.02 + rPulse * 0.015;
       if (ra < 0.005) continue;
       var rayW = W * (0.025 + Math.abs(rPulse) * 0.015);
-      ctx.beginPath();
-      ctx.moveTo(rx - rayW * 0.3, 0);
-      ctx.lineTo(rx + rayW * 0.3, H * 0.25);
-      ctx.lineTo(rx - rayW * 0.5, H * 0.25);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(255,240,130,' + ra.toFixed(3) + ')';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(rx - rayW * 0.5, H * 0.25);
-      ctx.lineTo(rx + rayW * 1.5, H * 0.7);
-      ctx.lineTo(rx - rayW * 0.8, H * 0.7);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(255,230,100,' + (ra * 0.3).toFixed(3) + ')';
-      ctx.fill();
+      sctx.beginPath();
+      sctx.moveTo(rx - rayW * 0.3, 0);
+      sctx.lineTo(rx + rayW * 0.3, H * 0.25);
+      sctx.lineTo(rx - rayW * 0.5, H * 0.25);
+      sctx.closePath();
+      sctx.fillStyle = 'rgba(255,240,130,' + ra.toFixed(3) + ')';
+      sctx.fill();
+      sctx.beginPath();
+      sctx.moveTo(rx - rayW * 0.5, H * 0.25);
+      sctx.lineTo(rx + rayW * 1.5, H * 0.7);
+      sctx.lineTo(rx - rayW * 0.8, H * 0.7);
+      sctx.closePath();
+      sctx.fillStyle = 'rgba(255,230,100,' + (ra * 0.3).toFixed(3) + ')';
+      sctx.fill();
     }
-    ctx.restore();
+    sctx.restore();
 
     // Warm color grading
-    ctx.save();
-    ctx.globalCompositeOperation = 'overlay';
-    ctx.fillStyle = 'rgba(180,160,60,0.03)';
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
+    sctx.save();
+    sctx.globalCompositeOperation = 'overlay';
+    sctx.fillStyle = 'rgba(180,160,60,0.03)';
+    sctx.fillRect(0, 0, W, H);
+    sctx.restore();
 
     // Vignette (cached on resize)
     if (!frame._vig || frame._vigW !== W || frame._vigH !== H) {
-      frame._vig = ctx.createRadialGradient(W/2, H*0.38, H*0.12, W/2, H*0.38, H*0.95);
+      frame._vig = sctx.createRadialGradient(W/2, H*0.38, H*0.12, W/2, H*0.38, H*0.95);
       frame._vig.addColorStop(0, 'rgba(0,0,0,0)');
       frame._vig.addColorStop(0.6, 'rgba(8,18,12,0.08)');
       frame._vig.addColorStop(0.8, 'rgba(10,20,15,0.18)');
       frame._vig.addColorStop(1, 'rgba(8,16,10,0.35)');
       frame._vigW = W; frame._vigH = H;
     }
-    ctx.fillStyle = frame._vig;
-    ctx.fillRect(0, 0, W, H);
+    sctx.fillStyle = frame._vig;
+    sctx.fillRect(0, 0, W, H);
+
+      frame._sceneCache = sc; frame._sceneW = W; frame._sceneH = H;
+    }
+    // Draw cached scene (one drawImage instead of ~300 draw calls)
+    ctx.drawImage(frame._sceneCache, 0, 0);
 
     // Particles -- spawn rates scaled for mobile
     if (Math.random() < 0.05) Forest.spawnP('firefly', W, H);
