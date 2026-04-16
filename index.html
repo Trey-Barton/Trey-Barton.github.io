@@ -1568,6 +1568,8 @@ try {
 
   function frame(ts) {
     if (!window._isPageVisible) { lastTs = null; requestAnimationFrame(frame); return; }
+    // Skip canvas redraw when scrolled past viewport — fixed canvas is invisible
+    if (window.scrollY > window.innerHeight * 1.5) { lastTs = null; setTimeout(function(){ requestAnimationFrame(frame); }, 200); return; }
     if (lastTs === null) lastTs = ts;
     var dt = Math.min((ts - lastTs) / 1000, 0.05);
     lastTs = ts;
@@ -2785,14 +2787,20 @@ document.documentElement.classList.add('js-ready');
   updateAllWires();
 
   window.addEventListener('resize', updateAllWires);
-  // Only reposition wires on scroll for desktop — mobile skips for performance
+  // Only reposition wires on scroll for desktop, AND only when projects section visible
   if (window.innerWidth > 768) {
+    var projectsVisible = false;
+    var projectsObs = new IntersectionObserver(function(entries) {
+      projectsVisible = entries[0].isIntersecting;
+      if (projectsVisible) updateAllWires(); // sync on re-enter
+    }, { rootMargin: '200px' });
+    projectsObs.observe(document.querySelector('#projects'));
+
     var wireTicking = false;
     window.addEventListener('scroll', function() {
-      if (!wireTicking) {
-        wireTicking = true;
-        requestAnimationFrame(function() { updateAllWires(); wireTicking = false; });
-      }
+      if (!projectsVisible || wireTicking) return;
+      wireTicking = true;
+      requestAnimationFrame(function() { updateAllWires(); wireTicking = false; });
     }, { passive: true });
   }
 })();
