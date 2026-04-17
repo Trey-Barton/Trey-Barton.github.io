@@ -48,34 +48,63 @@ window.Forest = window.Forest || {};
       });
     }
 
-    // Branches
+    // Branches — recursive fractal structure. Each entry stores a parent
+    // index (-1 = attached to trunk, else another branch's index), a signed
+    // angle, and a depth level. Draw-trunk.js walks the array parent-first
+    // and derives endpoint positions from the parent chain.
     t.branches = [];
-    var nb = (layer === 'fg') ? 3 + Math.floor(r() * 3) : (layer === 'mid') ? 2 + Math.floor(r() * 2) : 1 + Math.floor(r() * 2);
-    for (var i = 0; i < nb; i++) {
-      // Spread branches evenly up the trunk, with some jitter
-      var evenY = 0.15 + (i / Math.max(nb - 1, 1)) * 0.45;
-      var jitter = (r() - 0.5) * 0.12;
-      // Alternate direction for natural look
-      var dir = (i % 2 === 0) ? 1 : -1;
-      if (r() < 0.2) dir = -dir; // occasional flip
-      // Wider angle range, more horizontal spread
-      var angle = 0.6 + r() * 1.0;
+    var maxDepth = (layer === 'fg') ? 3 : (layer === 'mid') ? 2 : 1;
+    t.maxDepth = maxDepth;
+    function growBranch(parent, yFrac, angle, length, width, depth) {
+      if (depth > maxDepth || length < 0.012) return;
+      var myIdx = t.branches.length;
       t.branches.push({
-        yFrac: Math.max(0.08, Math.min(0.65, evenY + jitter)),
-        dir: dir,
-        angle: angle,
-        len: (layer === 'fg' ? 0.09 : 0.06) + r() * 0.07,
-        w: t.trunkW * (0.18 + r() * 0.35),
+        parent: parent,
+        yFrac: yFrac,         // only meaningful for depth === 0 (trunk attach)
+        angle: angle,         // signed — positive = right, negative = left
+        len: length,
+        w: width,
+        depth: depth,
         stripeCI: Math.floor(r() * BARK.length),
-        // Always 1-3 sub-branches so every main branch has a visible fork.
-        subCount: 1 + Math.floor(r() * 3),
-        subAngles: [0.3 + r() * 0.8, 0.3 + r() * 0.8, 0.3 + r() * 0.8],
-        subLens: [0.35 + r() * 0.45, 0.35 + r() * 0.45, 0.35 + r() * 0.45],
-        subDirs: [r() < 0.5 ? -1 : 1, r() < 0.5 ? -1 : 1, r() < 0.5 ? -1 : 1],
-        // Per-branch sway phase so adjacent branches don't swing in lockstep.
+        foliageCI: Math.floor(r() * CANOPY.length),
+        foliageAccent: r() < 0.15,
+        accentCI: Math.floor(r() * CANOPY_ACCENT.length),
         swayPhase: r() * 6.28,
-        swaySpeed: 0.35 + r() * 0.35,
+        swaySpeed: 0.3 + r() * 0.4,
       });
+      // Children — right-leaning branches get +1 fork so the right side
+      // reads bushier and the left stays clean.
+      var rightBias = angle > 0 ? 1 : 0;
+      var childCount;
+      if (depth === 0)       childCount = (layer === 'fg') ? 2 + Math.floor(r() * 2) + rightBias : 1 + Math.floor(r() * 2) + rightBias;
+      else if (depth < maxDepth) childCount = 1 + Math.floor(r() * 2) + rightBias;
+      else                   childCount = 0;
+      for (var c = 0; c < childCount; c++) {
+        var forkOffset;
+        if (childCount === 1) {
+          forkOffset = (r() - 0.5) * 0.7;
+        } else {
+          var spread = 0.5 + r() * 0.5;
+          forkOffset = (c - (childCount - 1) / 2) * (spread * 2 / Math.max(1, childCount - 1));
+        }
+        forkOffset += (r() - 0.5) * 0.25;
+        var childAngle = angle + forkOffset;
+        var cLen = length * (0.55 + r() * 0.25);
+        var cW = width * (0.55 + r() * 0.2);
+        growBranch(myIdx, yFrac, childAngle, cLen, cW, depth + 1);
+      }
+    }
+    // Seed primary branches off the trunk.
+    var nb = (layer === 'fg') ? 5 + Math.floor(r() * 3) : (layer === 'mid') ? 3 + Math.floor(r() * 2) : 2 + Math.floor(r() * 2);
+    for (var i = 0; i < nb; i++) {
+      var evenY = 0.15 + (i / Math.max(nb - 1, 1)) * 0.55;
+      var yF = Math.max(0.12, Math.min(0.72, evenY + (r() - 0.5) * 0.1));
+      var dir = (i % 2 === 0) ? 1 : -1;
+      if (r() < 0.25) dir = -dir;
+      var ang = dir * (0.55 + r() * 0.9);
+      var len = ((layer === 'fg') ? 0.1 : (layer === 'mid') ? 0.075 : 0.05) + r() * 0.06;
+      var w = t.trunkW * (0.2 + r() * 0.3);
+      growBranch(-1, yF, ang, len, w, 0);
     }
 
     // Canopy blobs
@@ -104,13 +133,18 @@ window.Forest = window.Forest || {};
       });
     }
 
-    // Hanging vines from branches
+    // Hanging vines — attach only to primary (depth 0) branches so they don't
+    // dangle from deep twigs. Collect those indices first.
+    var primaryIdxs = [];
+    for (var bIdx = 0; bIdx < t.branches.length; bIdx++) {
+      if (t.branches[bIdx].parent < 0) primaryIdxs.push(bIdx);
+    }
     t.vines = [];
     var nv = (layer === 'fg') ? 2 + Math.floor(r() * 4) : (layer === 'mid') ? 1 + Math.floor(r() * 3) : Math.floor(r() * 2);
     for (var i = 0; i < nv; i++) {
       t.vines.push({
-        branchIdx: Math.floor(r() * nb),
-        tFrac: 0.3 + r() * 0.6, // position along branch
+        branchIdx: primaryIdxs[Math.floor(r() * primaryIdxs.length)],
+        tFrac: 0.3 + r() * 0.6,
         len: 0.04 + r() * 0.08,
         swayPhase: r() * 6.28,
         swayAmp: 1.5 + r() * 3,
@@ -119,14 +153,15 @@ window.Forest = window.Forest || {};
       });
     }
 
-    // Root flares at base
+    // Root flares — prominent flat buttress roots spreading horizontally
+    // from the trunk base (was small, steep, and sparse).
     t.roots = [];
-    var nr = (layer === 'fg') ? 3 + Math.floor(r() * 4) : (layer === 'mid') ? 2 + Math.floor(r() * 2) : Math.floor(r() * 2);
+    var nr = (layer === 'fg') ? 5 + Math.floor(r() * 5) : (layer === 'mid') ? 3 + Math.floor(r() * 3) : 1 + Math.floor(r() * 2);
     for (var i = 0; i < nr; i++) {
       t.roots.push({
         dir: r() < 0.5 ? -1 : 1,
-        spread: 0.3 + r() * 0.7,
-        height: 0.02 + r() * 0.03,
+        spread: ((layer === 'fg') ? 0.8 : (layer === 'mid') ? 0.6 : 0.45) + r() * 0.9,
+        height: ((layer === 'fg') ? 0.04 : (layer === 'mid') ? 0.03 : 0.018) + r() * 0.05,
         ci: Math.floor(r() * BARK.length),
       });
     }

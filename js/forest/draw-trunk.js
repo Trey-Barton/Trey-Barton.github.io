@@ -25,18 +25,33 @@ window.Forest = window.Forest || {};
       return { cx: x + lean + curve, hw: w * 0.5 };
     }
 
-    // Root flares
+    // Root flares — flat buttress roots laying along the ground.
     for (var ri = 0; ri < tree.roots.length; ri++) {
       var root = tree.roots[ri];
-      var rw = wBase * root.spread;
-      var rh = root.height * H;
+      var rw = wBase * root.spread * 1.6;
+      var rh = root.height * H * 0.5;
+      var rootColor = mix(BARK[root.ci], [40, 24, 32], 0.25);
+      // Shadow under the root — thin, long, flat.
       ctx.beginPath();
-      ctx.moveTo(x, baseY);
-      ctx.quadraticCurveTo(x + root.dir * rw * 0.5, baseY - rh * 0.3, x + root.dir * rw, baseY + rh * 0.5);
-      ctx.lineTo(x + root.dir * rw * 0.8, baseY + rh);
-      ctx.quadraticCurveTo(x + root.dir * rw * 0.3, baseY + rh * 0.2, x, baseY);
-      ctx.fillStyle = rgb(mix(BARK[root.ci], [48, 30, 42], 0.5), 0.8);
+      ctx.ellipse(x + root.dir * rw * 0.6, baseY + rh * 0.5, rw * 0.75, rh * 0.3, 0, 0, 6.28);
+      ctx.fillStyle = 'rgba(15,10,18,0.4)';
       ctx.fill();
+      // Main root — thick at trunk, tapering outward nearly horizontal.
+      ctx.beginPath();
+      ctx.moveTo(x, baseY - rh * 0.3);
+      ctx.quadraticCurveTo(x + root.dir * rw * 0.45, baseY - rh * 0.15, x + root.dir * rw, baseY + rh * 0.05);
+      ctx.lineTo(x + root.dir * rw * 0.98, baseY + rh * 0.35);
+      ctx.quadraticCurveTo(x + root.dir * rw * 0.4, baseY + rh * 0.3, x, baseY + rh * 0.35);
+      ctx.closePath();
+      ctx.fillStyle = rgb(rootColor, 0.95);
+      ctx.fill();
+      // Top-edge highlight — sunlight catch.
+      ctx.beginPath();
+      ctx.moveTo(x, baseY - rh * 0.3);
+      ctx.quadraticCurveTo(x + root.dir * rw * 0.45, baseY - rh * 0.15, x + root.dir * rw, baseY + rh * 0.05);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = rgb(mix(rootColor, [220, 190, 110], 0.35), 0.5);
+      ctx.stroke();
     }
 
     // Base trunk fill
@@ -118,114 +133,158 @@ window.Forest = window.Forest || {};
 
     ctx.restore();
 
-    // Branches with sub-branches. The wind sway amplitude grows with layer:
-    // fg trees sway most (closest to viewer), far trees least. Sub-branches
-    // inherit the parent's swayed angle, so the whole bough moves together.
+    // Hierarchical branches — parent-first layout so each child can anchor to
+    // its parent's swayed tip. Whole boughs move together with the wind.
     var swayAmpBase = (tree.layer === 'fg') ? 0.11 : (tree.layer === 'mid') ? 0.08 : 0.05;
+    var branchEnds = [];
     for (var bi = 0; bi < tree.branches.length; bi++) {
       var b = tree.branches[bi];
-      var by = baseY - trunkH * b.yFrac;
-      var bTx = trunkX(b.yFrac);
-      var bx = bTx.cx;
+      // Per-branch sway phase + speed + secondary harmonic — natural, not robotic.
+      var bPh = b.swayPhase, bSp = b.swaySpeed;
+      var depthGain = 1 + b.depth * 0.25; // finer tips sway a bit more
+      var sway = (Math.sin(time * bSp + bPh)
+               +  Math.sin(time * bSp * 2.3 + bPh * 1.7) * 0.25) * swayAmpBase * depthGain;
+      var ang = b.angle + sway;
       var bLen = b.len * H;
-      var bAngle = b.angle * b.dir;
-      // Each branch has its own phase + speed so adjacent branches don't
-      // swing in unison. Small secondary harmonic keeps it from being too
-      // sine-y / robotic.
-      var bPh = b.swayPhase || (bi * 1.5);
-      var bSp = b.swaySpeed || 0.4;
-      var sway = Math.sin(time * bSp + bPh) * swayAmpBase
-               + Math.sin(time * bSp * 2.3 + bPh * 1.7) * swayAmpBase * 0.25;
-      bAngle += sway;
-      var ex = bx + Math.sin(bAngle) * bLen;
-      var ey = by - Math.cos(Math.abs(bAngle)) * bLen * 0.4;
-      var bw = b.w * W;
+      var bw   = b.w * W;
+      var sx, sy;
+      if (b.parent < 0) {
+        var attachY = baseY - trunkH * b.yFrac;
+        var tx = trunkX(b.yFrac);
+        sx = tx.cx; sy = attachY;
+      } else {
+        var p = branchEnds[b.parent];
+        sx = p.ex; sy = p.ey;
+      }
+      // Branch vector: sideways + slight upward rise (flattened so trees
+      // don't all point straight up).
+      var dx = Math.sin(ang);
+      var dy = -Math.cos(ang) * 0.55;
+      var ex = sx + dx * bLen;
+      var ey = sy + dy * bLen;
+      branchEnds.push({ sx: sx, sy: sy, ex: ex, ey: ey, ang: ang, bw: bw });
+    }
 
-      // Skip branches whose tips go off canvas edges
-      if (ex < -bw * 2 || ex > W + bw * 2) continue;
+    // Mark terminal branches — they carry the foliage clusters.
+    var hasChild = new Array(tree.branches.length);
+    for (var bi = 0; bi < tree.branches.length; bi++) {
+      if (tree.branches[bi].parent >= 0) hasChild[tree.branches[bi].parent] = true;
+    }
 
+    // Draw branches parent-first so children overlap joints cleanly.
+    for (var bi = 0; bi < tree.branches.length; bi++) {
+      var b = tree.branches[bi];
+      var be = branchEnds[bi];
+      if ((be.sx < -be.bw * 2 && be.ex < -be.bw * 2) ||
+          (be.sx > W + be.bw * 2 && be.ex > W + be.bw * 2)) continue;
+      var startW = be.bw;
+      var tipW = be.bw * Math.max(0.28, 1 - b.depth * 0.22);
+      var midX = (be.sx + be.ex) / 2;
+      var midY = (be.sy + be.ey) / 2 - be.bw * 0.15;
+      // Branch fill (tapered from startW to tipW).
       ctx.beginPath();
-      ctx.moveTo(bx, by - bw * 0.4);
-      ctx.quadraticCurveTo((bx + ex) / 2, Math.min(by, ey) - bw * 0.6, ex, ey);
-      ctx.lineTo(ex + b.dir * bw * 0.12, ey + bw * 0.2);
-      ctx.quadraticCurveTo((bx + ex) / 2, Math.min(by, ey) + bw * 0.3, bx, by + bw * 0.4);
+      ctx.moveTo(be.sx, be.sy - startW * 0.45);
+      ctx.quadraticCurveTo(midX, midY - startW * 0.35, be.ex, be.ey - tipW * 0.35);
+      ctx.lineTo(be.ex + tipW * 0.2, be.ey + tipW * 0.35);
+      ctx.quadraticCurveTo(midX, midY + startW * 0.2, be.sx, be.sy + startW * 0.45);
       ctx.closePath();
       ctx.fillStyle = 'rgb(42,26,38)';
       ctx.fill();
-
+      // Bark-color stripe on top.
       ctx.beginPath();
-      ctx.moveTo(bx, by);
-      ctx.quadraticCurveTo((bx + ex) / 2, Math.min(by, ey) - bw * 0.15, ex, ey);
-      ctx.lineWidth = bw * 0.45;
+      ctx.moveTo(be.sx, be.sy);
+      ctx.quadraticCurveTo(midX, midY - startW * 0.1, be.ex, be.ey);
+      ctx.lineWidth = Math.max(0.4, startW * (0.4 - b.depth * 0.07));
       ctx.strokeStyle = rgb(BARK[b.stripeCI], 0.5);
       ctx.stroke();
+    }
 
-      // Sub-branches
-      for (var si = 0; si < b.subCount; si++) {
-        var sf = b.subLens[si];
-        var sa = b.subAngles[si] * b.subDirs[si] + bAngle;
-        var sx = ex + Math.sin(sa) * bLen * sf * 0.5;
-        var sy = ey - Math.cos(Math.abs(sa)) * bLen * sf * 0.3;
-        ctx.beginPath();
-        ctx.moveTo(ex, ey);
-        ctx.quadraticCurveTo((ex + sx) / 2, Math.min(ey, sy) - 2, sx, sy);
-        ctx.lineWidth = bw * 0.15;
-        ctx.strokeStyle = 'rgb(42,26,38)';
-        ctx.stroke();
+    // Depth-aware foliage — draws after all branch wood so leaves cover tips.
+    // Further layers dim toward atmospheric haze (aerial perspective).
+    var _lyr = tree.layer;
+    var layerDim    = (_lyr === 'far') ? 0.55 : (_lyr === 'mid') ? 0.82 : 1.0;
+    var layerFolScl = (_lyr === 'far') ? 0.5  : (_lyr === 'mid') ? 0.85 : 1.0;
+    for (var bi = 0; bi < tree.branches.length; bi++) {
+      var b = tree.branches[bi];
+      var be = branchEnds[bi];
+      if (be.ex < -60 || be.ex > W + 60 || be.ey < -60 || be.ey > H + 30) continue;
+      var isTerminal = !hasChild[bi];
+      var depthT = b.depth / Math.max(1, tree.maxDepth);
+      var baseCol = b.foliageAccent ? Forest.CANOPY_ACCENT[b.accentCI] : CANOPY[b.foliageCI];
+      // Inner leaves shaded, outer sunlit.
+      var shade = 0.65 + depthT * 0.35;
+      var col = mix(baseCol, [35, 55, 30], 1 - shade);
+      col = mix(col, [95, 120, 75], 1 - layerDim);
 
-        // Small leaf cluster at sub-branch tip
-        var lclR = bw * 0.6;
-        var lSway = Math.sin(time * 0.5 + bi * 2 + si) * 1;
-        var lci = (bi * 3 + si) % CANOPY.length;
+      if (isTerminal) {
+        var clR = be.bw * (1.1 + depthT * 1.2) * layerFolScl;
+        var cSway = Math.sin(time * 0.35 + bi * 1.4) * (1.2 + b.depth * 0.5);
+        var squash = 0.55 + Math.abs(Math.sin(bi * 3.1)) * 0.3;
+        ctx.save();
+        ctx.translate(be.ex + cSway, be.ey);
+        ctx.rotate(Math.sin(bi * 1.7) * 0.45);
+        // Under-shadow.
         ctx.beginPath();
-        ctx.ellipse(sx + lSway, sy, lclR, lclR * 0.6, 0, 0, 6.28);
-        ctx.fillStyle = rgb(CANOPY[lci], 0.7);
+        ctx.ellipse(clR * 0.15, clR * 0.22, clR, clR * squash, 0, 0, 6.28);
+        ctx.fillStyle = rgb(mix(col, [15, 25, 15], 0.55), 0.35 * layerDim);
         ctx.fill();
-      }
+        // Main blob.
+        ctx.beginPath();
+        ctx.ellipse(0, 0, clR, clR * squash, 0, 0, 6.28);
+        ctx.fillStyle = rgb(col, 0.88 * layerDim);
+        ctx.fill();
+        // Sunlit highlight.
+        ctx.beginPath();
+        ctx.ellipse(-clR * 0.22, -clR * 0.2, clR * 0.55, clR * squash * 0.55, 0, 0, 6.28);
+        ctx.fillStyle = rgb(mix(col, [185, 225, 135], 0.28), 0.45 * layerDim);
+        ctx.fill();
+        ctx.restore();
 
-      // Small foliage tuft at main branch tip
-      var tipR = bw * 1.0;
-      var tipSway = Math.sin(time * 0.4 + bi * 1.7) * 1.2;
-      var tipCI = (bi * 7) % CANOPY.length;
-      ctx.beginPath();
-      ctx.ellipse(ex + tipSway, ey, tipR, tipR * 0.65, 0, 0, 6.28);
-      ctx.fillStyle = rgb(CANOPY[tipCI], 0.75);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(ex + tipSway - tipR * 0.15, ey - tipR * 0.1, tipR * 0.4, tipR * 0.3, 0, 0, 6.28);
-      ctx.fillStyle = rgb(mix(CANOPY[tipCI], [150, 200, 110], 0.2), 0.3);
-      ctx.fill();
-
-      // A couple small leaves along the branch
-      for (var li = 0; li < 2; li++) {
-        var lf = 0.35 + li * 0.3;
-        var lx = bx + (ex - bx) * lf + Math.sin(time * 0.5 + bi + li) * 0.8;
-        var ly = by + (ey - by) * lf - bw * 0.3;
-        var leafSz = bw * 0.35;
-        var leafCI = (bi + li * 3) % CANOPY.length;
+        // Stray leaves poking out of deeper fg/mid terminal clusters.
+        if (_lyr !== 'far' && b.depth >= 1) {
+          var leafN = 2 + b.depth;
+          for (var li = 0; li < leafN; li++) {
+            var lAng = (bi * 0.73 + li * 1.31) % 6.28;
+            var lDist = clR * (0.75 + (li / leafN) * 0.7);
+            var lx = be.ex + Math.cos(lAng) * lDist * 0.85 + cSway * 0.7;
+            var ly = be.ey + Math.sin(lAng) * lDist * 0.55;
+            var lSz = clR * (0.22 + (li % 3) * 0.05);
+            ctx.save();
+            ctx.translate(lx, ly);
+            ctx.rotate(lAng + Math.PI / 2);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, lSz, lSz * 0.4, 0, 0, 6.28);
+            ctx.fillStyle = rgb(mix(col, [205, 235, 145], 0.15), 0.55 * layerDim);
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+      } else if (_lyr === 'fg' && b.depth >= tree.maxDepth - 1) {
+        // Sparse single leaf on interior near-terminal branches for texture.
+        var lf = 0.55 + Math.sin(bi * 1.5) * 0.2;
+        var lx = be.sx + (be.ex - be.sx) * lf;
+        var ly = be.sy + (be.ey - be.sy) * lf - be.bw * 0.25;
+        var lSz = be.bw * 0.6;
         ctx.save();
         ctx.translate(lx, ly);
-        ctx.rotate(-0.3 + li * 0.5 + Math.sin(time * 0.6 + li) * 0.08);
+        ctx.rotate(be.ang + Math.PI / 3);
         ctx.beginPath();
-        ctx.ellipse(0, 0, leafSz, leafSz * 0.4, 0, 0, 6.28);
-        ctx.fillStyle = rgb(CANOPY[leafCI], 0.6);
+        ctx.ellipse(0, 0, lSz, lSz * 0.45, 0, 0, 6.28);
+        ctx.fillStyle = rgb(col, 0.5 * layerDim);
         ctx.fill();
         ctx.restore();
       }
     }
 
-    // Vines
+    // Vines — interpolate along the PRIMARY branch using its live, swayed
+    // endpoints from branchEnds, so vines ride the wind with their branch.
     for (var vi = 0; vi < tree.vines.length; vi++) {
       var v = tree.vines[vi];
-      if (v.branchIdx >= tree.branches.length) continue;
-      var vb = tree.branches[v.branchIdx];
-      var vby = baseY - trunkH * vb.yFrac;
-      var vbTx = trunkX(vb.yFrac);
-      var vbx = vbTx.cx;
-      var vbAngle = vb.angle * vb.dir;
-      var vbLen = vb.len * H;
-      var vsx = vbx + Math.sin(vbAngle) * vbLen * v.tFrac;
-      var vsy = vby - Math.cos(Math.abs(vbAngle)) * vbLen * 0.4 * v.tFrac;
+      if (v.branchIdx == null || v.branchIdx >= tree.branches.length) continue;
+      var vbEnds = branchEnds[v.branchIdx];
+      if (!vbEnds) continue;
+      var vsx = vbEnds.sx + (vbEnds.ex - vbEnds.sx) * v.tFrac;
+      var vsy = vbEnds.sy + (vbEnds.ey - vbEnds.sy) * v.tFrac;
       var vineLen = v.len * H;
 
       ctx.beginPath();
