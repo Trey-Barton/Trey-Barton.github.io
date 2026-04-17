@@ -67,10 +67,14 @@ window.Forest = window.Forest || {};
         len: (layer === 'fg' ? 0.09 : 0.06) + r() * 0.07,
         w: t.trunkW * (0.18 + r() * 0.35),
         stripeCI: Math.floor(r() * BARK.length),
-        subCount: Math.floor(r() * 3),
-        subAngles: [r() * 0.8, r() * 0.8, r() * 0.8],
-        subLens: [0.3 + r() * 0.4, 0.3 + r() * 0.4, 0.3 + r() * 0.4],
+        // Always 1-3 sub-branches so every main branch has a visible fork.
+        subCount: 1 + Math.floor(r() * 3),
+        subAngles: [0.3 + r() * 0.8, 0.3 + r() * 0.8, 0.3 + r() * 0.8],
+        subLens: [0.35 + r() * 0.45, 0.35 + r() * 0.45, 0.35 + r() * 0.45],
         subDirs: [r() < 0.5 ? -1 : 1, r() < 0.5 ? -1 : 1, r() < 0.5 ? -1 : 1],
+        // Per-branch sway phase so adjacent branches don't swing in lockstep.
+        swayPhase: r() * 6.28,
+        swaySpeed: 0.35 + r() * 0.35,
       });
     }
 
