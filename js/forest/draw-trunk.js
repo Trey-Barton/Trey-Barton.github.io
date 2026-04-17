@@ -118,7 +118,10 @@ window.Forest = window.Forest || {};
 
     ctx.restore();
 
-    // Branches with sub-branches
+    // Branches with sub-branches. The wind sway amplitude grows with layer:
+    // fg trees sway most (closest to viewer), far trees least. Sub-branches
+    // inherit the parent's swayed angle, so the whole bough moves together.
+    var swayAmpBase = (tree.layer === 'fg') ? 0.11 : (tree.layer === 'mid') ? 0.08 : 0.05;
     for (var bi = 0; bi < tree.branches.length; bi++) {
       var b = tree.branches[bi];
       var by = baseY - trunkH * b.yFrac;
@@ -126,7 +129,13 @@ window.Forest = window.Forest || {};
       var bx = bTx.cx;
       var bLen = b.len * H;
       var bAngle = b.angle * b.dir;
-      var sway = Math.sin(time * 0.4 + bi * 1.5) * 0.02;
+      // Each branch has its own phase + speed so adjacent branches don't
+      // swing in unison. Small secondary harmonic keeps it from being too
+      // sine-y / robotic.
+      var bPh = b.swayPhase || (bi * 1.5);
+      var bSp = b.swaySpeed || 0.4;
+      var sway = Math.sin(time * bSp + bPh) * swayAmpBase
+               + Math.sin(time * bSp * 2.3 + bPh * 1.7) * swayAmpBase * 0.25;
       bAngle += sway;
       var ex = bx + Math.sin(bAngle) * bLen;
       var ey = by - Math.cos(Math.abs(bAngle)) * bLen * 0.4;
