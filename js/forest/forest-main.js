@@ -30,7 +30,15 @@ try {
 
   var windPhase = 0;
 
+  // Respect the OS "Reduce Motion" setting — let the scene settle for ~60
+  // frames so particles populate, then freeze. Keeps the image but stops
+  // animation for users who opt in.
+  var _reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var _rmFrames = 0;
+
   function frame(ts) {
+    if (_reduceMotion && _rmFrames > 60) return;
+    _rmFrames++;
     if (!window._isPageVisible) { lastTs = null; requestAnimationFrame(frame); return; }
     if (lastTs === null) lastTs = ts;
     var dt = Math.min((ts - lastTs) / 1000, 0.05);
