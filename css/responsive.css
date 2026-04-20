@@ -11,7 +11,8 @@
   .cube-viewport { transform-origin: center top; margin-top: 5px; overflow: visible; }
   .project-card p { line-height: 1.6; color: rgba(255,255,255,0.7); }
   .project-tag { letter-spacing: 0.12em; }
-  .projects-heading-face .section-heading { font-size: 1rem !important; }
+  /* Projects heading size is driven by var(--card-h3) inline on the h2 so
+     it matches the project card title. No forced shrink here. */
   .projects-mobile { display: none; }
   .projects-heading-mobile { display: none; }
   #contact { margin-top: 22px; }
