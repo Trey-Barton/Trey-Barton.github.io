@@ -31,16 +31,33 @@ document.documentElement.classList.add('js-ready');
       }
     });
   });
-  // Pause video when off-screen to save GPU/battery
+  // Pause video when off-screen to save GPU/battery. play() returns a
+  // Promise that rejects if autoplay is blocked (e.g., iOS low-power mode
+  // or tab backgrounded at load) — swallow the error so one failure doesn't
+  // permanently disable playback. Retry on first user interaction.
   var profileVideo = document.querySelector('.profile-video');
   if (profileVideo) {
+    function tryPlay() {
+      var p = profileVideo.play();
+      if (p && p.catch) p.catch(function(){});
+    }
+    // Kick it once on load.
+    tryPlay();
     var videoObs = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
-        if (entry.isIntersecting) profileVideo.play();
+        if (entry.isIntersecting) tryPlay();
         else profileVideo.pause();
       });
     }, { threshold: 0.1 });
     videoObs.observe(profileVideo);
+    // Recover if a hands-off autoplay got blocked — any tap starts it.
+    var resume = function() {
+      tryPlay();
+      document.removeEventListener('touchstart', resume);
+      document.removeEventListener('click', resume);
+    };
+    document.addEventListener('touchstart', resume, { passive: true, once: true });
+    document.addEventListener('click', resume, { once: true });
   }
   var revealEls = document.querySelectorAll('.reveal-section');
   var observer = new IntersectionObserver(function(entries) {

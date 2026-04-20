@@ -141,9 +141,11 @@
    * Change any 2-letter code to move that wire's endpoint.
    */
   var WIRE_CONFIG = {
-    topWires:     { from: 'bc', on: '.about-card',   cornerSpread: 0, cornerYShift: 0  },
-    bottomWires:  { to:   'tc', on: '.contact-card',  cornerSpread: 0, cornerYShift: 0 },
-    headingWires: { from: 'bc', on: '.about-card'   },  // keep as-is
+    // cornerSpread pushed out so top wires land on the VISIBLE outer corners
+    // of the project card instead of tucked inside along the 3D cube edge.
+    topWires:     { from: 'bc', on: '.about-card',   cornerSpread: 80, cornerYShift: 0 },
+    bottomWires:  { to:   'tc', on: '.contact-card', cornerSpread: 80, cornerYShift: 0 },
+    headingWires: { from: 'bc', on: '.about-card'   },
   };
   // cornerSpread: px to push corners outward from center (positive = wider)
   // cornerYShift: px to shift corners vertically (positive = down, negative = up)
