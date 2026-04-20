@@ -1,3 +1,9 @@
+/* Pull the About section up toward the hero's View My Work button —
+   smaller top padding than other sections. */
+#about.section {
+  padding-top: clamp(16px, 2vw, 32px);
+}
+
 .about-card {
   display: grid;
   grid-template-columns: 1fr auto;
