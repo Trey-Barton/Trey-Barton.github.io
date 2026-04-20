@@ -203,6 +203,10 @@ body {
   letter-spacing: 0.04em;
   text-shadow: 0 1px 8px rgba(0,0,0,0.4);
 }
+/* Second hero CTA ("About Me") sits tighter under "View My Work" — pulls
+   the column up visually inside the hero. */
+.hero-cta + .hero-cta { margin-top: -10px; }
+
 .hero-cta {
   margin-top: 12px;
   display: inline-block;
@@ -843,29 +847,47 @@ window.Forest = window.Forest || {};
       });
     }
 
-    // Branches
+    // Branches — denser count + 2 levels of splits. Each sub-branch gets
+    // its own tertiary fork for a more fractal feel, all in bark colors.
     t.branches = [];
-    var nb = (layer === 'fg') ? 3 + Math.floor(r() * 3) : (layer === 'mid') ? 2 + Math.floor(r() * 2) : 1 + Math.floor(r() * 2);
+    var nb = (layer === 'fg') ? 4 + Math.floor(r() * 4) : (layer === 'mid') ? 3 + Math.floor(r() * 2) : 2 + Math.floor(r() * 2);
     for (var i = 0; i < nb; i++) {
-      // Spread branches evenly up the trunk, with some jitter
-      var evenY = 0.15 + (i / Math.max(nb - 1, 1)) * 0.45;
+      var evenY = 0.15 + (i / Math.max(nb - 1, 1)) * 0.5;
       var jitter = (r() - 0.5) * 0.12;
-      // Alternate direction for natural look
       var dir = (i % 2 === 0) ? 1 : -1;
-      if (r() < 0.2) dir = -dir; // occasional flip
-      // Wider angle range, more horizontal spread
+      if (r() < 0.2) dir = -dir;
       var angle = 0.6 + r() * 1.0;
+      // Always 2-4 sub-branches (was 0-2) — every primary branch has a fork.
+      var subC = 2 + Math.floor(r() * 3);
+      var subAngles = [], subLens = [], subDirs = [], subStripes = [];
+      var tertAngles = [], tertLens = [], tertDirs = [], tertStripes = [];
+      for (var sc = 0; sc < subC; sc++) {
+        subAngles.push(0.3 + r() * 0.8);
+        subLens.push(0.4 + r() * 0.4);
+        subDirs.push(r() < 0.5 ? -1 : 1);
+        subStripes.push(Math.floor(r() * BARK.length));
+        // Each sub gets 1-2 tertiary splits at its tip.
+        tertAngles.push(0.25 + r() * 0.7);
+        tertLens.push(0.35 + r() * 0.35);
+        tertDirs.push(r() < 0.5 ? -1 : 1);
+        tertStripes.push(Math.floor(r() * BARK.length));
+      }
       t.branches.push({
         yFrac: Math.max(0.08, Math.min(0.65, evenY + jitter)),
         dir: dir,
         angle: angle,
-        len: (layer === 'fg' ? 0.09 : 0.06) + r() * 0.07,
+        len: (layer === 'fg' ? 0.1 : 0.065) + r() * 0.07,
         w: t.trunkW * (0.18 + r() * 0.35),
         stripeCI: Math.floor(r() * BARK.length),
-        subCount: Math.floor(r() * 3),
-        subAngles: [r() * 0.8, r() * 0.8, r() * 0.8],
-        subLens: [0.3 + r() * 0.4, 0.3 + r() * 0.4, 0.3 + r() * 0.4],
-        subDirs: [r() < 0.5 ? -1 : 1, r() < 0.5 ? -1 : 1, r() < 0.5 ? -1 : 1],
+        subCount: subC,
+        subAngles: subAngles,
+        subLens: subLens,
+        subDirs: subDirs,
+        subStripes: subStripes,
+        tertAngles: tertAngles,
+        tertLens: tertLens,
+        tertDirs: tertDirs,
+        tertStripes: tertStripes,
       });
     }
 
@@ -910,15 +932,21 @@ window.Forest = window.Forest || {};
       });
     }
 
-    // Root flares at base
+    // Root flares at base — denser + wider + flatter so neighboring trees'
+    // roots weave into each other instead of each sitting in its own puddle.
     t.roots = [];
-    var nr = (layer === 'fg') ? 3 + Math.floor(r() * 4) : (layer === 'mid') ? 2 + Math.floor(r() * 2) : Math.floor(r() * 2);
+    var nr = (layer === 'fg') ? 6 + Math.floor(r() * 5) : (layer === 'mid') ? 4 + Math.floor(r() * 3) : 2 + Math.floor(r() * 2);
     for (var i = 0; i < nr; i++) {
       t.roots.push({
         dir: r() < 0.5 ? -1 : 1,
-        spread: 0.3 + r() * 0.7,
-        height: 0.02 + r() * 0.03,
+        // Spread 1.2–2.8× the trunk width (was 0.3–1.0) — long flat lateral
+        // roots that overlap with neighbors.
+        spread: ((layer === 'fg') ? 1.4 : (layer === 'mid') ? 1.1 : 0.9) + r() * 1.3,
+        // Height 0.01–0.022 of viewport (was 0.02–0.05) — flatter profile.
+        height: 0.008 + r() * 0.014,
         ci: Math.floor(r() * BARK.length),
+        fibers: 3 + Math.floor(r() * 4),        // # of thin fiber roots into ground
+        fiberSeed: Math.floor(r() * 99999),     // stable seed for fiber geometry
       });
     }
 
@@ -1041,18 +1069,63 @@ window.Forest = window.Forest || {};
       return { cx: x + lean + curve, hw: w * 0.5 };
     }
 
-    // Root flares
+    // Root flares — flat lateral roots with thin fibers feathering into the
+    // ground texture beyond each root's tip.
     for (var ri = 0; ri < tree.roots.length; ri++) {
       var root = tree.roots[ri];
-      var rw = wBase * root.spread;
-      var rh = root.height * H;
+      var rw = wBase * root.spread * 1.8;   // longer lateral extent
+      var rh = root.height * H * 0.6;        // compressed vertical
+      var rootColor = mix(BARK[root.ci], [40, 24, 32], 0.3);
+      // Soft shadow under the root.
       ctx.beginPath();
-      ctx.moveTo(x, baseY);
-      ctx.quadraticCurveTo(x + root.dir * rw * 0.5, baseY - rh * 0.3, x + root.dir * rw, baseY + rh * 0.5);
-      ctx.lineTo(x + root.dir * rw * 0.8, baseY + rh);
-      ctx.quadraticCurveTo(x + root.dir * rw * 0.3, baseY + rh * 0.2, x, baseY);
-      ctx.fillStyle = rgb(mix(BARK[root.ci], [48, 30, 42], 0.5), 0.8);
+      ctx.ellipse(x + root.dir * rw * 0.55, baseY + rh * 0.7, rw * 0.8, rh * 0.4, 0, 0, 6.28);
+      ctx.fillStyle = 'rgba(12,8,14,0.35)';
       ctx.fill();
+      // Main flat root — thick at trunk, tapering out nearly horizontal.
+      ctx.beginPath();
+      ctx.moveTo(x, baseY - rh * 0.25);
+      ctx.quadraticCurveTo(x + root.dir * rw * 0.45, baseY - rh * 0.08, x + root.dir * rw, baseY + rh * 0.05);
+      ctx.lineTo(x + root.dir * rw * 0.98, baseY + rh * 0.35);
+      ctx.quadraticCurveTo(x + root.dir * rw * 0.4, baseY + rh * 0.28, x, baseY + rh * 0.3);
+      ctx.closePath();
+      ctx.fillStyle = rgb(rootColor, 0.95);
+      ctx.fill();
+      // Top-edge highlight — sunlight catch along the flat top.
+      ctx.beginPath();
+      ctx.moveTo(x, baseY - rh * 0.25);
+      ctx.quadraticCurveTo(x + root.dir * rw * 0.45, baseY - rh * 0.08, x + root.dir * rw, baseY + rh * 0.05);
+      ctx.lineWidth = 1.3;
+      ctx.strokeStyle = rgb(mix(rootColor, [220, 190, 110], 0.4), 0.55);
+      ctx.stroke();
+      // Fiber roots — thin lines radiating from the root tip into the
+      // ground for texture. Seeded so they're stable per-tree.
+      var fs = root.fiberSeed >>> 0;
+      function fRand() { fs = (fs + 0x6d2b79f5) >>> 0; var t = Math.imul(fs ^ (fs >>> 15), 1 | fs); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+      var tipX = x + root.dir * rw * 0.95;
+      var tipY = baseY + rh * 0.2;
+      for (var fbi = 0; fbi < root.fibers; fbi++) {
+        var fbLen = rw * (0.15 + fRand() * 0.35);
+        var fbAng = (fRand() - 0.5) * 0.8; // angle from horizontal
+        var fbEx = tipX + root.dir * Math.cos(fbAng) * fbLen;
+        var fbEy = tipY + Math.abs(Math.sin(fbAng)) * fbLen * 0.35 + rh * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.quadraticCurveTo(tipX + root.dir * fbLen * 0.4, tipY + rh * 0.2, fbEx, fbEy);
+        ctx.lineWidth = 1 + fRand() * 1.2;
+        ctx.strokeStyle = rgb(mix(rootColor, [35, 22, 18], 0.2), 0.55 + fRand() * 0.2);
+        ctx.stroke();
+        // Occasional side-fiber off the main fiber.
+        if (fRand() < 0.5) {
+          var sfEx = fbEx + root.dir * fbLen * 0.25 * (fRand() + 0.2);
+          var sfEy = fbEy + rh * 0.15;
+          ctx.beginPath();
+          ctx.moveTo(fbEx, fbEy);
+          ctx.lineTo(sfEx, sfEy);
+          ctx.lineWidth = 0.7;
+          ctx.strokeStyle = rgb(mix(rootColor, [35, 22, 18], 0.2), 0.4);
+          ctx.stroke();
+        }
+      }
     }
 
     // Base trunk fill
@@ -1167,25 +1240,47 @@ window.Forest = window.Forest || {};
       ctx.strokeStyle = rgb(BARK[b.stripeCI], 0.5);
       ctx.stroke();
 
-      // Sub-branches
+      // Sub-branches (secondary) + their tertiary forks, all stroked in
+      // bark colors so the whole tree reads as one connected woody system.
+      var subSway = Math.sin(time * 0.5 + bi * 1.3) * 0.03;
       for (var si = 0; si < b.subCount; si++) {
         var sf = b.subLens[si];
-        var sa = b.subAngles[si] * b.subDirs[si] + bAngle;
-        var sx = ex + Math.sin(sa) * bLen * sf * 0.5;
-        var sy = ey - Math.cos(Math.abs(sa)) * bLen * sf * 0.3;
+        var sa = b.subAngles[si] * b.subDirs[si] + bAngle + subSway;
+        var sx = ex + Math.sin(sa) * bLen * sf * 0.55;
+        var sy = ey - Math.cos(Math.abs(sa)) * bLen * sf * 0.35;
+        // Dark underlay.
         ctx.beginPath();
         ctx.moveTo(ex, ey);
         ctx.quadraticCurveTo((ex + sx) / 2, Math.min(ey, sy) - 2, sx, sy);
-        ctx.lineWidth = bw * 0.15;
+        ctx.lineWidth = bw * 0.22;
         ctx.strokeStyle = 'rgb(42,26,38)';
         ctx.stroke();
+        // Bark-color highlight stripe.
+        ctx.beginPath();
+        ctx.moveTo(ex, ey);
+        ctx.quadraticCurveTo((ex + sx) / 2, Math.min(ey, sy) - 2, sx, sy);
+        ctx.lineWidth = Math.max(0.6, bw * 0.12);
+        ctx.strokeStyle = rgb(BARK[(b.subStripes && b.subStripes[si]) || b.stripeCI], 0.55);
+        ctx.stroke();
 
-        // Small leaf cluster at sub-branch tip
-        var lclR = bw * 0.6;
+        // Tertiary fork at the sub-branch tip — thinner, same bark palette.
+        var ta = (b.tertAngles ? b.tertAngles[si] : 0.4) * (b.tertDirs ? b.tertDirs[si] : 1) + sa;
+        var tLen = bLen * (b.tertLens ? b.tertLens[si] : 0.35) * 0.5;
+        var tx2 = sx + Math.sin(ta) * tLen;
+        var ty2 = sy - Math.cos(Math.abs(ta)) * tLen * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo((sx + tx2) / 2, Math.min(sy, ty2) - 1, tx2, ty2);
+        ctx.lineWidth = Math.max(0.5, bw * 0.1);
+        ctx.strokeStyle = rgb(BARK[(b.tertStripes && b.tertStripes[si]) || b.stripeCI], 0.55);
+        ctx.stroke();
+
+        // Leaf cluster at the tertiary tip (was at the sub-branch tip).
+        var lclR = bw * 0.55;
         var lSway = Math.sin(time * 0.5 + bi * 2 + si) * 1;
         var lci = (bi * 3 + si) % CANOPY.length;
         ctx.beginPath();
-        ctx.ellipse(sx + lSway, sy, lclR, lclR * 0.6, 0, 0, 6.28);
+        ctx.ellipse(tx2 + lSway, ty2, lclR, lclR * 0.6, 0, 0, 6.28);
         ctx.fillStyle = rgb(CANOPY[lci], 0.7);
         ctx.fill();
       }
