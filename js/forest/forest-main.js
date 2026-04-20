@@ -27,14 +27,24 @@ try {
     Forest.isMobile = window.innerWidth <= 768;
     Forest.MAX_PARTICLES = Forest.isMobile ? 80 : 400;
     _initDPR = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1 : 2);
-    _cssW = Math.max(window.innerWidth, 1440);
-    _cssH = Math.max(window.innerHeight, document.documentElement.clientHeight, 900);
-    canvas.width  = _cssW * _initDPR;
-    canvas.height = _cssH * _initDPR;
+    // Match the actual viewport aspect at load — no landscape floor. An
+    // oversized/mismatched buffer made object-fit: cover crop so aggressively
+    // at certain window shapes that the trees fell outside the visible slice.
+    _cssW = window.innerWidth;
+    _cssH = window.innerHeight;
+    // Cap device-pixel dimensions at 4096 per axis so enormous monitors +
+    // high DPR don't exceed common GPU texture limits (blank canvas).
+    var pxW = Math.min(_cssW * _initDPR, 4096);
+    var pxH = Math.min(_cssH * _initDPR, 4096);
+    // Recalculate DPR if we hit the cap so draw coords stay correct.
+    var effDPR = Math.min(pxW / _cssW, pxH / _cssH, _initDPR);
+    _initDPR = effDPR;
+    canvas.width  = Math.round(_cssW * effDPR);
+    canvas.height = Math.round(_cssH * effDPR);
     canvas.style.width = '';     // CSS rules own display size
     canvas.style.height = '';
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(_initDPR, _initDPR);
+    ctx.scale(effDPR, effDPR);
   }
   initCanvas();
 

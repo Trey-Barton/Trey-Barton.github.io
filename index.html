@@ -1549,6 +1549,11 @@ try {
   var ctx = canvas.getContext('2d', { alpha: false });
   var time = 0, lastTs = null;
 
+  // Canvas buffer is LOCKED at init. Resizing the window does NOT clear and
+  // regenerate it — setting canvas.width wipes the buffer AND invalidates
+  // every offscreen cache, showing the body bg (blue/green flash) until the
+  // next full frame finishes. Init uses the current viewport aspect so
+  // object-fit: cover doesn't crop trees out of view.
   function resize() {
     Forest.isMobile = window.innerWidth <= 768;
     Forest.MAX_PARTICLES = Forest.isMobile ? 150 : 400;
@@ -1560,16 +1565,21 @@ try {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
   }
-  var resizeTimer;
-  window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 100); });
   resize();
+  // Only update mobile/spawn bucket on resize — buffer stays locked.
+  window.addEventListener('resize', function () {
+    Forest.isMobile = window.innerWidth <= 768;
+    Forest.MAX_PARTICLES = Forest.isMobile ? 150 : 400;
+  });
 
   var windPhase = 0;
 
   function frame(ts) {
     if (!window._isPageVisible) { lastTs = null; requestAnimationFrame(frame); return; }
-    // Skip canvas redraw when scrolled past viewport — fixed canvas is invisible
-    if (window.scrollY > window.innerHeight * 1.5) { lastTs = null; setTimeout(function(){ requestAnimationFrame(frame); }, 200); return; }
+    // (Removed: the scroll-past-1.5vh frame-skip that blanked the canvas —
+    // on Safari/Chrome the paused frame would read as body bg (blue/green)
+    // until the user scrolled back to the top. position:fixed keeps the
+    // canvas in view at every scroll depth, so it must keep rendering.)
     if (lastTs === null) lastTs = ts;
     var dt = Math.min((ts - lastTs) / 1000, 0.05);
     lastTs = ts;
@@ -2462,12 +2472,50 @@ document.documentElement.classList.add('js-ready');
       }
     });
   });
-  // Pause video when off-screen to save GPU/battery
+  // Autoplay the profile loop aggressively. Browsers block `autoplay` when:
+  // the page backgrounded at load, Safari Low Power Mode is on, metadata
+  // hasn't arrived, or the video isn't yet "ready." Belt + braces: force
+  // muted via JS (HTML attr alone isn't always trusted), call play() on
+  // every readiness event, and fall back to any user interaction.
   var profileVideo = document.querySelector('.profile-video');
   if (profileVideo) {
-    var videoObs = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) profileVideo.play();
+    profileVideo.muted = true;
+    profileVideo.defaultMuted = true;
+    profileVideo.playsInline = true;
+    profileVideo.setAttribute('muted', '');
+    profileVideo.setAttribute('playsinline', '');
+    profileVideo.setAttribute('webkit-playsinline', '');
+
+    function tryPlay() {
+      if (profileVideo.paused) {
+        try {
+          var p = profileVideo.play();
+          if (p && p.catch) p.catch(function(){});
+        } catch (_) {}
+      }
+    }
+    ['loadedmetadata','loadeddata','canplay','canplaythrough'].forEach(function(evt) {
+      profileVideo.addEventListener(evt, tryPlay);
+    });
+    tryPlay();
+    setTimeout(tryPlay, 100);
+    setTimeout(tryPlay, 600);
+
+    var resume = function () {
+      tryPlay();
+      if (!profileVideo.paused) {
+        document.removeEventListener('touchstart', resume);
+        document.removeEventListener('click', resume);
+        document.removeEventListener('scroll', resume);
+      }
+    };
+    document.addEventListener('touchstart', resume, { passive: true });
+    document.addEventListener('click', resume);
+    document.addEventListener('scroll', resume, { passive: true });
+
+    var videoObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) tryPlay();
         else profileVideo.pause();
       });
     }, { threshold: 0.1 });
