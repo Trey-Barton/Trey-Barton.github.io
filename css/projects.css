@@ -17,11 +17,13 @@
 .projects-mobile { display: none; }
 .projects-heading-face {
   position: absolute;
-  /* Inset the face by 4px on each side and use full-pill ends — the rounded
-     corners taper BEFORE reaching the 3D cube edge, so adjacent faces don't
-     clash at the vertical corners. */
-  width: calc(100% - 8px); height: 100%;
-  left: 4px;
+  /* Inset the face by 5px on each side (authored at native scale so the
+     inset scales uniformly with the rest of the chandelier via
+     --heading-scale — same ratio on every device). Full-pill ends so the
+     rounded corners taper before the 3D cube edge and adjacent faces
+     don't clash at the vertical corners. */
+  width: calc(100% - 10px); height: 100%;
+  left: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
