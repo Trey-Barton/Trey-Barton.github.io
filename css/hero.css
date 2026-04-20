@@ -1,11 +1,16 @@
 #hero {
   position: relative;
   z-index: 1;
-  height: 100vh;
+  /* Dynamic viewport unit — avoids the "URL bar appeared, hero got cut off"
+     bug on iOS Safari (100vh = large viewport, 100dvh = current viewport). */
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+@supports not (height: 100dvh) {
+  #hero { height: 100vh; }
 }
 .hero-content {
   display: flex;

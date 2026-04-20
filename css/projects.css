@@ -25,6 +25,11 @@
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 14px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+  /* Hide each face when rotated away so adjacent faces don't bleed through
+     the corners of the visible one. */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 .heading-wire {
   position: absolute;
@@ -72,6 +77,11 @@
 .cube-face {
   position: absolute;
   width: 100%; height: 100%;
+  /* Hide each face when it's rotated away from the camera so the back side
+     of adjacent faces doesn't bleed into the corners of the visible one. */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 /* cube-face transforms applied via inline styles */
 .chandelier-wire {

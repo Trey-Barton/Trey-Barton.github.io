@@ -1,12 +1,33 @@
 /* Reset */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+
+/* Faster tap response on iOS + no 300ms delay on interactives. */
+a, button, [role="button"], .cube-arrow, .cube-dot, .hero-cta {
+  touch-action: manipulation;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* overflow-x: clip on html (not body) — `overflow: hidden` on body breaks
+     `position: fixed` descendants on iOS Safari past certain scroll depths. */
+  overflow-x: clip;
+  /* Kill iOS Safari's blue tap-highlight flash. */
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent iOS rubber-band scroll from exposing the body bg at edges. */
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+}
 body {
   font-family: 'Inter', system-ui, sans-serif;
   color: #fff;
   background: var(--bg-primary);
-  overflow-x: hidden;
+  overflow-x: clip;
+  overscroll-behavior-y: none;
   padding-bottom: env(safe-area-inset-bottom);
+  min-height: 100svh;
+}
+@supports not (min-height: 100svh) {
+  body { min-height: 100vh; }
 }
 #bg-canvas {
   position: fixed;
@@ -14,11 +35,26 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  height: 100dvh;
-  min-height: -webkit-fill-available;
+  height: 100lvh;           /* cover URL-bar-hidden viewport */
+  z-index: 0;
   pointer-events: none;
-  will-change: contents;
-  contain: strict;
+  /* Force a GPU compositor layer — prevents iOS Safari from losing track of
+     the fixed canvas mid-scroll (that caused the "blue flash" earlier). */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* Preserve canvas aspect on viewport reshape without redrawing. */
+  object-fit: cover;
+  object-position: center center;
+  /* layout/paint containment only — size containment would kill object-fit. */
+  contain: layout paint;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+@supports not (height: 100lvh) {
+  #bg-canvas { height: 100vh; }
 }
 #content-wrap {
   position: relative;
@@ -30,14 +66,15 @@ body {
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 100;
-  padding: clamp(12px, 2vw, 20px) 0;
+  /* Respect iPhone notch / Dynamic Island. */
+  padding: calc(clamp(12px, 2vw, 20px) + env(safe-area-inset-top)) 0 clamp(12px, 2vw, 20px);
   transition: background 0.4s, backdrop-filter 0.4s, padding 0.3s;
 }
 .nav.scrolled {
   background: rgba(20, 40, 50, 0.75);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  padding: 12px 0;
+  padding: calc(12px + env(safe-area-inset-top)) 0 12px;
   border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 .nav-inner {
@@ -118,4 +155,6 @@ body {
 .js-ready .reveal:nth-child(3) { animation-delay: 0.4s; }
 .js-ready .reveal:nth-child(4) { animation-delay: 0.55s; }
 @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
-.js-ready .reveal-section { opacity: 1; transform: translateY(0); }
+/* Final reveal state — only opacity. Don't set transform here, it would
+   clobber the cube-viewport's `scale(var(--cube-scale))` via specificity. */
+.js-ready .reveal-section { opacity: 1; }
