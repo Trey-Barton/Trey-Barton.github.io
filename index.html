@@ -1574,6 +1574,407 @@ try {
 
   var windPhase = 0;
 
+  /* ═══════════ WILDLIFE + RIVER — OPTIMIZED ═══════════
+   *
+   * Strategy: every static asset (jaguar body + rosettes, snake scale shading,
+   * river base) is pre-rendered ONCE to a tiny offscreen canvas and blitted
+   * per-frame via drawImage. Per-frame cost is only the positional transform,
+   * a few legs/jaw lines, and the snake's wave math.
+   */
+
+  // ─── Jaguar sprite (drawn once, reused forever) ─────────────────────────
+  var _jagSprite = (function () {
+    var jw = 110, jh = 52;      // sprite canvas size in CSS px
+    var c = document.createElement('canvas');
+    c.width = jw; c.height = jh;
+    var g = c.getContext('2d');
+    var cx = jw * 0.5, cy = jh * 0.62;
+
+    // Shadow underneath.
+    g.beginPath();
+    g.ellipse(cx - 2, cy + 14, jw * 0.4, 4, 0, 0, 6.28);
+    g.fillStyle = 'rgba(0,0,0,0.3)';
+    g.fill();
+
+    // Body — elongated ellipse tilting slightly forward.
+    g.beginPath();
+    g.ellipse(cx, cy, jw * 0.36, jh * 0.22, 0, 0, 6.28);
+    g.fillStyle = '#c98a3a';
+    g.fill();
+    // Belly highlight.
+    g.beginPath();
+    g.ellipse(cx, cy + 5, jw * 0.30, jh * 0.12, 0, 0, 6.28);
+    g.fillStyle = 'rgba(240,210,155,0.55)';
+    g.fill();
+    // Shoulder bulge.
+    g.beginPath();
+    g.arc(cx + jw * 0.2, cy - 3, jh * 0.19, 0, 6.28);
+    g.fillStyle = '#c98a3a';
+    g.fill();
+
+    // Head + muzzle.
+    var hx = cx + jw * 0.32;
+    var hy = cy - jh * 0.08;
+    g.beginPath();
+    g.arc(hx, hy, jh * 0.18, 0, 6.28);
+    g.fillStyle = '#c98a3a';
+    g.fill();
+    // Muzzle.
+    g.beginPath();
+    g.ellipse(hx + 6, hy + 2, 6, 3.5, 0, 0, 6.28);
+    g.fillStyle = '#e2ab66';
+    g.fill();
+    // Ears.
+    g.beginPath();
+    g.moveTo(hx - 3, hy - 8);
+    g.lineTo(hx, hy - 14);
+    g.lineTo(hx + 3, hy - 8);
+    g.closePath();
+    g.fillStyle = '#a66a26';
+    g.fill();
+    g.beginPath();
+    g.moveTo(hx + 5, hy - 7);
+    g.lineTo(hx + 8, hy - 13);
+    g.lineTo(hx + 11, hy - 7);
+    g.closePath();
+    g.fill();
+    // Eye.
+    g.beginPath();
+    g.arc(hx + 4, hy - 1, 1.4, 0, 6.28);
+    g.fillStyle = '#111';
+    g.fill();
+    g.beginPath();
+    g.arc(hx + 4.5, hy - 1.5, 0.5, 0, 6.28);
+    g.fillStyle = '#eed6a0';
+    g.fill();
+    // Nose dot.
+    g.beginPath();
+    g.arc(hx + 11, hy + 2, 1, 0, 6.28);
+    g.fillStyle = '#2b1a10';
+    g.fill();
+
+    // Tail — curves backward.
+    g.beginPath();
+    g.moveTo(cx - jw * 0.36, cy - 1);
+    g.quadraticCurveTo(cx - jw * 0.5, cy - 10, cx - jw * 0.45, cy - 16);
+    g.lineWidth = 5;
+    g.lineCap = 'round';
+    g.strokeStyle = '#c98a3a';
+    g.stroke();
+    g.beginPath();
+    g.arc(cx - jw * 0.45, cy - 16, 2.5, 0, 6.28);
+    g.fillStyle = '#2b1a10';
+    g.fill();
+
+    // Rosettes (black rings with tan centers) — the jaguar's signature.
+    var rng = (function(s){return function(){s=(s+0x6d2b79f5)>>>0;var t=Math.imul(s^s>>>15,1|s);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296;};})(1337);
+    for (var r = 0; r < 28; r++) {
+      var rx = cx + (rng() - 0.5) * jw * 0.62;
+      var ry = cy + (rng() - 0.5) * jh * 0.35;
+      // Skip if outside body ellipse.
+      var dx = (rx - cx) / (jw * 0.36), dy = (ry - cy) / (jh * 0.22);
+      if (dx*dx + dy*dy > 1) continue;
+      var rr = 1.5 + rng() * 1.8;
+      // Outer black ring.
+      g.beginPath();
+      g.arc(rx, ry, rr, 0, 6.28);
+      g.lineWidth = 1;
+      g.strokeStyle = 'rgba(20,12,6,0.85)';
+      g.stroke();
+      // Small dark center dot.
+      g.beginPath();
+      g.arc(rx + 0.5, ry, rr * 0.35, 0, 6.28);
+      g.fillStyle = 'rgba(20,12,6,0.7)';
+      g.fill();
+    }
+
+    return { canvas: c, w: jw, h: jh };
+  })();
+
+  // Jaguar state — position + walk phase + direction. Mid-ground layer.
+  var _jag = { x: -200, y: 0, vx: 28, phase: 0, dir: 1 };
+
+  function drawJaguar(ctx, W, H, time, dt) {
+    // Initialize y on first draw.
+    if (!_jag._init) { _jag._init = true; _jag.y = H * 0.67; _jag.x = -150; }
+    _jag.x += _jag.vx * dt * _jag.dir;
+    _jag.phase += dt * 6;  // leg cadence
+    // Wrap.
+    if (_jag.dir > 0 && _jag.x > W + 160) { _jag.x = -160; _jag.y = H * (0.64 + Math.random() * 0.06); }
+    if (_jag.dir < 0 && _jag.x < -160) { _jag.x = W + 160; }
+
+    var bob = Math.sin(_jag.phase * 2) * 0.8;  // subtle vertical bob
+    ctx.save();
+    ctx.translate(Math.round(_jag.x), Math.round(_jag.y + bob));
+    if (_jag.dir < 0) ctx.scale(-1, 1);
+    // Body sprite.
+    ctx.drawImage(_jagSprite.canvas, -_jagSprite.w * 0.5, -_jagSprite.h * 0.5);
+    // Legs — 4 simple strokes with phase offsets.
+    var legY = _jagSprite.h * 0.14;
+    var legLen = 11;
+    var legXs = [-_jagSprite.w * 0.25, -_jagSprite.w * 0.05, _jagSprite.w * 0.12, _jagSprite.w * 0.3];
+    ctx.strokeStyle = '#a66a26';
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
+    for (var i = 0; i < 4; i++) {
+      var ph = _jag.phase + i * 1.6;
+      var swing = Math.sin(ph) * 4;
+      ctx.beginPath();
+      ctx.moveTo(legXs[i], legY);
+      ctx.lineTo(legXs[i] + swing, legY + legLen);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ─── Snake (foreground slither) — static body curve, animated wave ──────
+  var _snake = { x: 0, y: 0, phase: 0, vx: 18, seg: 40 };
+
+  function drawSnake(ctx, W, H, time, dt) {
+    if (!_snake._init) { _snake._init = true; _snake.x = -80; _snake.y = H * 0.94; }
+    _snake.x += _snake.vx * dt;
+    _snake.phase += dt * 3.2;
+    if (_snake.x > W + 200) _snake.x = -200;
+
+    var segs = _snake.seg;
+    var segLen = 9;   // horizontal step between segments
+    // Draw tail-to-head so head is on top.
+    for (var i = segs - 1; i >= 0; i--) {
+      var t = i / (segs - 1);        // 1 at tail, 0 at head
+      var sx = _snake.x - i * segLen;
+      // Sine wave + slight vertical undulation with wave speed.
+      var wavePhase = _snake.phase - i * 0.35;
+      var sy = _snake.y + Math.sin(wavePhase) * 12 * (1 - t * 0.3);
+      // Body thickness tapers from head (thicker) to tail.
+      var thick = 6.5 * (1 - t * 0.85) + 1.5;
+      // Body fill — dark green with lighter edge.
+      ctx.beginPath();
+      ctx.arc(sx, sy, thick, 0, 6.28);
+      ctx.fillStyle = 'rgba(48,72,32,0.95)';
+      ctx.fill();
+      // Highlight top of coil.
+      ctx.beginPath();
+      ctx.arc(sx - 0.6, sy - thick * 0.4, thick * 0.55, 0, 6.28);
+      ctx.fillStyle = 'rgba(105,130,58,0.6)';
+      ctx.fill();
+      // Scale band every 3 segments.
+      if (i % 3 === 0 && thick > 2) {
+        ctx.beginPath();
+        ctx.arc(sx, sy, thick * 0.45, 0, 6.28);
+        ctx.fillStyle = 'rgba(25,35,15,0.55)';
+        ctx.fill();
+      }
+    }
+    // Head details at position of i=0.
+    var hx = _snake.x;
+    var hy = _snake.y + Math.sin(_snake.phase) * 12;
+    // Slightly bigger head dome.
+    ctx.beginPath();
+    ctx.ellipse(hx + 4, hy, 8, 6, 0, 0, 6.28);
+    ctx.fillStyle = 'rgba(55,82,35,0.95)';
+    ctx.fill();
+    // Eye.
+    ctx.beginPath();
+    ctx.arc(hx + 5, hy - 2, 1.3, 0, 6.28);
+    ctx.fillStyle = '#e8c260';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(hx + 5.2, hy - 2, 0.55, 0, 6.28);
+    ctx.fillStyle = '#111';
+    ctx.fill();
+    // Tongue — flicks via sin gate.
+    if (Math.sin(_snake.phase * 2.4) > 0.6) {
+      ctx.beginPath();
+      ctx.moveTo(hx + 11, hy);
+      ctx.lineTo(hx + 18, hy - 1);
+      ctx.moveTo(hx + 11, hy);
+      ctx.lineTo(hx + 18, hy + 1);
+      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = '#b23030';
+      ctx.stroke();
+    }
+  }
+
+  // ─── River + crocodile (distant) ────────────────────────────────────────
+  // River shape: horizontal band with slight sinuous curvature at y ~gY.
+  // Baked into hillCache; ripples + croc draw per-frame.
+  function drawRiverBase(hctx, W, H, gY) {
+    var rivY = gY - H * 0.012;
+    var rivH = H * 0.025;
+    // Base water gradient.
+    var rgrad = hctx.createLinearGradient(0, rivY, 0, rivY + rivH);
+    rgrad.addColorStop(0,    'rgba(45,70,88,0.92)');
+    rgrad.addColorStop(0.5,  'rgba(60,95,108,0.92)');
+    rgrad.addColorStop(1,    'rgba(35,55,70,0.95)');
+    hctx.beginPath();
+    hctx.moveTo(0, rivY);
+    for (var x = 0; x <= W; x += 20) {
+      hctx.lineTo(x, rivY + Math.sin(x * 0.012) * 2);
+    }
+    hctx.lineTo(W, rivY + rivH);
+    for (var x = W; x >= 0; x -= 20) {
+      hctx.lineTo(x, rivY + rivH + Math.sin(x * 0.011 + 1.3) * 2);
+    }
+    hctx.closePath();
+    hctx.fillStyle = rgrad;
+    hctx.fill();
+    // Far bank shadow edge.
+    hctx.beginPath();
+    for (var x = 0; x <= W; x += 20) {
+      hctx.lineTo(x, rivY + Math.sin(x * 0.012) * 2);
+    }
+    hctx.lineWidth = 1.2;
+    hctx.strokeStyle = 'rgba(20,28,32,0.55)';
+    hctx.stroke();
+    // Reflection highlight (thin bright streak).
+    hctx.beginPath();
+    for (var x = 0; x <= W; x += 15) {
+      hctx.lineTo(x, rivY + rivH * 0.3 + Math.sin(x * 0.025) * 1.5);
+    }
+    hctx.lineWidth = 0.8;
+    hctx.strokeStyle = 'rgba(180,200,220,0.35)';
+    hctx.stroke();
+  }
+
+  // Pre-generated ripple positions so per-frame is just phase math.
+  var _ripples = [];
+  function ensureRipples(W, H) {
+    if (_ripples.length && _ripples[0].W === W) return;
+    _ripples.length = 0;
+    for (var i = 0; i < 16; i++) {
+      _ripples.push({ W: W, x: Math.random() * W, y: 0, phase: Math.random() * 6.28, speed: 0.5 + Math.random() * 1.2 });
+    }
+  }
+
+  function drawRiverRipples(ctx, W, H, gY, time) {
+    ensureRipples(W, H);
+    var rivY = gY - H * 0.012;
+    var rivH = H * 0.025;
+    ctx.save();
+    for (var i = 0; i < _ripples.length; i++) {
+      var r = _ripples[i];
+      var p = (r.phase + time * r.speed) % 6.28;
+      var a = Math.max(0, Math.sin(p)) * 0.5;
+      var rad = 3 + p * 2;
+      ctx.beginPath();
+      ctx.ellipse(r.x, rivY + rivH * (0.3 + (i % 5) * 0.12), rad, rad * 0.3, 0, 0, 6.28);
+      ctx.lineWidth = 0.6;
+      ctx.strokeStyle = 'rgba(200,215,230,' + a.toFixed(3) + ')';
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Crocodile — tiny silhouette in the river, jaw opens/closes on a cycle.
+  function drawCroc(ctx, W, H, gY, time) {
+    var cx = W * 0.35;
+    var cy = gY - H * 0.006;
+    var size = Math.max(H * 0.028, 22);
+    // Jaw cycle: smooth open 0 → 1 → 0 every ~4s.
+    var jawRaw = (Math.sin(time * 0.8) + 1) * 0.5;
+    var jaw = Math.pow(Math.max(0, jawRaw - 0.35) / 0.65, 0.9);  // closed most of the time, opens fully
+    // Body (partially submerged — upper half visible).
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, size, size * 0.22, 0, Math.PI, 0);
+    ctx.fillStyle = 'rgba(45,62,32,0.95)';
+    ctx.fill();
+    // Scales texture along back.
+    for (var s = -4; s <= 4; s++) {
+      ctx.beginPath();
+      ctx.ellipse(cx + s * size * 0.18, cy - size * 0.18, size * 0.08, size * 0.05, 0, 0, 6.28);
+      ctx.fillStyle = 'rgba(25,38,18,0.7)';
+      ctx.fill();
+    }
+    // Snout (extends to the right).
+    var sx = cx + size * 0.9, sy = cy;
+    ctx.beginPath();
+    ctx.moveTo(sx - size * 0.2, sy);
+    ctx.lineTo(sx + size * 0.3, sy);
+    ctx.lineTo(sx + size * 0.25, sy - size * 0.13);
+    ctx.lineTo(sx - size * 0.2, sy - size * 0.13);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(45,62,32,0.95)';
+    ctx.fill();
+    // Upper jaw (opens upward with jaw cycle).
+    ctx.save();
+    ctx.translate(sx - size * 0.2, sy - size * 0.13);
+    ctx.rotate(-jaw * 0.55);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(size * 0.5, 0);
+    ctx.lineTo(size * 0.45, -size * 0.08);
+    ctx.lineTo(0, -size * 0.06);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(55,75,38,0.95)';
+    ctx.fill();
+    // Teeth on upper jaw.
+    for (var t = 0; t < 4; t++) {
+      ctx.beginPath();
+      ctx.moveTo(size * 0.1 + t * size * 0.1, 0);
+      ctx.lineTo(size * 0.1 + t * size * 0.1 + 1, size * 0.05);
+      ctx.lineTo(size * 0.1 + t * size * 0.1 + 2, 0);
+      ctx.closePath();
+      ctx.fillStyle = '#eee';
+      ctx.fill();
+    }
+    ctx.restore();
+    // Eye — small bump above water on the back.
+    ctx.beginPath();
+    ctx.arc(cx + size * 0.35, cy - size * 0.25, size * 0.07, 0, 6.28);
+    ctx.fillStyle = 'rgba(60,78,40,0.95)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx + size * 0.36, cy - size * 0.27, size * 0.03, 0, 6.28);
+    ctx.fillStyle = '#d6c030';
+    ctx.fill();
+  }
+
+  // ─── Extra decorative hanging vines (in front of canopy) ────────────────
+  // Pre-generated; animated sway is cheap sin per-segment.
+  var _bigVines = [];
+  function ensureBigVines(W, H) {
+    if (_bigVines.length && _bigVines[0].W === W) return;
+    _bigVines.length = 0;
+    for (var i = 0; i < 6; i++) {
+      _bigVines.push({
+        W: W,
+        x: (0.05 + i * 0.17 + (Math.random()-0.5)*0.05) * W,
+        len: H * (0.22 + Math.random() * 0.18),
+        phase: Math.random() * 6.28,
+        speed: 0.25 + Math.random() * 0.3,
+        amp: 4 + Math.random() * 6,
+        leafN: 4 + Math.floor(Math.random() * 5),
+      });
+    }
+  }
+  function drawBigVines(ctx, W, H, time) {
+    ensureBigVines(W, H);
+    for (var i = 0; i < _bigVines.length; i++) {
+      var v = _bigVines[i];
+      var segs = 18;
+      ctx.beginPath();
+      for (var s = 0; s <= segs; s++) {
+        var t = s / segs;
+        var wave = Math.sin(time * v.speed + v.phase + t * 3) * v.amp * t;
+        ctx.lineTo(v.x + wave, t * v.len);
+      }
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = 'rgba(45,80,40,0.65)';
+      ctx.stroke();
+      // Leaves at a few points.
+      for (var lf = 1; lf <= v.leafN; lf++) {
+        var lt = lf / v.leafN;
+        var lwave = Math.sin(time * v.speed + v.phase + lt * 3) * v.amp * lt;
+        var lx = v.x + lwave;
+        var ly = lt * v.len;
+        ctx.beginPath();
+        ctx.ellipse(lx + 3, ly, 3.5, 1.4, 0.3, 0, 6.28);
+        ctx.fillStyle = 'rgba(55,100,45,0.65)';
+        ctx.fill();
+      }
+    }
+  }
+
   function frame(ts) {
     if (!window._isPageVisible) { lastTs = null; requestAnimationFrame(frame); return; }
     // (Removed: the scroll-past-1.5vh frame-skip that blanked the canvas —
@@ -1872,39 +2273,6 @@ try {
         gctx.restore();
       }
 
-      // Mushroom clusters — 6 clusters of 3-5 little caps each.
-      for (var mci = 0; mci < 6; mci++) {
-        var mcCX = _gRng() * W;
-        var mcCY = gY + gDepth * (0.3 + _gRng() * 0.65);
-        var mcCount = 3 + Math.floor(_gRng() * 3);
-        var mcCap = _gRng() < 0.4 ? [175, 60, 55] : (_gRng() < 0.5 ? [215, 195, 165] : [155, 125, 85]);
-        for (var mc = 0; mc < mcCount; mc++) {
-          var mmx = mcCX + (_gRng() - 0.5) * 12;
-          var mmy = mcCY + (_gRng() - 0.5) * 5;
-          var mSz = 1.8 + _gRng() * 2.5;
-          // Stem.
-          gctx.beginPath();
-          gctx.rect(mmx - mSz * 0.2, mmy - mSz * 1.2, mSz * 0.4, mSz * 1.2);
-          gctx.fillStyle = 'rgba(220,210,180,0.7)';
-          gctx.fill();
-          // Cap.
-          gctx.beginPath();
-          gctx.ellipse(mmx, mmy - mSz * 1.2, mSz, mSz * 0.55, 0, Math.PI, 0);
-          gctx.fillStyle = 'rgba(' + mcCap[0] + ',' + mcCap[1] + ',' + mcCap[2] + ',0.85)';
-          gctx.fill();
-          // Cap spots.
-          if (mcCap[0] > 170 && mcCap[1] < 80) {
-            gctx.beginPath();
-            gctx.arc(mmx - mSz * 0.3, mmy - mSz * 1.35, mSz * 0.15, 0, 6.28);
-            gctx.fillStyle = 'rgba(245,240,215,0.9)';
-            gctx.fill();
-            gctx.beginPath();
-            gctx.arc(mmx + mSz * 0.35, mmy - mSz * 1.3, mSz * 0.12, 0, 6.28);
-            gctx.fill();
-          }
-        }
-      }
-
       // Exposed roots crossing the ground — sinuous brown lines.
       for (var rti = 0; rti < 10; rti++) {
         var rtSX = _gRng() * W;
@@ -2080,10 +2448,16 @@ try {
         hctx.fillStyle = Forest.rgb(Forest.mix(dbcol, [60, 80, 45], 0.4), 0.2 + hillRng() * 0.18);
         hctx.fill();
       }
+      // River — baked into the hill cache so the water surface is free per frame.
+      drawRiverBase(hctx, W, H, gY);
       frame._hillCache = hc;
       frame._hillW = W; frame._hillH = H;
     }
     sctx.drawImage(frame._hillCache, 0, 0);
+
+    // Animated river ripples + crocodile on top of the cached water surface.
+    drawRiverRipples(sctx, W, H, gY, time);
+    drawCroc(sctx, W, H, gY, time);
 
     // FAR undergrowth + trees (cached to offscreen canvas, refreshed every 2s)
     if (!frame._farCache || frame._farW !== W || frame._farH !== H || !frame._farTime) {
@@ -2159,6 +2533,9 @@ try {
       frame._midCache = mc; frame._midW = W; frame._midH = H; frame._midTime = time;
     }
     sctx.drawImage(frame._midCache, 0, 0);
+
+    // Jaguar — prowls between mid-canopy and foreground so fg trees occlude it.
+    drawJaguar(sctx, W, H, time, dt);
 
     // Golden atmosphere between mid and fg (cached on resize)
     if (!frame._midGlow || frame._mgW !== W || frame._mgH !== H) {
@@ -2404,6 +2781,13 @@ try {
       frame._fgCache = fgc; frame._fgCW = W; frame._fgCH = H;
     }
     sctx.drawImage(frame._fgCache, 0, 0);
+
+    // Snake slithering across the very foreground — below fg trees so any
+    // close-up trunk can partially occlude it.
+    drawSnake(sctx, W, H, time, dt);
+
+    // Extra decorative hanging vines drifting in front of the canopy.
+    drawBigVines(sctx, W, H, time);
 
     // Dense canopy fill + hanging drips (cached, refreshed every 2s)
     if (!frame._canopyCache || frame._canopyW !== W || frame._canopyH !== H || !frame._canopyTime) {
