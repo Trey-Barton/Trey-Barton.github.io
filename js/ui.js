@@ -31,18 +31,53 @@ document.documentElement.classList.add('js-ready');
       }
     });
   });
-  // Pause video when off-screen to save GPU/battery. play() returns a
-  // Promise that rejects if autoplay is blocked (e.g., iOS low-power mode
-  // or tab backgrounded at load) — swallow the error so one failure doesn't
-  // permanently disable playback. Retry on first user interaction.
+  // Autoplay the profile loop aggressively — iOS Safari + mobile Chrome
+  // will block `autoplay` when: the page is backgrounded at load, Low Power
+  // Mode is on, the video is preparing, or metadata hasn't arrived. Belt +
+  // braces: force muted via JS (HTML attr alone isn't always trusted), call
+  // play() on every readiness event, and retry on first user interaction.
   var profileVideo = document.querySelector('.profile-video');
   if (profileVideo) {
+    profileVideo.muted = true;          // required for iOS autoplay
+    profileVideo.defaultMuted = true;
+    profileVideo.playsInline = true;
+    profileVideo.setAttribute('muted', '');
+    profileVideo.setAttribute('playsinline', '');
+    profileVideo.setAttribute('webkit-playsinline', '');
+
     function tryPlay() {
-      var p = profileVideo.play();
-      if (p && p.catch) p.catch(function(){});
+      if (profileVideo.paused) {
+        try {
+          var p = profileVideo.play();
+          if (p && p.catch) p.catch(function(){ /* will retry on next event */ });
+        } catch (_) {}
+      }
     }
-    // Kick it once on load.
+
+    // Fire on every readiness signal — whichever arrives first wins.
+    ['loadedmetadata','loadeddata','canplay','canplaythrough'].forEach(function(evt) {
+      profileVideo.addEventListener(evt, tryPlay);
+    });
+    // Kick once immediately in case the video is already ready.
     tryPlay();
+    // Kick again after the page settles (in case autoplay needs layout done).
+    setTimeout(tryPlay, 100);
+    setTimeout(tryPlay, 600);
+
+    // Still paused? Any user interaction starts it.
+    var resume = function() {
+      tryPlay();
+      if (!profileVideo.paused) {
+        document.removeEventListener('touchstart', resume);
+        document.removeEventListener('click', resume);
+        document.removeEventListener('scroll', resume);
+      }
+    };
+    document.addEventListener('touchstart', resume, { passive: true });
+    document.addEventListener('click', resume);
+    document.addEventListener('scroll', resume, { passive: true });
+
+    // Pause when off-screen to save battery, resume when back in view.
     var videoObs = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
         if (entry.isIntersecting) tryPlay();
@@ -50,14 +85,6 @@ document.documentElement.classList.add('js-ready');
       });
     }, { threshold: 0.1 });
     videoObs.observe(profileVideo);
-    // Recover if a hands-off autoplay got blocked — any tap starts it.
-    var resume = function() {
-      tryPlay();
-      document.removeEventListener('touchstart', resume);
-      document.removeEventListener('click', resume);
-    };
-    document.addEventListener('touchstart', resume, { passive: true, once: true });
-    document.addEventListener('click', resume, { once: true });
   }
   var revealEls = document.querySelectorAll('.reveal-section');
   var observer = new IntersectionObserver(function(entries) {

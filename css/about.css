@@ -1,7 +1,7 @@
 /* Pull the About section up toward the hero's View My Work button —
-   smaller top padding than other sections. */
+   smaller top padding than other sections. 8px tighter than before. */
 #about.section {
-  padding-top: clamp(16px, 2vw, 32px);
+  padding-top: clamp(8px, 1.5vw, 24px);
 }
 
 .about-card {
