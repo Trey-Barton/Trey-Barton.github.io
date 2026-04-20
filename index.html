@@ -315,6 +315,20 @@ body {
   display: block;
   transform: scale(0.87) translateZ(0);
   will-change: transform;
+  pointer-events: none;
+}
+/* Hide Safari's native autoplay-blocked overlay + all media controls.
+   The <video> has no `controls` attribute so there's nothing legitimate to
+   show; Safari still renders a play-button poster when autoplay is blocked,
+   which is what was overlaying the face. */
+.profile-video::-webkit-media-controls,
+.profile-video::-webkit-media-controls-enclosure,
+.profile-video::-webkit-media-controls-panel,
+.profile-video::-webkit-media-controls-start-playback-button,
+.profile-video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+  -webkit-appearance: none;
+  opacity: 0 !important;
 }
 #projects { text-align: center; margin-top: 8px; }
 .heading-viewport {
@@ -2454,10 +2468,9 @@ try {
       frame._hillW = W; frame._hillH = H;
     }
     sctx.drawImage(frame._hillCache, 0, 0);
-
-    // Animated river ripples + crocodile on top of the cached water surface.
-    drawRiverRipples(sctx, W, H, gY, time);
-    drawCroc(sctx, W, H, gY, time);
+    // (ripples + croc + jaguar + snake + big vines draw on the MAIN ctx
+    // after the scene cache blits — they're animated, so they can't live
+    // inside the cache.)
 
     // FAR undergrowth + trees (cached to offscreen canvas, refreshed every 2s)
     if (!frame._farCache || frame._farW !== W || frame._farH !== H || !frame._farTime) {
@@ -2476,7 +2489,7 @@ try {
       }
       for (var i = 0; i < Forest.farTrees.length; i++) {
         if (_farPos[i] === null) continue;
-        Forest.drawCanopy(fctx, Forest.farTrees[i], _farPos[i], W, H, time, 0.65);
+        Forest.drawCanopy(fctx, Forest.farTrees[i], _farPos[i], W, H, time, 0.88);
       }
       frame._farCache = fc; frame._farW = W; frame._farH = H; frame._farTime = time;
     }
@@ -2485,11 +2498,12 @@ try {
     // Atmospheric haze (cached on resize)
     if (!frame._hazeG || frame._hazeW !== W || frame._hazeH !== H) {
       frame._hazeG = sctx.createLinearGradient(0, H * 0.15, 0, H * 0.7);
-      frame._hazeG.addColorStop(0, 'rgba(90,110,60,0.07)');
-      frame._hazeG.addColorStop(0.3, 'rgba(140,140,60,0.1)');
-      frame._hazeG.addColorStop(0.5, 'rgba(170,160,65,0.08)');
-      frame._hazeG.addColorStop(0.7, 'rgba(130,130,55,0.06)');
-      frame._hazeG.addColorStop(1, 'rgba(90,100,50,0.03)');
+      // Lighter haze so back layers stay more visible.
+      frame._hazeG.addColorStop(0, 'rgba(90,110,60,0.03)');
+      frame._hazeG.addColorStop(0.3, 'rgba(140,140,60,0.045)');
+      frame._hazeG.addColorStop(0.5, 'rgba(170,160,65,0.04)');
+      frame._hazeG.addColorStop(0.7, 'rgba(130,130,55,0.03)');
+      frame._hazeG.addColorStop(1, 'rgba(90,100,50,0.015)');
       frame._hazeW = W; frame._hazeH = H;
     }
     sctx.fillStyle = frame._hazeG;
@@ -2533,9 +2547,6 @@ try {
       frame._midCache = mc; frame._midW = W; frame._midH = H; frame._midTime = time;
     }
     sctx.drawImage(frame._midCache, 0, 0);
-
-    // Jaguar — prowls between mid-canopy and foreground so fg trees occlude it.
-    drawJaguar(sctx, W, H, time, dt);
 
     // Golden atmosphere between mid and fg (cached on resize)
     if (!frame._midGlow || frame._mgW !== W || frame._mgH !== H) {
@@ -2782,13 +2793,6 @@ try {
     }
     sctx.drawImage(frame._fgCache, 0, 0);
 
-    // Snake slithering across the very foreground — below fg trees so any
-    // close-up trunk can partially occlude it.
-    drawSnake(sctx, W, H, time, dt);
-
-    // Extra decorative hanging vines drifting in front of the canopy.
-    drawBigVines(sctx, W, H, time);
-
     // Dense canopy fill + hanging drips (cached, refreshed every 2s)
     if (!frame._canopyCache || frame._canopyW !== W || frame._canopyH !== H || !frame._canopyTime) {
       var cc = frame._canopyCache || document.createElement('canvas');
@@ -2908,6 +2912,19 @@ try {
     }
     // Draw cached scene (one drawImage instead of ~300 draw calls)
     ctx.drawImage(frame._sceneCache, 0, 0);
+
+    // Animated critters + decorations — drawn on the main ctx AFTER the
+    // scene cache blits so they actually animate (they'd freeze in cache).
+    // Approximate layering:
+    //  • River ripples + crocodile sit atop the cached water surface.
+    //  • Jaguar prowls mid-ground, above trees but under the dense canopy.
+    //  • Snake slithers in the foreground dirt zone.
+    //  • Extra hanging vines drift in front of everything.
+    drawRiverRipples(ctx, W, H, H * 0.58, time);
+    drawCroc(ctx, W, H, H * 0.58, time);
+    drawJaguar(ctx, W, H, time, dt);
+    drawSnake(ctx, W, H, time, dt);
+    drawBigVines(ctx, W, H, time);
 
     // Particles -- spawn rates scaled for mobile
     if (Math.random() < 0.05) Forest.spawnP('firefly', W, H);
@@ -3063,6 +3080,8 @@ document.documentElement.classList.add('js-ready');
     profileVideo.setAttribute('muted', '');
     profileVideo.setAttribute('playsinline', '');
     profileVideo.setAttribute('webkit-playsinline', '');
+    profileVideo.controls = false;
+    profileVideo.removeAttribute('controls');
 
     function tryPlay() {
       if (profileVideo.paused) {
@@ -3072,12 +3091,16 @@ document.documentElement.classList.add('js-ready');
         } catch (_) {}
       }
     }
+    // Force data fetch so `play()` has bytes to start on — `preload="auto"`
+    // alone isn't always honored on iOS.
+    try { profileVideo.load(); } catch (_) {}
     ['loadedmetadata','loadeddata','canplay','canplaythrough'].forEach(function(evt) {
       profileVideo.addEventListener(evt, tryPlay);
     });
     tryPlay();
     setTimeout(tryPlay, 100);
     setTimeout(tryPlay, 600);
+    setTimeout(tryPlay, 1500);
 
     var resume = function () {
       tryPlay();
