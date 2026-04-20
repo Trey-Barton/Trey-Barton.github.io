@@ -1692,14 +1692,28 @@ try {
       frame._gcW = W; frame._gcH = H; frame._gcGY = Math.round(gY);
       var _gRng = Forest.mkRng(999);
 
-      // Base ground color variation
-      for (var ep = 0; ep < 25; ep++) {
+      // Base ground color variation — doubled count for richer mottling.
+      for (var ep = 0; ep < 50; ep++) {
         var epx = _gRng() * W;
         var epy = gY + _gRng() * gDepth;
-        var epsz = H * (0.03 + _gRng() * 0.06);
+        var epsz = H * (0.025 + _gRng() * 0.07);
+        var ejr = earthR + (_gRng() - 0.5) * 30;
+        var ejg = earthG + (_gRng() - 0.5) * 24;
+        var ejb = earthB + (_gRng() - 0.5) * 20;
         gctx.beginPath();
-        gctx.ellipse(epx, epy, epsz, epsz * 0.5, _gRng() * 3.14, 0, 6.28);
-        gctx.fillStyle = 'rgba(' + earthR + ',' + earthG + ',' + earthB + ',' + (0.15 + _gRng() * 0.12).toFixed(3) + ')';
+        gctx.ellipse(epx, epy, epsz, epsz * (0.35 + _gRng() * 0.35), _gRng() * 3.14, 0, 6.28);
+        gctx.fillStyle = 'rgba(' + Math.round(ejr) + ',' + Math.round(ejg) + ',' + Math.round(ejb) + ',' + (0.12 + _gRng() * 0.15).toFixed(3) + ')';
+        gctx.fill();
+      }
+
+      // Darker shadow blotches — break up uniformity.
+      for (var sbi = 0; sbi < 18; sbi++) {
+        var sbx = _gRng() * W;
+        var sby = gY + _gRng() * gDepth;
+        var sbsz = H * (0.02 + _gRng() * 0.05);
+        gctx.beginPath();
+        gctx.ellipse(sbx, sby, sbsz, sbsz * 0.5, _gRng() * 3.14, 0, 6.28);
+        gctx.fillStyle = 'rgba(35,28,18,' + (0.18 + _gRng() * 0.15).toFixed(3) + ')';
         gctx.fill();
       }
 
@@ -1733,8 +1747,8 @@ try {
         gctx.fill();
       }
 
-      // Sticks/twigs
-      for (var si = 0; si < 45; si++) {
+      // Sticks/twigs — bumped count + length variance for denser debris.
+      for (var si = 0; si < 75; si++) {
         var sx = _gRng() * W;
         var sy = gY + _gRng() * gDepth;
         var sl = 8 + _gRng() * 18;
@@ -1758,8 +1772,8 @@ try {
         }
       }
 
-      // Rocks/pebbles
-      for (var ri = 0; ri < 28; ri++) {
+      // Rocks/pebbles — larger count + occasional lichen dab on top.
+      for (var ri = 0; ri < 55; ri++) {
         var rx = _gRng() * W;
         var ry = gY + _gRng() * gDepth;
         var rsz = 2 + _gRng() * 5;
@@ -1768,16 +1782,165 @@ try {
         gctx.ellipse(rx, ry, rsz, rsz * (0.5 + _gRng() * 0.3), _gRng() * 3.14, 0, 6.28);
         gctx.fillStyle = 'rgba(' + rg + ',' + (rg - 5) + ',' + (rg - 15) + ',' + (0.4 + _gRng() * 0.25).toFixed(3) + ')';
         gctx.fill();
+        // Highlight on upper-left — gives rocks a lit face.
+        gctx.beginPath();
+        gctx.arc(rx - rsz * 0.3, ry - rsz * 0.2, rsz * 0.4, 0, 6.28);
+        gctx.fillStyle = 'rgba(' + (rg + 35) + ',' + (rg + 28) + ',' + (rg + 18) + ',0.35)';
+        gctx.fill();
+        // ~25% chance of lichen dab.
+        if (_gRng() < 0.25) {
+          var lc = _gRng() < 0.5 ? 'rgba(130,150,80,0.55)' : 'rgba(175,165,100,0.5)';
+          gctx.beginPath();
+          gctx.ellipse(rx + (_gRng()-0.5)*rsz, ry + (_gRng()-0.5)*rsz*0.6, rsz * 0.4, rsz * 0.25, _gRng()*3.14, 0, 6.28);
+          gctx.fillStyle = lc;
+          gctx.fill();
+        }
       }
 
-      // Moss patches
-      for (var msi = 0; msi < 16; msi++) {
+      // Moss patches — more varied sizes + occasional brighter moss highlights.
+      for (var msi = 0; msi < 32; msi++) {
         var msx = _gRng() * W;
         var msy = gY + _gRng() * gDepth;
-        var msz = 4 + _gRng() * 10;
+        var msz = 3 + _gRng() * 14;
         gctx.beginPath();
-        gctx.ellipse(msx, msy, msz, msz * 0.4, _gRng() * 3.14, 0, 6.28);
-        gctx.fillStyle = 'rgba(45,90,30,' + (0.2 + _gRng() * 0.15).toFixed(3) + ')';
+        gctx.ellipse(msx, msy, msz, msz * (0.3 + _gRng() * 0.2), _gRng() * 3.14, 0, 6.28);
+        gctx.fillStyle = 'rgba(' + (35 + Math.round(_gRng()*25)) + ',' + (80 + Math.round(_gRng()*30)) + ',' + (25 + Math.round(_gRng()*20)) + ',' + (0.2 + _gRng() * 0.18).toFixed(3) + ')';
+        gctx.fill();
+        // A few brighter flecks on top of the moss patch.
+        if (msz > 7) {
+          for (var mf = 0; mf < 3; mf++) {
+            gctx.beginPath();
+            gctx.arc(msx + (_gRng()-0.5)*msz*1.5, msy + (_gRng()-0.5)*msz*0.6, 1 + _gRng()*1.5, 0, 6.28);
+            gctx.fillStyle = 'rgba(80,130,55,0.4)';
+            gctx.fill();
+          }
+        }
+      }
+
+      // Leaf litter — scattered small colored ellipses in fall tones.
+      var LITTER_COLS = [
+        [155, 80, 30],  [180, 110, 45], [120, 60, 25],
+        [95, 55, 28],   [165, 130, 55], [140, 100, 45],
+        [75, 90, 40],   [105, 75, 30]
+      ];
+      for (var lli = 0; lli < 90; lli++) {
+        var llx = _gRng() * W;
+        var lly = gY + _gRng() * gDepth;
+        var llsz = 2 + _gRng() * 4;
+        var llc = LITTER_COLS[Math.floor(_gRng() * LITTER_COLS.length)];
+        gctx.save();
+        gctx.translate(llx, lly);
+        gctx.rotate(_gRng() * 3.14);
+        gctx.beginPath();
+        gctx.ellipse(0, 0, llsz, llsz * 0.45, 0, 0, 6.28);
+        gctx.fillStyle = 'rgba(' + llc[0] + ',' + llc[1] + ',' + llc[2] + ',' + (0.55 + _gRng() * 0.25).toFixed(3) + ')';
+        gctx.fill();
+        gctx.restore();
+      }
+
+      // Pine needles — tiny thin lines in brown-green, clustered in drifts.
+      for (var pni = 0; pni < 12; pni++) {
+        var pnCX = _gRng() * W;
+        var pnCY = gY + _gRng() * gDepth;
+        var pnCount = 8 + Math.floor(_gRng() * 10);
+        for (var pn = 0; pn < pnCount; pn++) {
+          var pnx = pnCX + (_gRng() - 0.5) * 40;
+          var pny = pnCY + (_gRng() - 0.5) * 18;
+          var pnLen = 4 + _gRng() * 8;
+          var pnAng = _gRng() * 3.14;
+          gctx.beginPath();
+          gctx.moveTo(pnx, pny);
+          gctx.lineTo(pnx + Math.cos(pnAng) * pnLen, pny + Math.sin(pnAng) * pnLen * 0.2);
+          gctx.lineWidth = 0.5;
+          gctx.strokeStyle = 'rgba(' + (75 + Math.round(_gRng()*20)) + ',' + (55 + Math.round(_gRng()*15)) + ',' + (30 + Math.round(_gRng()*10)) + ',0.55)';
+          gctx.stroke();
+        }
+      }
+
+      // Bark chips — small dark flakes scattered with clusters near tree lines.
+      for (var bki = 0; bki < 40; bki++) {
+        var bkx = _gRng() * W;
+        var bky = gY + _gRng() * gDepth;
+        var bksz = 1.5 + _gRng() * 3;
+        gctx.save();
+        gctx.translate(bkx, bky);
+        gctx.rotate(_gRng() * 3.14);
+        gctx.beginPath();
+        gctx.rect(-bksz * 0.5, -bksz * 0.25, bksz, bksz * 0.5);
+        gctx.fillStyle = 'rgba(' + (55 + Math.round(_gRng()*25)) + ',' + (38 + Math.round(_gRng()*15)) + ',' + (22 + Math.round(_gRng()*10)) + ',0.6)';
+        gctx.fill();
+        gctx.restore();
+      }
+
+      // Mushroom clusters — 6 clusters of 3-5 little caps each.
+      for (var mci = 0; mci < 6; mci++) {
+        var mcCX = _gRng() * W;
+        var mcCY = gY + gDepth * (0.3 + _gRng() * 0.65);
+        var mcCount = 3 + Math.floor(_gRng() * 3);
+        var mcCap = _gRng() < 0.4 ? [175, 60, 55] : (_gRng() < 0.5 ? [215, 195, 165] : [155, 125, 85]);
+        for (var mc = 0; mc < mcCount; mc++) {
+          var mmx = mcCX + (_gRng() - 0.5) * 12;
+          var mmy = mcCY + (_gRng() - 0.5) * 5;
+          var mSz = 1.8 + _gRng() * 2.5;
+          // Stem.
+          gctx.beginPath();
+          gctx.rect(mmx - mSz * 0.2, mmy - mSz * 1.2, mSz * 0.4, mSz * 1.2);
+          gctx.fillStyle = 'rgba(220,210,180,0.7)';
+          gctx.fill();
+          // Cap.
+          gctx.beginPath();
+          gctx.ellipse(mmx, mmy - mSz * 1.2, mSz, mSz * 0.55, 0, Math.PI, 0);
+          gctx.fillStyle = 'rgba(' + mcCap[0] + ',' + mcCap[1] + ',' + mcCap[2] + ',0.85)';
+          gctx.fill();
+          // Cap spots.
+          if (mcCap[0] > 170 && mcCap[1] < 80) {
+            gctx.beginPath();
+            gctx.arc(mmx - mSz * 0.3, mmy - mSz * 1.35, mSz * 0.15, 0, 6.28);
+            gctx.fillStyle = 'rgba(245,240,215,0.9)';
+            gctx.fill();
+            gctx.beginPath();
+            gctx.arc(mmx + mSz * 0.35, mmy - mSz * 1.3, mSz * 0.12, 0, 6.28);
+            gctx.fill();
+          }
+        }
+      }
+
+      // Exposed roots crossing the ground — sinuous brown lines.
+      for (var rti = 0; rti < 10; rti++) {
+        var rtSX = _gRng() * W;
+        var rtSY = gY + gDepth * (0.1 + _gRng() * 0.75);
+        var rtLen = 40 + _gRng() * 90;
+        var rtAng = (_gRng() - 0.5) * 1.2;
+        gctx.beginPath();
+        gctx.moveTo(rtSX, rtSY);
+        var rtSteps = 6;
+        for (var rts = 1; rts <= rtSteps; rts++) {
+          var rtT = rts / rtSteps;
+          var rtX = rtSX + Math.cos(rtAng) * rtLen * rtT + Math.sin(rtT * 6) * 6;
+          var rtY = rtSY + Math.sin(rtAng) * rtLen * rtT * 0.3 + Math.cos(rtT * 4) * 3;
+          gctx.lineTo(rtX, rtY);
+        }
+        gctx.lineWidth = 2.5 + _gRng() * 2;
+        gctx.strokeStyle = 'rgba(' + (65 + Math.round(_gRng()*20)) + ',' + (42 + Math.round(_gRng()*12)) + ',' + (22 + Math.round(_gRng()*8)) + ',0.55)';
+        gctx.stroke();
+        // Highlight on top.
+        gctx.lineWidth = 0.8;
+        gctx.strokeStyle = 'rgba(155,125,85,0.35)';
+        gctx.stroke();
+      }
+
+      // Acorns / seeds — tiny dark ovals with cap dot.
+      for (var aci = 0; aci < 18; aci++) {
+        var acx = _gRng() * W;
+        var acy = gY + _gRng() * gDepth;
+        var acsz = 1.2 + _gRng() * 1.2;
+        gctx.beginPath();
+        gctx.ellipse(acx, acy, acsz, acsz * 1.3, 0, 0, 6.28);
+        gctx.fillStyle = 'rgba(88,58,28,0.75)';
+        gctx.fill();
+        gctx.beginPath();
+        gctx.arc(acx, acy - acsz * 1.1, acsz * 0.6, 0, 6.28);
+        gctx.fillStyle = 'rgba(55,35,18,0.85)';
         gctx.fill();
       }
 
@@ -1860,30 +2023,61 @@ try {
       hctx.closePath();
       hctx.fillStyle = 'rgba(80,100,55,0.3)';
       hctx.fill();
-      // Distant tree line silhouette
-      for (var dti = 0; dti < 120; dti++) {
+      // Third hill layer — even farther back, hazier.
+      hctx.beginPath();
+      hctx.moveTo(0, gY + 2);
+      for (var hx = 0; hx <= W; hx += 10) {
+        var hy = gY - H * 0.07 - Math.sin(hx * 0.002 + 2.1) * H * 0.03 - Math.sin(hx * 0.006 + 1.7) * H * 0.015;
+        hctx.lineTo(hx, hy);
+      }
+      hctx.lineTo(W, gY + 2);
+      hctx.closePath();
+      hctx.fillStyle = 'rgba(55,75,50,0.28)';
+      hctx.fill();
+
+      // Distant tree line silhouette — denser crowd.
+      for (var dti = 0; dti < 200; dti++) {
         var dtx = hillRng() * W;
-        var dty = gY - H * 0.01 - hillRng() * H * 0.04;
-        var dth = H * (0.015 + hillRng() * 0.03);
-        var dtw = H * (0.004 + hillRng() * 0.006);
-        hctx.fillStyle = 'rgba(50,40,30,' + (0.15 + hillRng() * 0.15).toFixed(3) + ')';
+        var dty = gY - H * 0.01 - hillRng() * H * 0.045;
+        var dth = H * (0.012 + hillRng() * 0.035);
+        var dtw = H * (0.003 + hillRng() * 0.007);
+        hctx.fillStyle = 'rgba(50,40,30,' + (0.12 + hillRng() * 0.18).toFixed(3) + ')';
         hctx.fillRect(dtx - dtw * 0.3, dty, dtw * 0.6, dth);
-        var dcr = dtw * (1.5 + hillRng() * 2);
+        var dcr = dtw * (1.5 + hillRng() * 2.2);
         hctx.beginPath();
         hctx.arc(dtx, dty - dcr * 0.3, dcr, 0, 6.28);
         var dtcol = Forest.CANOPY[Math.floor(hillRng() * Forest.CANOPY.length)];
-        hctx.fillStyle = Forest.rgb(Forest.mix(dtcol, [50, 70, 40], 0.5), 0.25 + hillRng() * 0.15);
+        hctx.fillStyle = Forest.rgb(Forest.mix(dtcol, [50, 70, 40], 0.5), 0.22 + hillRng() * 0.18);
         hctx.fill();
       }
-      // Scattered distant bushes
-      for (var dbi = 0; dbi < 40; dbi++) {
+
+      // Tiny background "saplings" — thin strokes of bright foliage spots.
+      for (var sdi = 0; sdi < 80; sdi++) {
+        var sdx = hillRng() * W;
+        var sdy = gY + hillRng() * H * 0.025;
+        var sdh = H * (0.01 + hillRng() * 0.02);
+        hctx.beginPath();
+        hctx.moveTo(sdx, sdy);
+        hctx.lineTo(sdx + (hillRng()-0.5)*2, sdy - sdh);
+        hctx.lineWidth = 0.6;
+        hctx.strokeStyle = 'rgba(58,74,40,0.45)';
+        hctx.stroke();
+        var sdcol = Forest.CANOPY[Math.floor(hillRng() * Forest.CANOPY.length)];
+        hctx.beginPath();
+        hctx.arc(sdx, sdy - sdh, sdh * 0.55, 0, 6.28);
+        hctx.fillStyle = Forest.rgb(Forest.mix(sdcol, [80, 105, 55], 0.35), 0.45);
+        hctx.fill();
+      }
+
+      // Scattered distant bushes — more variety.
+      for (var dbi = 0; dbi < 70; dbi++) {
         var dbx = hillRng() * W;
-        var dby = gY + hillRng() * H * 0.03;
-        var dbr = H * (0.005 + hillRng() * 0.012);
+        var dby = gY + hillRng() * H * 0.035;
+        var dbr = H * (0.004 + hillRng() * 0.013);
         hctx.beginPath();
         hctx.ellipse(dbx, dby, dbr * 1.8, dbr, 0, 0, 6.28);
         var dbcol = Forest.CANOPY[Math.floor(hillRng() * Forest.CANOPY.length)];
-        hctx.fillStyle = Forest.rgb(Forest.mix(dbcol, [60, 80, 45], 0.4), 0.2 + hillRng() * 0.15);
+        hctx.fillStyle = Forest.rgb(Forest.mix(dbcol, [60, 80, 45], 0.4), 0.2 + hillRng() * 0.18);
         hctx.fill();
       }
       frame._hillCache = hc;
