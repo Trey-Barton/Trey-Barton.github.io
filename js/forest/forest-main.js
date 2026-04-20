@@ -11,22 +11,38 @@ try {
   var ctx = canvas.getContext('2d', { alpha: false });
   var time = 0, lastTs = null;
 
-  function resize() {
-    var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1 : 2);
-    var w = window.innerWidth;
-    var h = Math.max(window.innerHeight, document.documentElement.clientHeight, screen.height);
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
+  // Canvas buffer is LOCKED at init. Resizing the window does NOT clear and
+  // regenerate it — that's what caused the blue/green glitch on resize,
+  // because setting canvas.width wipes the buffer AND invalidates every
+  // offscreen cache (sky, hills, ground). The CSS `object-fit: cover`
+  // handles display reshape for free.
+  //
+  // Initial buffer is sized generously (uses current viewport with a desktop
+  // floor) so later expansion doesn't blur. DPR is capped at 2× for retina.
+  // The DPR used at init is frozen so frame()'s W/H calc stays consistent
+  // even if the user drags the window to a different monitor.
+  var _initDPR = 1;
+  var _cssW = 0, _cssH = 0;
+  function initCanvas() {
     Forest.isMobile = window.innerWidth <= 768;
     Forest.MAX_PARTICLES = Forest.isMobile ? 80 : 400;
+    _initDPR = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1 : 2);
+    _cssW = Math.max(window.innerWidth, 1440);
+    _cssH = Math.max(window.innerHeight, document.documentElement.clientHeight, 900);
+    canvas.width  = _cssW * _initDPR;
+    canvas.height = _cssH * _initDPR;
+    canvas.style.width = '';     // CSS rules own display size
+    canvas.style.height = '';
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(_initDPR, _initDPR);
   }
-  var resizeTimer;
-  window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 100); });
-  resize();
+  initCanvas();
+
+  // Only recalc spawn-rate bucket on resize — don't touch the canvas buffer.
+  window.addEventListener('resize', function () {
+    Forest.isMobile = window.innerWidth <= 768;
+    Forest.MAX_PARTICLES = Forest.isMobile ? 80 : 400;
+  });
 
   var windPhase = 0;
 
@@ -46,8 +62,8 @@ try {
     time += dt;
     windPhase += dt * 0.15;
 
-    var dpr = Math.min(window.devicePixelRatio || 1, Forest.isMobile ? 1.5 : 2);
-    var W = canvas.width / dpr, H = canvas.height / dpr;
+    // Use the init DPR — canvas buffer is locked, so these must stay constant.
+    var W = _cssW, H = _cssH;
     var wind = Math.sin(windPhase) * 0.5 + Math.sin(windPhase * 2.3) * 0.2;
 
     // Sky gradient (cached on resize)
