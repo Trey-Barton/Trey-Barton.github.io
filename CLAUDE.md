@@ -1,50 +1,30 @@
 # Trey Barton Portfolio — Developer Guide
 
 ## Architecture
-Static GitHub Pages site. Vanilla JS, no build tools, no frameworks.
+Static GitHub Pages site. Vanilla JS, no build tools, no frameworks. **Everything — HTML, CSS, JS — lives inline in `index.html`**. There is no external stylesheet or script file.
 
 ## File Map
-
-### HTML
-- `index.html` — All markup. Sections: nav, #hero, #about, #projects, #contact, footer.
-
-### CSS (css/)
-- `variables.css` — Design tokens (colors, spacing, typography). ALL sizing uses `clamp()`. Edit HERE to change sizes.
-- `base.css` — Reset, body, nav, glass-card, footer, reveal animations.
-- `hero.css` — Hero section styles.
-- `about.css` — About card, photo ring, skills tags.
-- `projects.css` — 3D cube viewport, faces, wires, project cards, nav dots/arrows.
-- `contact.css` — Contact card, social links.
-- `responsive.css` — Layout-only overrides at 768px breakpoint. NO sizing here (use clamp in variables.css).
-
-### JS — Canvas Forest (js/forest/)
-All files use the `window.Forest` namespace.
-- `palette.js` — Color arrays (BARK, CANOPY, LEAF_COLORS, etc.) and utilities (mkRng, rgb, mix).
-- `tree-gen.js` — Tree/branch/canopy/vine/root generation. Forest.genTree, Forest.genLayer.
-- `undergrowth-gen.js` — Ferns, mushrooms, grass, bushes. Forest.undergrowth.
-- `draw-trunk.js` — Trunk, bark stripes, branches, vines rendering. Forest.drawTrunk.
-- `draw-canopy.js` — Canopy blob rendering. Forest.drawCanopy.
-- `draw-undergrowth.js` — Undergrowth rendering. Forest.drawUndergrowth.
-- `particles.js` — Fireflies, spores, leaves, petals, dust, stars, mist. Forest.particles, Forest.spawnP.
-- `scene.js` — Tree layer instances (far/mid/fg). Forest.farTrees, Forest.midTrees, Forest.fgTrees.
-- `forest-main.js` — Canvas init, resize, render loop. Orchestrates all Forest.* modules.
-
-### JS — UI (js/)
-- `cube.js` — 3D cube carousel, wire attachment point system, swipe gestures, dot navigation. WIRE_CONFIG at top defines where wires attach (2-letter codes: tl/tc/tr/ml/mc/mr/bl/bc/br).
-- `ui.js` — Nav scroll, smooth scrolling, year, video observer, reveal animations.
+- `index.html` — All markup, styles, and scripts. Only local file the browser loads.
+  - `<style>` block: reset, design tokens (`:root`), nav, hero, about, projects, cube, contact, footer, responsive tweaks.
+  - First `<script>` block (around lines ~712–2429): Canvas forest — palette, RNG, tree generation, branch/root drawing, canopy, undergrowth, particles, main render loop.
+  - Second `<script>` block (around lines ~2431–end): Nav scroll state, smooth scrolling, year, profile-video autoplay, reveal animations, cube carousel, chandelier wire positioning.
+- `bounce_loop.mp4` — Profile video loop (~1.1 MB, H.264 baseline, 900 px tall, 30 fps, no audio).
+- `.gitignore` — excludes `bounce.mov` / `bounce.mp4` (raw source videos) and `.gstack/`.
 
 ## Common Tasks
-- **Change text sizes**: Edit `clamp()` values in `css/variables.css`
-- **Change colors**: Edit color variables in `css/variables.css`
-- **Adjust cube geometry**: Edit constants at top of `js/cube.js` (WIRE_CONVERGENCE_RATIO, CUBE_HEIGHT_RATIO, etc.)
-- **Move wire attachment points**: Edit `WIRE_CONFIG` at top of `js/cube.js` — change the 2-letter codes (tl/tc/tr/ml/mc/mr/bl/bc/br)
-- **Modify forest appearance**: Edit palette arrays in `js/forest/palette.js`
-- **Add a project card**: Add a `.cube-face` div in `index.html` inside `#cube-scene`, update dot count
-- **Fix mobile layout**: Check `css/responsive.css` for structural issues, `css/variables.css` for sizing
+All edits are grep → edit in `index.html`.
+
+- **Change a color**: search the palette arrays (`BARK`, `CANOPY`, `CANOPY_ACCENT`, `LEAF_COLORS`, `FERN_COLORS`) or the sky gradient `addColorStop` calls.
+- **Change text sizes**: edit the `clamp()` values in the `:root` block near the top of `<style>`.
+- **Adjust cube geometry / wires**: the cube carousel + wire system lives in the second `<script>` block. `WIRE_CONFIG` at the top of that block controls attachment points (`bc` / `tc` / etc — `t/m/b` × `l/c/r`).
+- **Add a project card**: add another `<div class="cube-face">…</div>` inside `#cube-scene` and bump the dot count.
+- **Tune the sway / branch density**: `genTree` and `drawTrunk` in the first `<script>` block. Layer-aware sway amplitude is set from `tree.layer` (`fg`/`mid`/`far`). Recursive `growBranch` produces the fractal branch tree; right-leaning branches (angle > 0) get +1 child fork.
 
 ## Key Conventions
-- All sizing uses CSS `clamp()` for fluid scaling across all screen sizes. No magic pixel breakpoints for sizing.
-- JS namespace: `window.Forest` for canvas code. Cube and UI are self-contained IIFEs.
-- Canvas caches static elements (ground, hills, sky gradient) to offscreen canvases, regenerated only on resize.
-- Wire positions recalculated on scroll and resize via `positionWires()` in cube.js.
-- Cube viewport width is fluid via CSS `clamp(280px, 80vw, 560px)` — JS reads offsetWidth to compute geometry.
+- All sizing uses CSS `clamp()` for fluid scaling. No per-breakpoint sizing hacks.
+- Canvas buffer is **locked at init** — window resize never touches `canvas.width` / `canvas.height` (that wipe caused the blue/green flash mid-scroll / mid-resize). CSS `object-fit: cover` handles display reshape.
+- Canvas frame loop **never** skips frames based on scroll position (that caused the same flash on scroll).
+- iOS-safe: `100dvh` hero with `100vh` fallback, `100lvh` canvas, `env(safe-area-inset-*)` on nav/footer, `overscroll-behavior-y: none`, `-webkit-tap-highlight-color: transparent`, `touch-action: manipulation` on interactives.
+- `#bg-canvas` is promoted to a GPU compositor layer (`transform: translateZ(0)` + `backface-visibility: hidden`) so position:fixed doesn't "fall off" mid-scroll on mobile browsers.
+- Profile video: `muted playsinline autoplay preload="auto"` with a JS fallback that re-attempts `play()` on every readiness event + user interaction (iOS blocks cold autoplay more often than you'd think).
+- Wire positions recalculate on scroll and resize via `positionTopWires` / `positionBottomWires` / `positionHeadingWires`.
