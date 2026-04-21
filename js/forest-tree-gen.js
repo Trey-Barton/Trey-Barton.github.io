@@ -15,17 +15,17 @@
     var t = { nx: r(), layer: layer };
 
     if (layer === 'fg') {
-      t.trunkW = 0.07 + r() * 0.08;      // was 0.05-0.11 → 0.07-0.15 (bigger)
+      t.trunkW = 0.05 + r() * 0.06;      // back to original (zoomed out)
       t.baseY  = 0.94 + r() * 0.14;
       t.topY   = -0.08 + r() * 0.12;
       t.taper  = 0.55 + r() * 0.2;
     } else if (layer === 'mid') {
-      t.trunkW = 0.028 + r() * 0.032;    // was 0.02-0.045 → 0.028-0.06
+      t.trunkW = 0.02 + r() * 0.025;     // back to original
       t.baseY  = 0.72 + r() * 0.1;
       t.topY   = 0.06 + r() * 0.14;
       t.taper  = 0.45 + r() * 0.25;
     } else {
-      t.trunkW = 0.012 + r() * 0.018;    // was 0.009-0.023 → 0.012-0.03
+      t.trunkW = 0.009 + r() * 0.014;    // back to original
       t.baseY  = 0.62 + r() * 0.06;
       t.topY   = 0.1 + r() * 0.18;
       t.taper  = 0.4 + r() * 0.2;
