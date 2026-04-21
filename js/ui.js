@@ -121,17 +121,24 @@ document.documentElement.classList.add('js-ready');
    * When sections move (scroll/resize), wires stretch and angle automatically.
    */
 
+  /* Accepts either:
+   *   • single-letter codes 'T' / 'B' — horizontally centered on the
+   *     TOP or BOTTOM edge of the element (the new, simpler format),
+   *   • two-letter codes 'tl' / 'tc' / 'tr' / 'ml' / 'mc' / 'mr' /
+   *     'bl' / 'bc' / 'br' (legacy 9-point grid, still supported). */
   function getAttachPoint(el, pos) {
     var rect = el.getBoundingClientRect();
+    if (pos === 'T') return { x: rect.left + rect.width / 2, y: rect.top };
+    if (pos === 'B') return { x: rect.left + rect.width / 2, y: rect.bottom };
     var x, y;
-    // Horizontal
+    // Horizontal (legacy)
     if (pos[1] === 'l') x = rect.left;
     else if (pos[1] === 'r') x = rect.right;
-    else x = rect.left + rect.width / 2; // 'c'
-    // Vertical
+    else x = rect.left + rect.width / 2;
+    // Vertical (legacy)
     if (pos[0] === 't') y = rect.top;
     else if (pos[0] === 'b') y = rect.bottom;
-    else y = rect.top + rect.height / 2; // 'm'
+    else y = rect.top + rect.height / 2;
     return { x: x, y: y };
   }
 
@@ -242,24 +249,29 @@ document.documentElement.classList.add('js-ready');
 
   /* ═══════ WIRE CONNECTION CONFIG ═══════
    *
-   * Edit these to change where wires attach on each box.
-   * Each box has 9 attachment points:
+   * Three wire sets, each with 4 physical wires.
    *
-   *   tl ── tc ── tr
-   *   │           │
-   *   ml    mc    mr
-   *   │           │
-   *   bl ── bc ── br
+   *   topWires  : About card → Mini chandelier (heading-cube) corners.
+   *               (Previously called "headingWires".)
+   *   miniWires : Project cube's TOP corners → Mini chandelier (conceptually
+   *               drawn bottom-up from the cube up to the chandelier).
+   *               (Previously called "topWires".)
+   *   bottomWires: Project cube's BOTTOM corners → Contact card.
    *
-   * Change any 2-letter code to move that wire's endpoint.
+   * Attachment-point codes (the `from` / `to` fields):
+   *   • 'T' — top-edge, horizontally centered.
+   *   • 'B' — bottom-edge, horizontally centered.
+   *   (Legacy 9-point codes like 'bc' / 'tr' still work for custom anchors.)
+   *
+   * `on`           — CSS selector for the anchor element.
+   * `cornerSpread` — px to push the 4 corner endpoints outward (wider fan).
+   * `cornerYShift` — px vertical offset on corners (+down, -up).
    */
   var WIRE_CONFIG = {
-    topWires:     { from: 'bc', on: '.about-card',   cornerSpread: 0, cornerYShift: 0  },
-    bottomWires:  { to:   'tc', on: '.contact-card',  cornerSpread: 0, cornerYShift: 0 },
-    headingWires: { from: 'bc', on: '.about-card'   },  // keep as-is
+    topWires:    { from: 'B', on: '.about-card' },                              // about → mini
+    miniWires:   { from: 'B', on: '.about-card',   cornerSpread: 0, cornerYShift: 0 }, // mini ← cube top
+    bottomWires: { to:   'T', on: '.contact-card', cornerSpread: 0, cornerYShift: 0 }, // cube bottom → contact
   };
-  // cornerSpread: px to push corners outward from center (positive = wider)
-  // cornerYShift: px to shift corners vertically (positive = down, negative = up)
 
   // Convert a 2D page-space target point into cube-scene 3D local Y
   function pagePointToCubeY(targetPoint, cubeViewport) {
@@ -319,10 +331,12 @@ document.documentElement.classList.add('js-ready');
   // ── Section elements ──
   var headingVP = document.querySelector('.heading-viewport');
 
-  // Top wires: WIRE_CONFIG.topWires.on attachment → cube top corners
-  function positionTopWires() {
+  // MINI WIRES — .chandelier-wire DOM elements.
+  // Physically: project-cube TOP corners → mini-chandelier (up-going).
+  // (Anchor point is WIRE_CONFIG.miniWires.on — configurable.)
+  function positionMiniWires() {
     var wires = document.querySelectorAll('.chandelier-wire');
-    var cfg = WIRE_CONFIG.topWires;
+    var cfg = WIRE_CONFIG.miniWires;
     var srcEl = document.querySelector(cfg.on);
     if (!cubeVP || !srcEl || wires.length < 4) return;
     var attachPt = getAttachPoint(srcEl, cfg.from);
@@ -347,10 +361,12 @@ document.documentElement.classList.add('js-ready');
     positionWireSet(bWires, bottomConvY, 'bottom', cfg.cornerSpread || 0, cfg.cornerYShift || 0);
   }
 
-  // Heading wires: WIRE_CONFIG.headingWires.on attachment → heading cube corners
-  function positionHeadingWires() {
+  // TOP WIRES — .heading-wire DOM elements.
+  // Physically: about-card BOTTOM → mini-chandelier corners.
+  // (Previously called "heading wires".)
+  function positionTopWires() {
     var hWires = document.querySelectorAll('.heading-wire');
-    var cfg = WIRE_CONFIG.headingWires;
+    var cfg = WIRE_CONFIG.topWires;
     var srcEl = document.querySelector(cfg.on);
     if (!srcEl || !headingVP || hWires.length < 4) return;
 
@@ -390,9 +406,9 @@ document.documentElement.classList.add('js-ready');
 
   // ── Initialize and listen ──
   function updateAllWires() {
-    positionHeadingWires();
-    positionTopWires();
-    positionBottomWires();
+    positionTopWires();    // about-card → mini-chandelier (the .heading-wire DOM)
+    positionMiniWires();   // project-cube top ↔ mini-chandelier (the .chandelier-wire DOM)
+    positionBottomWires(); // project-cube bottom → contact-card (the .chandelier-wire-bottom DOM)
   }
 
   updateAllWires();
