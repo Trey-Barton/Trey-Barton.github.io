@@ -268,19 +268,28 @@ document.documentElement.classList.add('js-ready');
    * `cornerYShift` — px vertical offset on corners (+down, -up).
    */
   var WIRE_CONFIG = {
-    topWires:    { from: 'B', on: '.about-card', bPointSpreadDeg: 2 },          // about → mini
-    miniWires:   { from: 'B', on: '.about-card',   cornerSpread: 0, cornerYShift: 0 }, // mini ← cube top
-    bottomWires: { to:   'T', on: '.contact-card', cornerSpread: 0, cornerYShift: 0 }, // cube bottom → contact
+    // Top wires (.heading-wire): about-card → mini chandelier corners.
+    // T-point (upper / about-card) stays centered. B-point (lower / each
+    // chandelier corner) is pushed out + down by the pixel knobs below.
+    topWires:    {
+      from: 'B', on: '.about-card',
+      bCornerSpreadPx: 15,   // B-point (corner) outward in XZ by this many px
+      bCornerDropPx:   8,    // B-point (corner) downward (away from T-point) in px
+    },
+    // Mini wires (.chandelier-wire): cube top corners ↔ mini chandelier.
+    miniWires:   { from: 'B', on: '.about-card',   cornerSpread: 0, cornerYShift: 0 },
+    // Bottom wires (.chandelier-wire-bottom): cube bottom corners → contact.
+    // B-point (lower / contact-card) stays centered. T-point (upper / each
+    // cube-bottom corner) mirrors the top-wires: out 15 px, UP 8 px (away
+    // from the contact-card convergence below).
+    bottomWires: {
+      to:   'T', on: '.contact-card',
+      cornerSpread: 15,      // T-point outward in XZ (positionWireSet knob)
+      cornerYShift: -8,      // T-point UP by 8 px (negative Y = further from convergence)
+    },
   };
-  // Wire-end vocabulary:
-  //   T-point = the TOP of the wire (upper end in space).
-  //   B-point = the BOTTOM of the wire (lower end in space).
-  // For top-wires, T-point is the about-card anchor (fixed convergence);
-  //                B-point is each mini-chandelier corner.
-  //
-  // tPointSpreadDeg: widen the fan at the TOP of each wire (upper anchor).
-  // bPointSpreadDeg: widen the fan at the BOTTOM of each wire (corner side).
-  //   Shift is wireLen * tan(deg) along the corner's outward azimuth.
+  // Vocabulary: T-point = TOP of the wire (upper end in space).
+  //             B-point = BOTTOM of the wire (lower end in space).
 
   // Convert a 2D page-space target point into cube-scene 3D local Y
   function pagePointToCubeY(targetPoint, cubeViewport) {
@@ -400,44 +409,33 @@ document.documentElement.classList.add('js-ready');
       { x: -edgeZ, z: edgeZ }
     ];
 
-    // Spread knobs: push the T-end (upper anchor) or B-end (corner) outward
-    // by some degrees along each corner's outward azimuth direction.
-    var tDeg = cfg.tPointSpreadDeg || 0;
-    var bDeg = cfg.bPointSpreadDeg || 0;
-    var tRad = tDeg * Math.PI / 180;
-    var bRad = bDeg * Math.PI / 180;
+    // Pixel knobs — outward (XZ) and vertical (Y) shift of the B-point
+    // (the mini-chandelier corner end) of each wire.
+    var bSpreadPx = cfg.bCornerSpreadPx || 0;
+    var bDropPx   = cfg.bCornerDropPx   || 0;
 
     corners.forEach(function(corner, i) {
-      // Base geometry (no spread).
-      var dx0 = corner.x;
-      var dy0 = -headingHalf - convY3D;
-      var dz0 = corner.z;
-      var baseLen = Math.sqrt(dx0 * dx0 + dy0 * dy0 + dz0 * dz0);
       // Outward unit vector in XZ (from cube center toward this corner).
       var cornerLen = Math.sqrt(corner.x * corner.x + corner.z * corner.z) || 1;
       var ux = corner.x / cornerLen;
       var uz = corner.z / cornerLen;
 
-      // T-end shift (upper anchor) — outward along azimuth.
-      var tShift = baseLen * Math.tan(tRad);
-      var upperX = ux * tShift;
-      var upperZ = uz * tShift;
-      // B-end shift (corner / lower anchor) — outward along azimuth.
-      var bShift = baseLen * Math.tan(bRad);
-      var lowerX = corner.x + ux * bShift;
-      var lowerZ = corner.z + uz * bShift;
+      // Shift B-point outward + downward.
+      var lowerX = corner.x + ux * bSpreadPx;
+      var lowerZ = corner.z + uz * bSpreadPx;
+      var lowerY = -headingHalf + bDropPx;   // +Y = toward ground; more positive = lower
 
-      // Re-derive wire geometry from the shifted anchors.
-      var dx = lowerX - upperX;
-      var dy = -headingHalf - convY3D;
-      var dz = lowerZ - upperZ;
+      // T-point stays at the convergence (0, convY3D, 0).
+      var dx = lowerX;
+      var dy = lowerY - convY3D;
+      var dz = lowerZ;
       var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
       var azimuth = Math.atan2(-dx, -dz) * (180 / Math.PI);
       var dxz = Math.sqrt(dx * dx + dz * dz);
       var tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
       hWires[i].style.height = wireLen + 'px';
       hWires[i].style.transform =
-        'translate3d(' + upperX.toFixed(2) + 'px,' + convY3D.toFixed(2) + 'px,' + upperZ.toFixed(2) + 'px)' +
+        'translate3d(0px,' + convY3D.toFixed(2) + 'px,0px)' +
         ' rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
     });
   }

@@ -620,7 +620,13 @@ try {
     var wind = Math.sin(windPhase) * 0.5 + Math.sin(windPhase * 2.3) * 0.2;
 
     // ═══ FULL SCENE CACHE: render everything except particles once ═══
-    if (!frame._sceneCache || frame._sceneW !== W || frame._sceneH !== H) {
+    // Rebuild the scene cache every ~300 ms so branch sway actually shows on
+    // screen (trees draw inside the cache; if we never refreshed, sway would
+    // be frozen in a single frame). ~3 fps of tree redraw is plenty for
+    // natural motion without burning the mobile GPU.
+    var _sceneStale = !frame._sceneT || (time - frame._sceneT) > 0.3;
+    if (!frame._sceneCache || frame._sceneW !== W || frame._sceneH !== H || _sceneStale) {
+      frame._sceneT = time;
       var sc = frame._sceneCache || document.createElement('canvas');
       sc.width = W; sc.height = H;
       var sctx = sc.getContext('2d');
