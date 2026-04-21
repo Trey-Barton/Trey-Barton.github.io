@@ -814,17 +814,17 @@ window.Forest = window.Forest || {};
     var t = { nx: r(), layer: layer };
 
     if (layer === 'fg') {
-      t.trunkW = 0.05 + r() * 0.06;
+      t.trunkW = 0.07 + r() * 0.08;      // was 0.05-0.11 → 0.07-0.15 (bigger)
       t.baseY  = 0.94 + r() * 0.14;
       t.topY   = -0.08 + r() * 0.12;
       t.taper  = 0.55 + r() * 0.2;
     } else if (layer === 'mid') {
-      t.trunkW = 0.02 + r() * 0.025;
+      t.trunkW = 0.028 + r() * 0.032;    // was 0.02-0.045 → 0.028-0.06
       t.baseY  = 0.72 + r() * 0.1;
       t.topY   = 0.06 + r() * 0.14;
       t.taper  = 0.45 + r() * 0.25;
     } else {
-      t.trunkW = 0.009 + r() * 0.014;
+      t.trunkW = 0.012 + r() * 0.018;    // was 0.009-0.023 → 0.012-0.03
       t.baseY  = 0.62 + r() * 0.06;
       t.topY   = 0.1 + r() * 0.18;
       t.taper  = 0.4 + r() * 0.2;
@@ -932,21 +932,31 @@ window.Forest = window.Forest || {};
       });
     }
 
-    // Root flares at base — denser + wider + flatter so neighboring trees'
-    // roots weave into each other instead of each sitting in its own puddle.
+    // Root flares — many directions, varied lengths, mid-length side-splits.
+    // Each root attaches at a slightly different vertical offset along the
+    // trunk base, launches at its own angle (not just purely horizontal),
+    // and can split a side-branch partway along its length.
     t.roots = [];
-    var nr = (layer === 'fg') ? 6 + Math.floor(r() * 5) : (layer === 'mid') ? 4 + Math.floor(r() * 3) : 2 + Math.floor(r() * 2);
+    var nr = (layer === 'fg') ? 7 + Math.floor(r() * 5) : (layer === 'mid') ? 4 + Math.floor(r() * 3) : 2 + Math.floor(r() * 2);
     for (var i = 0; i < nr; i++) {
       t.roots.push({
         dir: r() < 0.5 ? -1 : 1,
-        // Spread 1.2–2.8× the trunk width (was 0.3–1.0) — long flat lateral
-        // roots that overlap with neighbors.
-        spread: ((layer === 'fg') ? 1.4 : (layer === 'mid') ? 1.1 : 0.9) + r() * 1.3,
-        // Height 0.01–0.022 of viewport (was 0.02–0.05) — flatter profile.
-        height: 0.008 + r() * 0.014,
+        // Spread varies a LOT per root — some long and reaching, others short.
+        spread: ((layer === 'fg') ? 0.8 : (layer === 'mid') ? 0.7 : 0.6) + r() * 2.2,
+        height: 0.008 + r() * 0.016,
+        // yOffset: attachment point along trunk base (fraction of H).
+        // Range lets roots emerge slightly above or below the exact ground line.
+        yOffset: (r() - 0.55) * 0.018,
+        // Angle from horizontal, signed. +down / -up. Keeps most roots along
+        // ground but lets some dive deeper or climb up the trunk slightly.
+        angle: (r() - 0.45) * 0.6,
+        // Fraction along the root where a side-branch splits off.
+        splitAt: 0.25 + r() * 0.5,
+        splitAngle: (r() - 0.5) * 1.2,
+        splitLen: 0.3 + r() * 0.5,
         ci: Math.floor(r() * BARK.length),
-        fibers: 3 + Math.floor(r() * 4),        // # of thin fiber roots into ground
-        fiberSeed: Math.floor(r() * 99999),     // stable seed for fiber geometry
+        fibers: 3 + Math.floor(r() * 4),
+        fiberSeed: Math.floor(r() * 99999),
       });
     }
 
@@ -1069,63 +1079,116 @@ window.Forest = window.Forest || {};
       return { cx: x + lean + curve, hw: w * 0.5 };
     }
 
-    // Root flares — flat lateral roots with thin fibers feathering into the
-    // ground texture beyond each root's tip.
+    // Root flares — each root attaches at its own trunk offset, launches at
+    // its own angle, may split a side-branch partway along its length, and
+    // finishes with 3-6 thin fiber roots reaching into the ground.
     for (var ri = 0; ri < tree.roots.length; ri++) {
       var root = tree.roots[ri];
-      var rw = wBase * root.spread * 1.8;   // longer lateral extent
-      var rh = root.height * H * 0.6;        // compressed vertical
+      var rw = wBase * root.spread * 1.6;
+      var rh = root.height * H * 0.6;
       var rootColor = mix(BARK[root.ci], [40, 24, 32], 0.3);
-      // Soft shadow under the root.
+      var rootY = baseY + root.yOffset * H;     // slight vertical offset per root
+      var ang = root.angle || 0;                 // signed angle from horizontal
+      // Direction vector along the root's main axis.
+      var ddx = root.dir * Math.cos(ang);
+      var ddy = Math.sin(ang) * 0.6 + 0.15;     // mostly horizontal, slight dip
+      var tipX = x + ddx * rw;
+      var tipY = rootY + ddy * rw * 0.25;
+
+      // Soft shadow below the root.
       ctx.beginPath();
-      ctx.ellipse(x + root.dir * rw * 0.55, baseY + rh * 0.7, rw * 0.8, rh * 0.4, 0, 0, 6.28);
-      ctx.fillStyle = 'rgba(12,8,14,0.35)';
+      ctx.ellipse((x + tipX) * 0.5, tipY + rh * 0.4, rw * 0.55, rh * 0.4, 0, 0, 6.28);
+      ctx.fillStyle = 'rgba(10,7,12,0.3)';
       ctx.fill();
-      // Main flat root — thick at trunk, tapering out nearly horizontal.
+
+      // Main root body — quadratic curve with thickness on both sides. Path
+      // is an offset polygon along the axis so the taper reads cleanly.
+      var perpX = -ddy * rh;    // perpendicular (thickness axis)
+      var perpY = ddx * rh;
+      // Thick at trunk, thin at tip.
+      var thA = 1.0, thB = 0.25;
       ctx.beginPath();
-      ctx.moveTo(x, baseY - rh * 0.25);
-      ctx.quadraticCurveTo(x + root.dir * rw * 0.45, baseY - rh * 0.08, x + root.dir * rw, baseY + rh * 0.05);
-      ctx.lineTo(x + root.dir * rw * 0.98, baseY + rh * 0.35);
-      ctx.quadraticCurveTo(x + root.dir * rw * 0.4, baseY + rh * 0.28, x, baseY + rh * 0.3);
+      ctx.moveTo(x + perpX * thA * -0.4, rootY + perpY * thA * -0.4);
+      ctx.quadraticCurveTo(
+        x + ddx * rw * 0.5 + perpX * thA * -0.3,
+        rootY + ddy * rw * 0.15 + perpY * thA * -0.3,
+        tipX + perpX * thB * -0.5,
+        tipY + perpY * thB * -0.5
+      );
+      ctx.lineTo(tipX + perpX * thB * 0.5, tipY + perpY * thB * 0.5);
+      ctx.quadraticCurveTo(
+        x + ddx * rw * 0.5 + perpX * thA * 0.3,
+        rootY + ddy * rw * 0.15 + perpY * thA * 0.3,
+        x + perpX * thA * 0.4,
+        rootY + perpY * thA * 0.4
+      );
       ctx.closePath();
-      ctx.fillStyle = rgb(rootColor, 0.95);
+      ctx.fillStyle = rgb(rootColor, 0.93);
       ctx.fill();
-      // Top-edge highlight — sunlight catch along the flat top.
+
+      // Top-edge highlight — sunlit catch along the upper curve.
       ctx.beginPath();
-      ctx.moveTo(x, baseY - rh * 0.25);
-      ctx.quadraticCurveTo(x + root.dir * rw * 0.45, baseY - rh * 0.08, x + root.dir * rw, baseY + rh * 0.05);
-      ctx.lineWidth = 1.3;
+      ctx.moveTo(x + perpX * thA * -0.4, rootY + perpY * thA * -0.4);
+      ctx.quadraticCurveTo(
+        x + ddx * rw * 0.5 + perpX * thA * -0.3,
+        rootY + ddy * rw * 0.15 + perpY * thA * -0.3,
+        tipX + perpX * thB * -0.5,
+        tipY + perpY * thB * -0.5
+      );
+      ctx.lineWidth = 1.2;
       ctx.strokeStyle = rgb(mix(rootColor, [220, 190, 110], 0.4), 0.55);
       ctx.stroke();
-      // Fiber roots — thin lines radiating from the root tip into the
-      // ground for texture. Seeded so they're stable per-tree.
+
+      // Side-split: a thinner root-branch forking off partway along the main.
+      var sp = root.splitAt;
+      var spSign = (root.splitAngle > 0) ? 1 : -1;
+      var spBaseX = x + ddx * rw * sp;
+      var spBaseY = rootY + ddy * rw * sp * 0.4;
+      var spAng = ang + root.splitAngle;
+      var spLen = rw * root.splitLen;
+      var spTipX = spBaseX + root.dir * Math.cos(spAng) * spLen;
+      var spTipY = spBaseY + (Math.sin(spAng) * 0.6 + 0.2) * spLen * 0.3 + spSign * rh * 0.2;
+      ctx.beginPath();
+      ctx.moveTo(spBaseX, spBaseY);
+      ctx.quadraticCurveTo(
+        (spBaseX + spTipX) * 0.5,
+        (spBaseY + spTipY) * 0.5 + spSign * rh * 0.15,
+        spTipX, spTipY
+      );
+      ctx.lineWidth = Math.max(1.2, rh * 0.9);
+      ctx.strokeStyle = rgb(rootColor, 0.85);
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Fiber roots — radiate from BOTH the main tip and the side-split tip.
       var fs = root.fiberSeed >>> 0;
       function fRand() { fs = (fs + 0x6d2b79f5) >>> 0; var t = Math.imul(fs ^ (fs >>> 15), 1 | fs); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
-      var tipX = x + root.dir * rw * 0.95;
-      var tipY = baseY + rh * 0.2;
-      for (var fbi = 0; fbi < root.fibers; fbi++) {
-        var fbLen = rw * (0.15 + fRand() * 0.35);
-        var fbAng = (fRand() - 0.5) * 0.8; // angle from horizontal
-        var fbEx = tipX + root.dir * Math.cos(fbAng) * fbLen;
-        var fbEy = tipY + Math.abs(Math.sin(fbAng)) * fbLen * 0.35 + rh * 0.3;
-        ctx.beginPath();
-        ctx.moveTo(tipX, tipY);
-        ctx.quadraticCurveTo(tipX + root.dir * fbLen * 0.4, tipY + rh * 0.2, fbEx, fbEy);
-        ctx.lineWidth = 1 + fRand() * 1.2;
-        ctx.strokeStyle = rgb(mix(rootColor, [35, 22, 18], 0.2), 0.55 + fRand() * 0.2);
-        ctx.stroke();
-        // Occasional side-fiber off the main fiber.
-        if (fRand() < 0.5) {
-          var sfEx = fbEx + root.dir * fbLen * 0.25 * (fRand() + 0.2);
-          var sfEy = fbEy + rh * 0.15;
+      function feather(fromX, fromY, count) {
+        for (var fbi = 0; fbi < count; fbi++) {
+          var fbLen = rw * (0.12 + fRand() * 0.32);
+          var fbAng = (fRand() - 0.5) * 1.1;
+          var fbEx = fromX + root.dir * Math.cos(fbAng) * fbLen;
+          var fbEy = fromY + Math.abs(Math.sin(fbAng)) * fbLen * 0.35 + rh * 0.25;
           ctx.beginPath();
-          ctx.moveTo(fbEx, fbEy);
-          ctx.lineTo(sfEx, sfEy);
-          ctx.lineWidth = 0.7;
-          ctx.strokeStyle = rgb(mix(rootColor, [35, 22, 18], 0.2), 0.4);
+          ctx.moveTo(fromX, fromY);
+          ctx.quadraticCurveTo(fromX + root.dir * fbLen * 0.4, fromY + rh * 0.18, fbEx, fbEy);
+          ctx.lineWidth = 0.8 + fRand() * 1.0;
+          ctx.strokeStyle = rgb(mix(rootColor, [35, 22, 18], 0.2), 0.5 + fRand() * 0.2);
           ctx.stroke();
+          if (fRand() < 0.4) {
+            var sfEx = fbEx + root.dir * fbLen * 0.22 * (fRand() + 0.2);
+            var sfEy = fbEy + rh * 0.12;
+            ctx.beginPath();
+            ctx.moveTo(fbEx, fbEy);
+            ctx.lineTo(sfEx, sfEy);
+            ctx.lineWidth = 0.6;
+            ctx.strokeStyle = rgb(mix(rootColor, [35, 22, 18], 0.2), 0.4);
+            ctx.stroke();
+          }
         }
       }
+      feather(tipX, tipY, root.fibers);
+      feather(spTipX, spTipY, Math.max(2, Math.floor(root.fibers * 0.6)));
     }
 
     // Base trunk fill
@@ -1207,7 +1270,11 @@ window.Forest = window.Forest || {};
 
     ctx.restore();
 
-    // Branches with sub-branches
+    // Branches with sub-branches + tertiary splits. Visible sway comes from
+    // a layered sin amplitude (primary + harmonic) that's 4-6× bigger than
+    // the old micro-sway. Sub-branches inherit the swayed angle so the
+    // whole bough moves together.
+    var swayAmpBase = (tree.layer === 'fg') ? 0.12 : (tree.layer === 'mid') ? 0.09 : 0.05;
     for (var bi = 0; bi < tree.branches.length; bi++) {
       var b = tree.branches[bi];
       var by = baseY - trunkH * b.yFrac;
@@ -1215,7 +1282,11 @@ window.Forest = window.Forest || {};
       var bx = bTx.cx;
       var bLen = b.len * H;
       var bAngle = b.angle * b.dir;
-      var sway = Math.sin(time * 0.4 + bi * 1.5) * 0.02;
+      // Per-branch phase + speed with a secondary harmonic for natural motion.
+      var bPh = bi * 1.5 + b.yFrac * 3.7;
+      var bSp = 0.4 + (bi % 3) * 0.08;
+      var sway = Math.sin(time * bSp + bPh) * swayAmpBase
+               + Math.sin(time * bSp * 2.3 + bPh * 1.7) * swayAmpBase * 0.3;
       bAngle += sway;
       var ex = bx + Math.sin(bAngle) * bLen;
       var ey = by - Math.cos(Math.abs(bAngle)) * bLen * 0.4;
@@ -1275,45 +1346,31 @@ window.Forest = window.Forest || {};
         ctx.strokeStyle = rgb(BARK[(b.tertStripes && b.tertStripes[si]) || b.stripeCI], 0.55);
         ctx.stroke();
 
-        // Leaf cluster at the tertiary tip (was at the sub-branch tip).
-        var lclR = bw * 0.55;
-        var lSway = Math.sin(time * 0.5 + bi * 2 + si) * 1;
+        // Big nice tuft at tertiary tip — fewer but denser leaf clusters.
+        // Three ellipses overlap (shadow + main + highlight) for depth.
+        var lclR = bw * 1.3;
+        var lSway = Math.sin(time * 0.5 + bi * 2 + si) * 1.3;
         var lci = (bi * 3 + si) % CANOPY.length;
+        var lCol = CANOPY[lci];
+        // Shadow underneath.
         ctx.beginPath();
-        ctx.ellipse(tx2 + lSway, ty2, lclR, lclR * 0.6, 0, 0, 6.28);
-        ctx.fillStyle = rgb(CANOPY[lci], 0.7);
+        ctx.ellipse(tx2 + lSway + lclR * 0.15, ty2 + lclR * 0.2, lclR, lclR * 0.6, 0, 0, 6.28);
+        ctx.fillStyle = rgb(mix(lCol, [15, 25, 15], 0.55), 0.35);
+        ctx.fill();
+        // Main blob.
+        ctx.beginPath();
+        ctx.ellipse(tx2 + lSway, ty2, lclR, lclR * 0.65, 0, 0, 6.28);
+        ctx.fillStyle = rgb(lCol, 0.88);
+        ctx.fill();
+        // Sunlit highlight.
+        ctx.beginPath();
+        ctx.ellipse(tx2 + lSway - lclR * 0.22, ty2 - lclR * 0.18, lclR * 0.55, lclR * 0.35, 0, 0, 6.28);
+        ctx.fillStyle = rgb(mix(lCol, [190, 225, 140], 0.3), 0.48);
         ctx.fill();
       }
 
-      // Small foliage tuft at main branch tip
-      var tipR = bw * 1.0;
-      var tipSway = Math.sin(time * 0.4 + bi * 1.7) * 1.2;
-      var tipCI = (bi * 7) % CANOPY.length;
-      ctx.beginPath();
-      ctx.ellipse(ex + tipSway, ey, tipR, tipR * 0.65, 0, 0, 6.28);
-      ctx.fillStyle = rgb(CANOPY[tipCI], 0.75);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(ex + tipSway - tipR * 0.15, ey - tipR * 0.1, tipR * 0.4, tipR * 0.3, 0, 0, 6.28);
-      ctx.fillStyle = rgb(mix(CANOPY[tipCI], [150, 200, 110], 0.2), 0.3);
-      ctx.fill();
-
-      // A couple small leaves along the branch
-      for (var li = 0; li < 2; li++) {
-        var lf = 0.35 + li * 0.3;
-        var lx = bx + (ex - bx) * lf + Math.sin(time * 0.5 + bi + li) * 0.8;
-        var ly = by + (ey - by) * lf - bw * 0.3;
-        var leafSz = bw * 0.35;
-        var leafCI = (bi + li * 3) % CANOPY.length;
-        ctx.save();
-        ctx.translate(lx, ly);
-        ctx.rotate(-0.3 + li * 0.5 + Math.sin(time * 0.6 + li) * 0.08);
-        ctx.beginPath();
-        ctx.ellipse(0, 0, leafSz, leafSz * 0.4, 0, 0, 6.28);
-        ctx.fillStyle = rgb(CANOPY[leafCI], 0.6);
-        ctx.fill();
-        ctx.restore();
-      }
+      // No extra mid-branch leaves — user wants "not too many". The tertiary
+      // tufts above provide all the foliage weight for each branch.
     }
 
     // Vines
@@ -1645,7 +1702,21 @@ window.Forest = window.Forest || {};
 
   Forest.farTrees  = Forest.genLayer(45, 'far', 42);
   Forest.midTrees  = Forest.genLayer(24, 'mid', 137);
-  Forest.fgTrees   = Forest.genLayer(14, 'fg', 99);
+  Forest.fgTrees   = Forest.genLayer(18, 'fg', 99);
+  // Guarantee several larger fg trees clustered in the front-left so the
+  // hero has a "coming out from behind the tree" feel on load.
+  (function addFrontLeftTrees() {
+    var leftSeed = 2025;
+    var leftRng = Forest.mkRng(leftSeed);
+    for (var i = 0; i < 4; i++) {
+      var t = Forest.genTree(leftRng, 'fg');
+      // Force into the left third with slight variation.
+      t.nx = 0.04 + i * 0.07 + (leftRng() - 0.5) * 0.04;
+      // Pump them up 10–25% so they visually dominate the front-left.
+      t.trunkW *= 1.1 + leftRng() * 0.15;
+      Forest.fgTrees.push(t);
+    }
+  })();
 })();
 /**
  * Forest main orchestrator -- canvas setup, resize, render loop
@@ -1698,107 +1769,198 @@ try {
 
   // ─── Jaguar sprite (drawn once, reused forever) ─────────────────────────
   var _jagSprite = (function () {
-    var jw = 110, jh = 52;      // sprite canvas size in CSS px
+    var jw = 130, jh = 64;
     var c = document.createElement('canvas');
     c.width = jw; c.height = jh;
     var g = c.getContext('2d');
-    var cx = jw * 0.5, cy = jh * 0.62;
+    var cx = jw * 0.48, cy = jh * 0.6;
 
-    // Shadow underneath.
-    g.beginPath();
-    g.ellipse(cx - 2, cy + 14, jw * 0.4, 4, 0, 0, 6.28);
-    g.fillStyle = 'rgba(0,0,0,0.3)';
-    g.fill();
+    var COAT       = '#c8852f';
+    var COAT_DARK  = '#a06820';
+    var COAT_LIGHT = '#e6b06a';
+    var BELLY      = '#f0d4a0';
+    var INK        = 'rgba(20,12,6,0.92)';
 
-    // Body — elongated ellipse tilting slightly forward.
+    // Shadow under feet.
     g.beginPath();
-    g.ellipse(cx, cy, jw * 0.36, jh * 0.22, 0, 0, 6.28);
-    g.fillStyle = '#c98a3a';
-    g.fill();
-    // Belly highlight.
-    g.beginPath();
-    g.ellipse(cx, cy + 5, jw * 0.30, jh * 0.12, 0, 0, 6.28);
-    g.fillStyle = 'rgba(240,210,155,0.55)';
-    g.fill();
-    // Shoulder bulge.
-    g.beginPath();
-    g.arc(cx + jw * 0.2, cy - 3, jh * 0.19, 0, 6.28);
-    g.fillStyle = '#c98a3a';
+    g.ellipse(cx, cy + 18, jw * 0.42, 4, 0, 0, 6.28);
+    g.fillStyle = 'rgba(0,0,0,0.35)';
     g.fill();
 
-    // Head + muzzle.
-    var hx = cx + jw * 0.32;
-    var hy = cy - jh * 0.08;
+    // Tail — curves up and back. Drawn first so body covers its base.
     g.beginPath();
-    g.arc(hx, hy, jh * 0.18, 0, 6.28);
-    g.fillStyle = '#c98a3a';
-    g.fill();
-    // Muzzle.
-    g.beginPath();
-    g.ellipse(hx + 6, hy + 2, 6, 3.5, 0, 0, 6.28);
-    g.fillStyle = '#e2ab66';
-    g.fill();
-    // Ears.
-    g.beginPath();
-    g.moveTo(hx - 3, hy - 8);
-    g.lineTo(hx, hy - 14);
-    g.lineTo(hx + 3, hy - 8);
-    g.closePath();
-    g.fillStyle = '#a66a26';
-    g.fill();
-    g.beginPath();
-    g.moveTo(hx + 5, hy - 7);
-    g.lineTo(hx + 8, hy - 13);
-    g.lineTo(hx + 11, hy - 7);
-    g.closePath();
-    g.fill();
-    // Eye.
-    g.beginPath();
-    g.arc(hx + 4, hy - 1, 1.4, 0, 6.28);
-    g.fillStyle = '#111';
-    g.fill();
-    g.beginPath();
-    g.arc(hx + 4.5, hy - 1.5, 0.5, 0, 6.28);
-    g.fillStyle = '#eed6a0';
-    g.fill();
-    // Nose dot.
-    g.beginPath();
-    g.arc(hx + 11, hy + 2, 1, 0, 6.28);
-    g.fillStyle = '#2b1a10';
-    g.fill();
-
-    // Tail — curves backward.
-    g.beginPath();
-    g.moveTo(cx - jw * 0.36, cy - 1);
-    g.quadraticCurveTo(cx - jw * 0.5, cy - 10, cx - jw * 0.45, cy - 16);
-    g.lineWidth = 5;
+    g.moveTo(cx - jw * 0.35, cy - 2);
+    g.quadraticCurveTo(cx - jw * 0.55, cy - 6, cx - jw * 0.6, cy - 14);
+    g.quadraticCurveTo(cx - jw * 0.62, cy - 22, cx - jw * 0.5, cy - 26);
+    g.lineWidth = 6;
     g.lineCap = 'round';
-    g.strokeStyle = '#c98a3a';
+    g.strokeStyle = COAT;
     g.stroke();
+    // Tail tip — black tuft.
     g.beginPath();
-    g.arc(cx - jw * 0.45, cy - 16, 2.5, 0, 6.28);
-    g.fillStyle = '#2b1a10';
+    g.arc(cx - jw * 0.5, cy - 26, 3.5, 0, 6.28);
+    g.fillStyle = INK;
     g.fill();
 
-    // Rosettes (black rings with tan centers) — the jaguar's signature.
-    var rng = (function(s){return function(){s=(s+0x6d2b79f5)>>>0;var t=Math.imul(s^s>>>15,1|s);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296;};})(1337);
-    for (var r = 0; r < 28; r++) {
-      var rx = cx + (rng() - 0.5) * jw * 0.62;
-      var ry = cy + (rng() - 0.5) * jh * 0.35;
-      // Skip if outside body ellipse.
-      var dx = (rx - cx) / (jw * 0.36), dy = (ry - cy) / (jh * 0.22);
-      if (dx*dx + dy*dy > 1) continue;
-      var rr = 1.5 + rng() * 1.8;
-      // Outer black ring.
+    // Hindquarters — large rounded haunch.
+    g.beginPath();
+    g.ellipse(cx - jw * 0.22, cy - 2, jw * 0.18, jh * 0.22, 0, 0, 6.28);
+    g.fillStyle = COAT;
+    g.fill();
+
+    // Main body — long muscular trunk.
+    g.beginPath();
+    g.ellipse(cx + 4, cy - 2, jw * 0.34, jh * 0.21, 0, 0, 6.28);
+    g.fillStyle = COAT;
+    g.fill();
+
+    // Shoulder/chest bulge.
+    g.beginPath();
+    g.ellipse(cx + jw * 0.22, cy - 4, jw * 0.16, jh * 0.2, 0, 0, 6.28);
+    g.fillStyle = COAT;
+    g.fill();
+
+    // Belly + chest highlight.
+    g.beginPath();
+    g.ellipse(cx - 2, cy + 6, jw * 0.30, jh * 0.10, 0, 0, 6.28);
+    g.fillStyle = BELLY;
+    g.fill();
+
+    // Top-of-back highlight.
+    g.beginPath();
+    g.ellipse(cx, cy - jh * 0.15, jw * 0.30, jh * 0.06, 0, 0, 6.28);
+    g.fillStyle = 'rgba(245,210,155,0.45)';
+    g.fill();
+
+    // Neck.
+    g.beginPath();
+    g.ellipse(cx + jw * 0.32, cy - 6, jw * 0.08, jh * 0.13, 0.3, 0, 6.28);
+    g.fillStyle = COAT;
+    g.fill();
+
+    // Head — rounder, more cat-like.
+    var hx = cx + jw * 0.39;
+    var hy = cy - jh * 0.18;
+    g.beginPath();
+    g.ellipse(hx, hy, jh * 0.18, jh * 0.16, 0, 0, 6.28);
+    g.fillStyle = COAT;
+    g.fill();
+    // Cheek bulge (jaguars have powerful jaws).
+    g.beginPath();
+    g.arc(hx - 2, hy + 4, jh * 0.11, 0, 6.28);
+    g.fillStyle = COAT;
+    g.fill();
+    // Forehead cap (slightly darker).
+    g.beginPath();
+    g.ellipse(hx - 1, hy - 3, jh * 0.13, jh * 0.07, 0, 0, 6.28);
+    g.fillStyle = COAT_DARK;
+    g.fill();
+    // Muzzle (lighter pad around nose).
+    g.beginPath();
+    g.ellipse(hx + 7, hy + 4, 7, 4, 0, 0, 6.28);
+    g.fillStyle = BELLY;
+    g.fill();
+    // Nose.
+    g.beginPath();
+    g.moveTo(hx + 12, hy + 2);
+    g.lineTo(hx + 13, hy + 4.5);
+    g.lineTo(hx + 11, hy + 4.5);
+    g.closePath();
+    g.fillStyle = '#2a160c';
+    g.fill();
+    // Mouth line.
+    g.beginPath();
+    g.moveTo(hx + 12, hy + 5);
+    g.lineTo(hx + 7, hy + 6.5);
+    g.lineWidth = 0.8;
+    g.strokeStyle = '#3a1a10';
+    g.stroke();
+    // Eye — almond shape.
+    g.beginPath();
+    g.ellipse(hx + 3, hy - 1, 2.2, 1.5, 0, 0, 6.28);
+    g.fillStyle = '#f0d860';
+    g.fill();
+    // Pupil.
+    g.beginPath();
+    g.arc(hx + 3.5, hy - 1, 0.9, 0, 6.28);
+    g.fillStyle = '#0a0805';
+    g.fill();
+    // Eye shine.
+    g.beginPath();
+    g.arc(hx + 4.0, hy - 1.6, 0.4, 0, 6.28);
+    g.fillStyle = '#ffffe0';
+    g.fill();
+    // Ears — rounded triangles with dark inner.
+    g.beginPath();
+    g.moveTo(hx - 5, hy - 8);
+    g.quadraticCurveTo(hx - 8, hy - 14, hx - 2, hy - 12);
+    g.quadraticCurveTo(hx + 1, hy - 9, hx - 5, hy - 8);
+    g.fillStyle = COAT;
+    g.fill();
+    g.beginPath();
+    g.moveTo(hx - 4, hy - 9);
+    g.quadraticCurveTo(hx - 5, hy - 12, hx - 2, hy - 11);
+    g.fillStyle = '#3a1a10';
+    g.fill();
+    g.beginPath();
+    g.moveTo(hx + 5, hy - 8);
+    g.quadraticCurveTo(hx + 8, hy - 14, hx + 11, hy - 9);
+    g.quadraticCurveTo(hx + 9, hy - 6, hx + 5, hy - 8);
+    g.fillStyle = COAT;
+    g.fill();
+    g.beginPath();
+    g.moveTo(hx + 6, hy - 9);
+    g.quadraticCurveTo(hx + 8, hy - 12, hx + 9, hy - 9);
+    g.fillStyle = '#3a1a10';
+    g.fill();
+    // Whiskers.
+    g.lineWidth = 0.4;
+    g.strokeStyle = 'rgba(245,235,200,0.7)';
+    for (var w = 0; w < 3; w++) {
       g.beginPath();
-      g.arc(rx, ry, rr, 0, 6.28);
-      g.lineWidth = 1;
-      g.strokeStyle = 'rgba(20,12,6,0.85)';
+      g.moveTo(hx + 8, hy + 4 + w);
+      g.lineTo(hx + 16 + w, hy + 3 + w * 1.5);
       g.stroke();
-      // Small dark center dot.
+    }
+
+    // Rosettes — proper jaguar pattern: black ring with a small dark
+    // center spot, distributed across body + haunches + neck.
+    var rng = (function(s){return function(){s=(s+0x6d2b79f5)>>>0;var t=Math.imul(s^s>>>15,1|s);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296;};})(8472);
+    var bodyRegions = [
+      { cx: cx + 4,            cy: cy - 4, rx: jw * 0.34, ry: jh * 0.18 },  // main body
+      { cx: cx - jw * 0.22,    cy: cy - 4, rx: jw * 0.16, ry: jh * 0.20 },  // hindquarters
+      { cx: cx + jw * 0.22,    cy: cy - 6, rx: jw * 0.14, ry: jh * 0.18 },  // shoulder
+    ];
+    for (var ri = 0; ri < 38; ri++) {
+      var region = bodyRegions[Math.floor(rng() * bodyRegions.length)];
+      var rx = region.cx + (rng() - 0.5) * region.rx * 1.5;
+      var ry = region.cy + (rng() - 0.5) * region.ry * 1.4;
+      // Reject if below belly line (would draw on belly, looks wrong).
+      if (ry > cy + 3) continue;
+      var rr = 1.6 + rng() * 1.6;
+      // Open ring (3-arc cluster) for an authentic jaguar rosette feel.
+      g.lineWidth = 0.9;
+      g.strokeStyle = INK;
+      // Two crescent arcs to suggest a broken ring.
       g.beginPath();
-      g.arc(rx + 0.5, ry, rr * 0.35, 0, 6.28);
-      g.fillStyle = 'rgba(20,12,6,0.7)';
+      g.arc(rx, ry, rr, 0.3, Math.PI - 0.3);
+      g.stroke();
+      g.beginPath();
+      g.arc(rx, ry, rr, Math.PI + 0.3, Math.PI * 2 - 0.3);
+      g.stroke();
+      // Small center dot.
+      if (rng() > 0.3) {
+        g.beginPath();
+        g.arc(rx + (rng() - 0.5) * 0.6, ry + (rng() - 0.5) * 0.6, rr * 0.3, 0, 6.28);
+        g.fillStyle = INK;
+        g.fill();
+      }
+    }
+    // A few solid spots on the head + legs zone.
+    for (var hi = 0; hi < 6; hi++) {
+      g.beginPath();
+      g.arc(hx + (rng() - 0.5) * 14, hy + (rng() - 0.3) * 6 - 2, 0.7 + rng() * 0.6, 0, 6.28);
+      g.fillStyle = INK;
       g.fill();
     }
 
@@ -1823,90 +1985,147 @@ try {
     if (_jag.dir < 0) ctx.scale(-1, 1);
     // Body sprite.
     ctx.drawImage(_jagSprite.canvas, -_jagSprite.w * 0.5, -_jagSprite.h * 0.5);
-    // Legs — 4 simple strokes with phase offsets.
+    // Legs — 4 simple strokes (front pair + back pair) with phase offsets
+    // for a natural diagonal walk gait. Bigger sprite → wider stance.
     var legY = _jagSprite.h * 0.14;
-    var legLen = 11;
-    var legXs = [-_jagSprite.w * 0.25, -_jagSprite.w * 0.05, _jagSprite.w * 0.12, _jagSprite.w * 0.3];
-    ctx.strokeStyle = '#a66a26';
-    ctx.lineWidth = 3.5;
+    var legLen = 14;
+    var legXs = [-_jagSprite.w * 0.30, -_jagSprite.w * 0.18, _jagSprite.w * 0.10, _jagSprite.w * 0.28];
+    // Diagonal gait: front-left + back-right move together, opposite for the
+    // other pair (mod 2 phase offset of π).
+    var legPhases = [0, Math.PI, Math.PI, 0];
     ctx.lineCap = 'round';
     for (var i = 0; i < 4; i++) {
-      var ph = _jag.phase + i * 1.6;
-      var swing = Math.sin(ph) * 4;
+      var ph = _jag.phase + legPhases[i];
+      var swing = Math.sin(ph) * 5;
+      var lift = Math.max(0, Math.cos(ph)) * 2; // leg lifts when stepping
+      // Upper leg (darker).
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#9c6420';
       ctx.beginPath();
       ctx.moveTo(legXs[i], legY);
-      ctx.lineTo(legXs[i] + swing, legY + legLen);
+      ctx.lineTo(legXs[i] + swing * 0.5, legY + legLen * 0.55 - lift);
       ctx.stroke();
+      // Lower leg / paw (slightly thinner).
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#7a4f18';
+      ctx.beginPath();
+      ctx.moveTo(legXs[i] + swing * 0.5, legY + legLen * 0.55 - lift);
+      ctx.lineTo(legXs[i] + swing, legY + legLen - lift);
+      ctx.stroke();
+      // Paw dot.
+      ctx.beginPath();
+      ctx.arc(legXs[i] + swing, legY + legLen - lift, 1.6, 0, 6.28);
+      ctx.fillStyle = '#2b1a10';
+      ctx.fill();
     }
     ctx.restore();
   }
 
-  // ─── Snake (foreground slither) — static body curve, animated wave ──────
-  var _snake = { x: 0, y: 0, phase: 0, vx: 18, seg: 40 };
+  // ─── Snake (foreground weaving) — continuous body via stroked path ──────
+  // Sample 64 points along the snake, build a smooth path, stroke it with a
+  // tapering width by drawing the path multiple times at decreasing widths.
+  // Y-amplitude is much larger so it weaves between fg trees on screen.
+  var _snake = { x: 0, y: 0, phase: 0, vx: 22 };
 
   function drawSnake(ctx, W, H, time, dt) {
-    if (!_snake._init) { _snake._init = true; _snake.x = -80; _snake.y = H * 0.94; }
+    if (!_snake._init) { _snake._init = true; _snake.x = -80; _snake.y = H * 0.92; }
     _snake.x += _snake.vx * dt;
-    _snake.phase += dt * 3.2;
-    if (_snake.x > W + 200) _snake.x = -200;
+    _snake.phase += dt * 2.6;
+    if (_snake.x > W + 260) _snake.x = -260;
 
-    var segs = _snake.seg;
-    var segLen = 9;   // horizontal step between segments
-    // Draw tail-to-head so head is on top.
-    for (var i = segs - 1; i >= 0; i--) {
-      var t = i / (segs - 1);        // 1 at tail, 0 at head
-      var sx = _snake.x - i * segLen;
-      // Sine wave + slight vertical undulation with wave speed.
-      var wavePhase = _snake.phase - i * 0.35;
-      var sy = _snake.y + Math.sin(wavePhase) * 12 * (1 - t * 0.3);
-      // Body thickness tapers from head (thicker) to tail.
-      var thick = 6.5 * (1 - t * 0.85) + 1.5;
-      // Body fill — dark green with lighter edge.
-      ctx.beginPath();
-      ctx.arc(sx, sy, thick, 0, 6.28);
-      ctx.fillStyle = 'rgba(48,72,32,0.95)';
-      ctx.fill();
-      // Highlight top of coil.
-      ctx.beginPath();
-      ctx.arc(sx - 0.6, sy - thick * 0.4, thick * 0.55, 0, 6.28);
-      ctx.fillStyle = 'rgba(105,130,58,0.6)';
-      ctx.fill();
-      // Scale band every 3 segments.
-      if (i % 3 === 0 && thick > 2) {
+    var SEG = 64;
+    var totalLen = 230;     // body length in px
+    var pts = [];
+    // Build sampled centerline. Head at i=0 (rightmost when moving right).
+    for (var i = 0; i < SEG; i++) {
+      var t = i / (SEG - 1);
+      var sx = _snake.x - t * totalLen;
+      // Two stacked sin waves give a more snake-like S-curve.
+      var wavePhase = _snake.phase - t * 4.2;
+      var amp = 22 * (1 - t * 0.15);          // bigger amplitude at head end
+      var sy = _snake.y + Math.sin(wavePhase) * amp + Math.sin(wavePhase * 0.4 + 0.7) * 6;
+      pts.push({ x: sx, y: sy, t: t });
+    }
+
+    // Helper: stroke a smooth (quadratic) path through the points.
+    function strokeSnake(widthFn, fillStyle) {
+      // Layered stroke — outer dark, then mid, then highlight — creates the
+      // illusion of a thick continuous body without polygon math.
+      // We segment the path so per-segment lineWidth is honored.
+      for (var s = 0; s < SEG - 1; s++) {
+        var p0 = pts[s], p1 = pts[s + 1];
+        var w = widthFn(p0.t);
         ctx.beginPath();
-        ctx.arc(sx, sy, thick * 0.45, 0, 6.28);
-        ctx.fillStyle = 'rgba(25,35,15,0.55)';
-        ctx.fill();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineWidth = w;
+        ctx.strokeStyle = fillStyle;
+        ctx.lineCap = 'round';
+        ctx.stroke();
       }
     }
-    // Head details at position of i=0.
-    var hx = _snake.x;
-    var hy = _snake.y + Math.sin(_snake.phase) * 12;
-    // Slightly bigger head dome.
+
+    // Body width taper: head ~12 → tail ~2.
+    function bodyW(t) { return 12 * (1 - t * 0.84) + 2; }
+
+    // Outer dark outline — slightly wider.
+    strokeSnake(function (t) { return bodyW(t) + 1.5; }, 'rgba(20,32,14,0.85)');
+    // Main body fill.
+    strokeSnake(bodyW, 'rgba(60,92,38,0.96)');
+    // Top-of-coil highlight (offset stroke at smaller width).
+    for (var s = 0; s < SEG - 1; s++) {
+      var p0 = pts[s], p1 = pts[s + 1];
+      var w0 = bodyW(p0.t), wH = w0 * 0.45;
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y - w0 * 0.25);
+      ctx.lineTo(p1.x, p1.y - bodyW(p1.t) * 0.25);
+      ctx.lineWidth = wH;
+      ctx.strokeStyle = 'rgba(120,150,72,0.55)';
+      ctx.stroke();
+    }
+    // Subtle dark scale bands every 6 segments.
+    for (var s = 0; s < SEG; s += 6) {
+      var p = pts[s];
+      var w = bodyW(p.t);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, w * 0.42, 0, 6.28);
+      ctx.fillStyle = 'rgba(20,30,10,0.45)';
+      ctx.fill();
+    }
+
+    // Head — at pts[0]. Slightly bigger oval, eye + tongue.
+    var head = pts[0];
+    // Direction to estimate head orientation.
+    var hd = Math.atan2(head.y - pts[1].y, head.x - pts[1].x);
+    ctx.save();
+    ctx.translate(head.x, head.y);
+    ctx.rotate(hd);
+    // Head dome.
     ctx.beginPath();
-    ctx.ellipse(hx + 4, hy, 8, 6, 0, 0, 6.28);
-    ctx.fillStyle = 'rgba(55,82,35,0.95)';
+    ctx.ellipse(2, 0, 11, 7, 0, 0, 6.28);
+    ctx.fillStyle = 'rgba(70,100,42,0.97)';
     ctx.fill();
-    // Eye.
+    // Eye + iris.
     ctx.beginPath();
-    ctx.arc(hx + 5, hy - 2, 1.3, 0, 6.28);
+    ctx.arc(4, -2.5, 1.6, 0, 6.28);
     ctx.fillStyle = '#e8c260';
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(hx + 5.2, hy - 2, 0.55, 0, 6.28);
+    ctx.arc(4.2, -2.5, 0.7, 0, 6.28);
     ctx.fillStyle = '#111';
     ctx.fill();
-    // Tongue — flicks via sin gate.
-    if (Math.sin(_snake.phase * 2.4) > 0.6) {
+    // Tongue flicks.
+    if (Math.sin(_snake.phase * 2.4) > 0.55) {
       ctx.beginPath();
-      ctx.moveTo(hx + 11, hy);
-      ctx.lineTo(hx + 18, hy - 1);
-      ctx.moveTo(hx + 11, hy);
-      ctx.lineTo(hx + 18, hy + 1);
-      ctx.lineWidth = 0.8;
+      ctx.moveTo(12, 0);
+      ctx.lineTo(20, -1.5);
+      ctx.moveTo(12, 0);
+      ctx.lineTo(20, 1.5);
+      ctx.lineWidth = 0.9;
       ctx.strokeStyle = '#b23030';
       ctx.stroke();
     }
+    ctx.restore();
   }
 
   // ─── River + crocodile (distant) ────────────────────────────────────────
