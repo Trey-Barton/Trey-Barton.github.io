@@ -1,5 +1,5 @@
 #contact { margin-top: 10px; position: relative; z-index: 3; }
-.contact-card { padding: clamp(28px, 6vw, 64px); text-align: center; max-width: min(480px, 90vw); margin: 0 auto; background: rgba(15, 30, 40, 0.72); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.contact-card { padding: clamp(28px, 6vw, 64px); text-align: center; max-width: min(480px, 90vw); margin: 0 auto; background: var(--glass-bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
 .contact-card h2 { font-family: 'Playfair Display', Georgia, serif; font-size: var(--contact-h2); margin-bottom: 16px; }
 .contact-card p { font-size: var(--contact-body); line-height: 1.7; color: rgba(255,255,255,0.65); margin-bottom: 32px; }
 .contact-email {

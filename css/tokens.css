@@ -28,6 +28,9 @@
 
   /* Colors */
   --bg-primary: #1e2a19;
-  --glass-bg: rgba(15, 30, 40, 0.65);
-  --glass-border: rgba(255,255,255,0.12);
+  /* Medium blue panel — shared by about-card, contact-card, project-card,
+     and the mini-chandelier heading faces. Edit this ONE value to re-tint
+     every translucent panel on the page. */
+  --glass-bg: rgba(70, 110, 160, 0.62);
+  --glass-border: rgba(255,255,255,0.14);
 }
