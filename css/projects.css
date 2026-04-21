@@ -15,22 +15,21 @@
 }
 .projects-heading-face {
   position: absolute;
-  /* Heading faces inset 5 px on each side so adjacent-face corners don't
-     clash when the cube rotates. All sizing authored at native scale so the
-     --heading-scale transform propagates proportionally. */
-  width: calc(100% - 10px); height: 100%;
-  left: 5px;
+  /* Heading faces inset 15 px on each side (5 original + 10 more per your
+     ask). Authored at native scale so the --heading-scale transform
+     propagates the inset proportionally across viewports. */
+  width: calc(100% - 30px); height: 100%;
+  left: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(15, 30, 40, 0.72);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 14px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
-  /* Hide each face when rotated away; otherwise back-face corners bleed
-     through the front face of the mini chandelier during rotation. */
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  /* Backfaces stay visible on purpose — you asked to see the other sides
+     of the mini chandelier through the cube again. transform-style
+     preserved so the 3D context is maintained. */
   transform-style: preserve-3d;
 }
 .heading-wire {
@@ -79,10 +78,9 @@
 .cube-face {
   position: absolute;
   width: 100%; height: 100%;
-  /* Hide each face when it's rotated away from the camera; without this the
-     back side of the adjacent face bleeds through the corners of the front. */
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  /* Backfaces intentionally visible — you can see all 4 sides of the cube
+     bleed through for the glassy 3D feel. transform-style preserved so the
+     face stays in the parent's 3D context. */
   transform-style: preserve-3d;
 }
 /* cube-face transforms applied via inline styles */
@@ -178,10 +176,13 @@
 .project-card {
   padding: var(--card-pad-v) var(--card-pad-h);
   display: flex; flex-direction: column; align-items: center; gap: var(--card-gap);
+  /* Fill the cube face so the colored panel reads as a wider surface
+     (was left a centered inner box with air on the sides). */
+  width: 100%;
   height: 100%;
   box-sizing: border-box;
   text-align: center;
-  background: rgba(15, 30, 40, 0.82);
+  background: var(--glass-bg);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   contain: none;

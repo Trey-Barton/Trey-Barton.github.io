@@ -14,27 +14,42 @@ try {
   var ctx = canvas.getContext('2d', { alpha: false });
   var time = 0, lastTs = null;
 
-  // Canvas buffer is LOCKED at init. Resizing the window does NOT clear and
-  // regenerate it — setting canvas.width wipes the buffer AND invalidates
-  // every offscreen cache, showing the body bg (blue/green flash) until the
-  // next full frame finishes. Init uses the current viewport aspect so
-  // object-fit: cover doesn't crop trees out of view.
+  // Canvas buffer matches the viewport aspect at load. Live resize during
+  // a drag stretches via CSS (cheap + flash-free); after the drag settles
+  // (300 ms of no resize events) we regenerate the buffer + all scene
+  // caches at the new viewport size so the forest reads as full, not
+  // squeezed. The debounce window is what prevents the old blue/green
+  // mid-drag flash.
   function resize() {
     Forest.isMobile = window.innerWidth <= 768;
     Forest.MAX_PARTICLES = Forest.isMobile ? 150 : 400;
-    var dpr = 1; // Canvas doesn't need Retina — 1x is sharp enough for background art
+    var dpr = 1; // Background art; 1× is sharp enough.
     var w = window.innerWidth;
     var h = window.innerHeight;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
+    // Invalidate every offscreen cache — they're keyed on W/H and will
+    // be rebuilt on the next requestAnimationFrame.
+    ['_sceneCache', '_groundCache', '_hillCache',
+     '_skyGrad', '_horizonCache', '_hazeG', '_midGlow', '_fogG', '_vig',
+     '_fgUG'
+    ].forEach(function (key) { if (frame[key] != null) frame[key] = null; });
   }
   resize();
-  // Only update mobile/spawn bucket on resize — buffer stays locked.
+
+  var _resizeTimer = null;
   window.addEventListener('resize', function () {
+    // Fast path: update spawn bucket immediately.
     Forest.isMobile = window.innerWidth <= 768;
     Forest.MAX_PARTICLES = Forest.isMobile ? 150 : 400;
+    // Slow path: debounce the full canvas regen.
+    if (_resizeTimer) clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(function () {
+      _resizeTimer = null;
+      resize();
+    }, 300);
   });
 
   var windPhase = 0;
