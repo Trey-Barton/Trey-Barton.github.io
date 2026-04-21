@@ -1,0 +1,16 @@
+@media (max-width: 768px) {
+  body { background: #1a3040; }
+  .nav { background: rgba(10, 21, 32, 0.95); }
+  .about-card { grid-template-columns: 1fr; text-align: center; max-width: min(90vw, 400px); margin: 0 auto; }
+  .about-text h2 { text-align: center; }
+  .about-text p { text-align: left; line-height: 1.75; }
+  .about-photo { justify-content: center; order: -1; }
+  .skills { justify-content: center; }
+  .biome-label { display: none; }
+  #bg-canvas { contain: none; }
+  .cube-viewport { transform-origin: center top; margin-top: 5px; overflow: visible; }
+  .project-card p { line-height: 1.6; color: rgba(255,255,255,0.7); }
+  .project-tag { letter-spacing: 0.12em; }
+  .projects-heading-face .section-heading { font-size: 1rem !important; }
+  #contact { margin-top: 22px; }
+}
