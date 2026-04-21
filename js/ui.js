@@ -268,10 +268,13 @@ document.documentElement.classList.add('js-ready');
    * `cornerYShift` — px vertical offset on corners (+down, -up).
    */
   var WIRE_CONFIG = {
-    topWires:    { from: 'B', on: '.about-card' },                              // about → mini
+    topWires:    { from: 'B', on: '.about-card', bPointSpreadDeg: 2 },          // about → mini
     miniWires:   { from: 'B', on: '.about-card',   cornerSpread: 0, cornerYShift: 0 }, // mini ← cube top
     bottomWires: { to:   'T', on: '.contact-card', cornerSpread: 0, cornerYShift: 0 }, // cube bottom → contact
   };
+  // bPointSpreadDeg: nudge the top-wire B-point outward by this many degrees
+  //   (per wire, along its azimuth). Spreads the 4 wires' upper ends apart
+  //   at the convergence point without moving the mini-chandelier corners.
 
   // Convert a 2D page-space target point into cube-scene 3D local Y
   function pagePointToCubeY(targetPoint, cubeViewport) {
@@ -391,16 +394,36 @@ document.documentElement.classList.add('js-ready');
       { x: -edgeZ, z: edgeZ }
     ];
 
+    // Spread the B-point (upper convergence) outward per-wire so the 4 wires
+    // don't all start from a single pixel-perfect point. The shift is equal
+    // to wireLen * tan(spreadDeg) along each wire's azimuth direction.
+    var spreadDeg = cfg.bPointSpreadDeg || 0;
+    var spreadRad = spreadDeg * Math.PI / 180;
+
     corners.forEach(function(corner, i) {
       var dx = corner.x;
       var dy = -headingHalf - convY3D;
       var dz = corner.z;
+      var wireLen0 = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      // Outward unit vector in XZ plane (pointing from center toward corner).
+      var cornerLen = Math.sqrt(corner.x * corner.x + corner.z * corner.z) || 1;
+      var ux = corner.x / cornerLen;
+      var uz = corner.z / cornerLen;
+      var shift = wireLen0 * Math.tan(spreadRad);
+      var upperX = ux * shift;
+      var upperZ = uz * shift;
+      // Re-derive wire geometry with the shifted upper anchor.
+      dx = corner.x - upperX;
+      dy = -headingHalf - convY3D;
+      dz = corner.z - upperZ;
       var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      var azimuth = Math.atan2(-corner.x, -corner.z) * (180 / Math.PI);
+      var azimuth = Math.atan2(-dx, -dz) * (180 / Math.PI);
       var dxz = Math.sqrt(dx * dx + dz * dz);
       var tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
       hWires[i].style.height = wireLen + 'px';
-      hWires[i].style.transform = 'translate3d(0px,' + convY3D + 'px,0px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
+      hWires[i].style.transform =
+        'translate3d(' + upperX.toFixed(2) + 'px,' + convY3D.toFixed(2) + 'px,' + upperZ.toFixed(2) + 'px)' +
+        ' rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
     });
   }
 
