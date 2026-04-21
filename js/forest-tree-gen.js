@@ -15,19 +15,19 @@
     var t = { nx: r(), layer: layer };
 
     if (layer === 'fg') {
-      t.trunkW = 0.05 + r() * 0.06;      // back to original (zoomed out)
+      t.trunkW = 0.035 + r() * 0.045;    // zoomed fully out (-30%)
       t.baseY  = 0.94 + r() * 0.14;
-      t.topY   = -0.08 + r() * 0.12;
+      t.topY   = -0.04 + r() * 0.10;     // trees slightly shorter too
       t.taper  = 0.55 + r() * 0.2;
     } else if (layer === 'mid') {
-      t.trunkW = 0.02 + r() * 0.025;     // back to original
+      t.trunkW = 0.014 + r() * 0.018;    // -30%
       t.baseY  = 0.72 + r() * 0.1;
-      t.topY   = 0.06 + r() * 0.14;
+      t.topY   = 0.10 + r() * 0.12;
       t.taper  = 0.45 + r() * 0.25;
     } else {
-      t.trunkW = 0.009 + r() * 0.014;    // back to original
+      t.trunkW = 0.007 + r() * 0.010;    // -25%
       t.baseY  = 0.62 + r() * 0.06;
-      t.topY   = 0.1 + r() * 0.18;
+      t.topY   = 0.14 + r() * 0.16;
       t.taper  = 0.4 + r() * 0.2;
     }
 

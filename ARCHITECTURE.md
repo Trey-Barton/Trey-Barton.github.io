@@ -117,9 +117,12 @@ When you say…                          | …I'll change:
 ---|---
 "make the project cube bigger"        | `.cube-viewport { width: clamp(...) }` in `css/projects.css`
 "wires too thin"                      | `.chandelier-wire`/`.heading-wire`/`.chandelier-wire-bottom` widths in `css/projects.css`
-"top wires land too far outside"      | `WIRE_CONFIG.topWires` in `js/ui.js`  (about → mini chandelier)
-"mini wires land too far outside"     | `WIRE_CONFIG.miniWires.cornerSpread` in `js/ui.js`  (cube top → mini chandelier)
+"top wires: T-point out"              | `WIRE_CONFIG.topWires.tPointSpreadDeg`  (spread UPPER end of each wire)
+"top wires: B-point out"              | `WIRE_CONFIG.topWires.bPointSpreadDeg`  (spread LOWER end / corner side)
+"mini wires land too far outside"     | `WIRE_CONFIG.miniWires.cornerSpread` in `js/ui.js`
 "bottom wires land too far outside"   | `WIRE_CONFIG.bottomWires.cornerSpread`
+/* T-point = TOP of the wire (upper end in space, higher on page).
+   B-point = BOTTOM of the wire (lower end in space, lower on page). */
 "move the project cube down"          | `#projects { margin-top: ... }` in `css/projects.css`
 "trees smaller"                       | `genTree` `trunkW` ranges in `js/forest-tree.js`
 "fewer trees"                         | Counts in `js/forest-scene.js`

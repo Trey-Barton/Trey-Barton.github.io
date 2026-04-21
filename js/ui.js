@@ -272,9 +272,15 @@ document.documentElement.classList.add('js-ready');
     miniWires:   { from: 'B', on: '.about-card',   cornerSpread: 0, cornerYShift: 0 }, // mini ← cube top
     bottomWires: { to:   'T', on: '.contact-card', cornerSpread: 0, cornerYShift: 0 }, // cube bottom → contact
   };
-  // bPointSpreadDeg: nudge the top-wire B-point outward by this many degrees
-  //   (per wire, along its azimuth). Spreads the 4 wires' upper ends apart
-  //   at the convergence point without moving the mini-chandelier corners.
+  // Wire-end vocabulary:
+  //   T-point = the TOP of the wire (upper end in space).
+  //   B-point = the BOTTOM of the wire (lower end in space).
+  // For top-wires, T-point is the about-card anchor (fixed convergence);
+  //                B-point is each mini-chandelier corner.
+  //
+  // tPointSpreadDeg: widen the fan at the TOP of each wire (upper anchor).
+  // bPointSpreadDeg: widen the fan at the BOTTOM of each wire (corner side).
+  //   Shift is wireLen * tan(deg) along the corner's outward azimuth.
 
   // Convert a 2D page-space target point into cube-scene 3D local Y
   function pagePointToCubeY(targetPoint, cubeViewport) {
@@ -394,28 +400,37 @@ document.documentElement.classList.add('js-ready');
       { x: -edgeZ, z: edgeZ }
     ];
 
-    // Spread the B-point (upper convergence) outward per-wire so the 4 wires
-    // don't all start from a single pixel-perfect point. The shift is equal
-    // to wireLen * tan(spreadDeg) along each wire's azimuth direction.
-    var spreadDeg = cfg.bPointSpreadDeg || 0;
-    var spreadRad = spreadDeg * Math.PI / 180;
+    // Spread knobs: push the T-end (upper anchor) or B-end (corner) outward
+    // by some degrees along each corner's outward azimuth direction.
+    var tDeg = cfg.tPointSpreadDeg || 0;
+    var bDeg = cfg.bPointSpreadDeg || 0;
+    var tRad = tDeg * Math.PI / 180;
+    var bRad = bDeg * Math.PI / 180;
 
     corners.forEach(function(corner, i) {
-      var dx = corner.x;
-      var dy = -headingHalf - convY3D;
-      var dz = corner.z;
-      var wireLen0 = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      // Outward unit vector in XZ plane (pointing from center toward corner).
+      // Base geometry (no spread).
+      var dx0 = corner.x;
+      var dy0 = -headingHalf - convY3D;
+      var dz0 = corner.z;
+      var baseLen = Math.sqrt(dx0 * dx0 + dy0 * dy0 + dz0 * dz0);
+      // Outward unit vector in XZ (from cube center toward this corner).
       var cornerLen = Math.sqrt(corner.x * corner.x + corner.z * corner.z) || 1;
       var ux = corner.x / cornerLen;
       var uz = corner.z / cornerLen;
-      var shift = wireLen0 * Math.tan(spreadRad);
-      var upperX = ux * shift;
-      var upperZ = uz * shift;
-      // Re-derive wire geometry with the shifted upper anchor.
-      dx = corner.x - upperX;
-      dy = -headingHalf - convY3D;
-      dz = corner.z - upperZ;
+
+      // T-end shift (upper anchor) — outward along azimuth.
+      var tShift = baseLen * Math.tan(tRad);
+      var upperX = ux * tShift;
+      var upperZ = uz * tShift;
+      // B-end shift (corner / lower anchor) — outward along azimuth.
+      var bShift = baseLen * Math.tan(bRad);
+      var lowerX = corner.x + ux * bShift;
+      var lowerZ = corner.z + uz * bShift;
+
+      // Re-derive wire geometry from the shifted anchors.
+      var dx = lowerX - upperX;
+      var dy = -headingHalf - convY3D;
+      var dz = lowerZ - upperZ;
       var wireLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
       var azimuth = Math.atan2(-dx, -dz) * (180 / Math.PI);
       var dxz = Math.sqrt(dx * dx + dz * dz);
