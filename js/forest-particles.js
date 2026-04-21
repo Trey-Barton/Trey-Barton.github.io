@@ -13,13 +13,29 @@
 
   var particles = [];
   var MAX_PARTICLES = Forest.isMobile ? 150 : 400;
+  // Object pool — recycled particle slots avoid churn on GC. Hot path
+  // (spawn/despawn) goes through push/pop of this free list instead of
+  // allocating a fresh object every firefly/leaf/spore.
+  var _particlePool = [];
+  function _recycle(p) {
+    if (_particlePool.length < MAX_PARTICLES * 2) _particlePool.push(p);
+  }
+  Forest._recycleParticle = _recycle;
 
   window._isPageVisible = true;
   document.addEventListener('visibilitychange', function() { window._isPageVisible = !document.hidden; });
 
   function spawnP(type, W, H) {
     if (particles.length >= MAX_PARTICLES) return;
-    var p = { type: type };
+    // Reuse an old slot if one exists — otherwise allocate.
+    var p = _particlePool.pop();
+    if (p) {
+      // Wipe transient fields so stale values from a leaf don't leak into a firefly.
+      for (var k in p) if (p.hasOwnProperty(k)) p[k] = undefined;
+    } else {
+      p = {};
+    }
+    p.type = type;
     if (type === 'firefly') {
       p.x = Math.random() * W; p.y = H * 0.2 + Math.random() * H * 0.5;
       p.vx = (Math.random()-0.5)*0.4; p.vy = (Math.random()-0.5)*0.25;
