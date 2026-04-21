@@ -61,9 +61,9 @@ bundler, no build step — plain `<script defer>` tags.
 | **Project faces** | `.cube-face[data-face]` | 4 rotating project cards |
 | **Project heading-cube** | `.heading-viewport` + `.projects-heading-scene` | Small "Projects" 3D box |
 | **Heading faces** | `.projects-heading-face[data-face]` | 4 pill panels |
-| **Top wires** | `.chandelier-wire` | Heading-cube → project-cube top corners |
-| **Bottom wires** | `.chandelier-wire-bottom` | Project-cube bottom corners → contact card |
-| **Heading wires** | `.heading-wire` | About card bottom → heading-cube corners |
+| **Top wires** | `.heading-wire` | About card bottom → Mini chandelier corners (was "heading wires") |
+| **Mini wires** | `.chandelier-wire` | Project cube TOP corners → Mini chandelier (conceptually up-going) (was "top wires") |
+| **Bottom wires** | `.chandelier-wire-bottom` | Project cube bottom corners → contact card |
 | **Contact section** | `#contact` | "Let's Talk" |
 | **Contact card** | `.contact-card` | Translucent panel in Contact |
 | **Social links** | `.social-link` | GitHub / LinkedIn / Instagram circles |
@@ -116,8 +116,9 @@ bundler, no build step — plain `<script defer>` tags.
 When you say…                          | …I'll change:
 ---|---
 "make the project cube bigger"        | `.cube-viewport { width: clamp(...) }` in `css/projects.css`
-"wires too thin"                      | `--wire-w` in `css/tokens.css` (drives `.chandelier-wire` etc.)
-"top wires land too far outside"      | `WIRE_CONFIG.topWires.cornerSpread` in `js/cube.js`
+"wires too thin"                      | `.chandelier-wire`/`.heading-wire`/`.chandelier-wire-bottom` widths in `css/projects.css`
+"top wires land too far outside"      | `WIRE_CONFIG.topWires` in `js/ui.js`  (about → mini chandelier)
+"mini wires land too far outside"     | `WIRE_CONFIG.miniWires.cornerSpread` in `js/ui.js`  (cube top → mini chandelier)
 "bottom wires land too far outside"   | `WIRE_CONFIG.bottomWires.cornerSpread`
 "move the project cube down"          | `#projects { margin-top: ... }` in `css/projects.css`
 "trees smaller"                       | `genTree` `trunkW` ranges in `js/forest-tree.js`

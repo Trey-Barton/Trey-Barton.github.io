@@ -15,7 +15,11 @@
 }
 .projects-heading-face {
   position: absolute;
-  width: 100%; height: 100%;
+  /* Heading faces inset 5 px on each side so adjacent-face corners don't
+     clash when the cube rotates. All sizing authored at native scale so the
+     --heading-scale transform propagates proportionally. */
+  width: calc(100% - 10px); height: 100%;
+  left: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,6 +27,11 @@
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 14px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+  /* Hide each face when rotated away; otherwise back-face corners bleed
+     through the front face of the mini chandelier during rotation. */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 .heading-wire {
   position: absolute;
@@ -70,6 +79,11 @@
 .cube-face {
   position: absolute;
   width: 100%; height: 100%;
+  /* Hide each face when it's rotated away from the camera; without this the
+     back side of the adjacent face bleeds through the corners of the front. */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 /* cube-face transforms applied via inline styles */
 .chandelier-wire {
