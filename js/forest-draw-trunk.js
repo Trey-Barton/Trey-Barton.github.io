@@ -25,116 +25,49 @@
       return { cx: x + lean + curve, hw: w * 0.5 };
     }
 
-    // Root flares — each root attaches at its own trunk offset, launches at
-    // its own angle, may split a side-branch partway along its length, and
-    // finishes with 3-6 thin fiber roots reaching into the ground.
+    // Root flares — clean tapered buttresses. One solid shape per root,
+    // soft shadow + top-edge highlight. No feathered fibers, no side-splits
+    // (they previously read as messy scribbles).
     for (var ri = 0; ri < tree.roots.length; ri++) {
       var root = tree.roots[ri];
-      var rw = wBase * root.spread * 1.6;
-      var rh = root.height * H * 0.6;
+      var rw = wBase * root.spread * 1.4;
+      var rh = root.height * H * 0.55;
       var rootColor = mix(BARK[root.ci], [40, 24, 32], 0.3);
-      var rootY = baseY + root.yOffset * H;     // slight vertical offset per root
-      var ang = root.angle || 0;                 // signed angle from horizontal
-      // Direction vector along the root's main axis.
-      var ddx = root.dir * Math.cos(ang);
-      var ddy = Math.sin(ang) * 0.6 + 0.15;     // mostly horizontal, slight dip
-      var tipX = x + ddx * rw;
-      var tipY = rootY + ddy * rw * 0.25;
 
-      // Soft shadow below the root.
+      // Soft cast shadow on the ground beside the root.
       ctx.beginPath();
-      ctx.ellipse((x + tipX) * 0.5, tipY + rh * 0.4, rw * 0.55, rh * 0.4, 0, 0, 6.28);
-      ctx.fillStyle = 'rgba(10,7,12,0.3)';
+      ctx.ellipse(x + root.dir * rw * 0.55, baseY + rh * 0.55, rw * 0.65, rh * 0.3, 0, 0, 6.28);
+      ctx.fillStyle = 'rgba(10,7,12,0.28)';
       ctx.fill();
 
-      // Main root body — quadratic curve with thickness on both sides. Path
-      // is an offset polygon along the axis so the taper reads cleanly.
-      var perpX = -ddy * rh;    // perpendicular (thickness axis)
-      var perpY = ddx * rh;
-      // Thick at trunk, thin at tip.
-      var thA = 1.0, thB = 0.25;
+      // Main buttress — wide at trunk, tapers to a point at the tip.
+      // Drawn as a single quadratic-sided wedge so it reads as one solid
+      // root instead of a tangle of lines.
       ctx.beginPath();
-      ctx.moveTo(x + perpX * thA * -0.4, rootY + perpY * thA * -0.4);
+      ctx.moveTo(x, baseY - rh * 0.25);
       ctx.quadraticCurveTo(
-        x + ddx * rw * 0.5 + perpX * thA * -0.3,
-        rootY + ddy * rw * 0.15 + perpY * thA * -0.3,
-        tipX + perpX * thB * -0.5,
-        tipY + perpY * thB * -0.5
+        x + root.dir * rw * 0.45, baseY - rh * 0.10,
+        x + root.dir * rw,        baseY + rh * 0.10
       );
-      ctx.lineTo(tipX + perpX * thB * 0.5, tipY + perpY * thB * 0.5);
+      ctx.lineTo(x + root.dir * rw * 0.98, baseY + rh * 0.30);
       ctx.quadraticCurveTo(
-        x + ddx * rw * 0.5 + perpX * thA * 0.3,
-        rootY + ddy * rw * 0.15 + perpY * thA * 0.3,
-        x + perpX * thA * 0.4,
-        rootY + perpY * thA * 0.4
+        x + root.dir * rw * 0.40, baseY + rh * 0.25,
+        x,                        baseY + rh * 0.30
       );
       ctx.closePath();
-      ctx.fillStyle = rgb(rootColor, 0.93);
+      ctx.fillStyle = rgb(rootColor, 0.94);
       ctx.fill();
 
       // Top-edge highlight — sunlit catch along the upper curve.
       ctx.beginPath();
-      ctx.moveTo(x + perpX * thA * -0.4, rootY + perpY * thA * -0.4);
+      ctx.moveTo(x, baseY - rh * 0.25);
       ctx.quadraticCurveTo(
-        x + ddx * rw * 0.5 + perpX * thA * -0.3,
-        rootY + ddy * rw * 0.15 + perpY * thA * -0.3,
-        tipX + perpX * thB * -0.5,
-        tipY + perpY * thB * -0.5
+        x + root.dir * rw * 0.45, baseY - rh * 0.10,
+        x + root.dir * rw,        baseY + rh * 0.10
       );
       ctx.lineWidth = 1.2;
-      ctx.strokeStyle = rgb(mix(rootColor, [220, 190, 110], 0.4), 0.55);
+      ctx.strokeStyle = rgb(mix(rootColor, [220, 190, 110], 0.4), 0.5);
       ctx.stroke();
-
-      // Side-split: a thinner root-branch forking off partway along the main.
-      var sp = root.splitAt;
-      var spSign = (root.splitAngle > 0) ? 1 : -1;
-      var spBaseX = x + ddx * rw * sp;
-      var spBaseY = rootY + ddy * rw * sp * 0.4;
-      var spAng = ang + root.splitAngle;
-      var spLen = rw * root.splitLen;
-      var spTipX = spBaseX + root.dir * Math.cos(spAng) * spLen;
-      var spTipY = spBaseY + (Math.sin(spAng) * 0.6 + 0.2) * spLen * 0.3 + spSign * rh * 0.2;
-      ctx.beginPath();
-      ctx.moveTo(spBaseX, spBaseY);
-      ctx.quadraticCurveTo(
-        (spBaseX + spTipX) * 0.5,
-        (spBaseY + spTipY) * 0.5 + spSign * rh * 0.15,
-        spTipX, spTipY
-      );
-      ctx.lineWidth = Math.max(1.2, rh * 0.9);
-      ctx.strokeStyle = rgb(rootColor, 0.85);
-      ctx.lineCap = 'round';
-      ctx.stroke();
-
-      // Fiber roots — radiate from BOTH the main tip and the side-split tip.
-      var fs = root.fiberSeed >>> 0;
-      function fRand() { fs = (fs + 0x6d2b79f5) >>> 0; var t = Math.imul(fs ^ (fs >>> 15), 1 | fs); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
-      function feather(fromX, fromY, count) {
-        for (var fbi = 0; fbi < count; fbi++) {
-          var fbLen = rw * (0.12 + fRand() * 0.32);
-          var fbAng = (fRand() - 0.5) * 1.1;
-          var fbEx = fromX + root.dir * Math.cos(fbAng) * fbLen;
-          var fbEy = fromY + Math.abs(Math.sin(fbAng)) * fbLen * 0.35 + rh * 0.25;
-          ctx.beginPath();
-          ctx.moveTo(fromX, fromY);
-          ctx.quadraticCurveTo(fromX + root.dir * fbLen * 0.4, fromY + rh * 0.18, fbEx, fbEy);
-          ctx.lineWidth = 0.8 + fRand() * 1.0;
-          ctx.strokeStyle = rgb(mix(rootColor, [35, 22, 18], 0.2), 0.5 + fRand() * 0.2);
-          ctx.stroke();
-          if (fRand() < 0.4) {
-            var sfEx = fbEx + root.dir * fbLen * 0.22 * (fRand() + 0.2);
-            var sfEy = fbEy + rh * 0.12;
-            ctx.beginPath();
-            ctx.moveTo(fbEx, fbEy);
-            ctx.lineTo(sfEx, sfEy);
-            ctx.lineWidth = 0.6;
-            ctx.strokeStyle = rgb(mix(rootColor, [35, 22, 18], 0.2), 0.4);
-            ctx.stroke();
-          }
-        }
-      }
-      feather(tipX, tipY, root.fibers);
-      feather(spTipX, spTipY, Math.max(2, Math.floor(root.fibers * 0.6)));
     }
 
     // Base trunk fill

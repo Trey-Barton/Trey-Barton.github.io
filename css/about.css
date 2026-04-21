@@ -1,8 +1,13 @@
-/* About starts on its own screen — no negative margin into the hero.
-   (The hero is 100dvh; About gets its own spacing from .section padding.) */
+/* About is its own "page" — min-height forces it to occupy a full viewport
+   so it doesn't peek up from the bottom of the hero. Top padding adds
+   generous breathing room between hero bottom and About heading. */
 #about.section {
-  padding-top: clamp(32px, 5vw, 72px);
+  padding-top: clamp(80px, 12vw, 160px);
   margin-top: 0;
+  min-height: 100dvh;
+}
+@supports not (min-height: 100dvh) {
+  #about.section { min-height: 100vh; }
 }
 .about-card {
   display: grid;
