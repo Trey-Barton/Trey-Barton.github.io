@@ -1,1 +1,9 @@
 .gstack/
+
+# Source/intermediate video files — only bounce_loop.mp4 ships.
+# bounce.mov = original ~41 MB / bounce.mp4 = ~40 MB intermediate.
+bounce.mov
+bounce.mp4
+
+# Claude preview launch config (local only).
+.claude/
