@@ -1071,6 +1071,13 @@ try {
     // after the scene cache blits — they're animated, so they can't live
     // inside the cache.)
 
+    // Camera pan: shift every tree + undergrowth + canopy rightward so the
+    // "camera" reads as panned left. Sky, hills, ground stay put (they're
+    // drawn above this translate or fill-rect the whole canvas).
+    var CAMERA_X = W * 0.15;
+    sctx.save();
+    sctx.translate(CAMERA_X, 0);
+
     // FAR undergrowth + trees — drawn directly into the scene cache.
     // (Was: dedicated _farCache offscreen canvas then blitted. Dead level
     // of indirection — this block only executes when the scene cache is
@@ -1470,6 +1477,9 @@ try {
     sctx.globalCompositeOperation = 'overlay';
     sctx.fillStyle = 'rgba(180,160,60,0.03)';
     sctx.fillRect(0, 0, W, H);
+    sctx.restore();
+
+    // Close camera pan (scene shift). Vignette below covers full viewport.
     sctx.restore();
 
     // Vignette (cached on resize)

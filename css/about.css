@@ -1,7 +1,8 @@
-/* Pull the About section up closer to the hero's View My Work button. */
+/* About starts on its own screen — no negative margin into the hero.
+   (The hero is 100dvh; About gets its own spacing from .section padding.) */
 #about.section {
-  padding-top: 0;
-  margin-top: clamp(-80px, -6vw, -32px);
+  padding-top: clamp(32px, 5vw, 72px);
+  margin-top: 0;
 }
 .about-card {
   display: grid;
