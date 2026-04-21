@@ -1071,28 +1071,24 @@ try {
     // after the scene cache blits — they're animated, so they can't live
     // inside the cache.)
 
-    // FAR undergrowth + trees (cached to offscreen canvas, refreshed every 2s)
-    if (!frame._farCache || frame._farW !== W || frame._farH !== H || !frame._farTime) {
-      var fc = frame._farCache || document.createElement('canvas');
-      fc.width = W; fc.height = H;
-      var fctx = fc.getContext('2d');
-      fctx.clearRect(0, 0, W, H);
-      Forest.drawUndergrowth(fctx, W, H, time, 'far');
-      var _farPos = [];
-      for (var i = 0; i < Forest.farTrees.length; i++) {
-        var t = Forest.farTrees[i];
-        var tx = ((t.nx * 1.5 - 0.25) * W + W * 3) % (W * 1.5) - W * 0.25;
-        if (tx < W * 0.33 && (i % 3 === 0)) { _farPos.push(null); continue; }
-        _farPos.push(tx);
-        Forest.drawTrunk(fctx, t, tx, W, H, time);
-      }
-      for (var i = 0; i < Forest.farTrees.length; i++) {
-        if (_farPos[i] === null) continue;
-        Forest.drawCanopy(fctx, Forest.farTrees[i], _farPos[i], W, H, time, 0.88);
-      }
-      frame._farCache = fc; frame._farW = W; frame._farH = H; frame._farTime = time;
+    // FAR undergrowth + trees — drawn directly into the scene cache.
+    // (Was: dedicated _farCache offscreen canvas then blitted. Dead level
+    // of indirection — this block only executes when the scene cache is
+    // being rebuilt, same cadence, so the intermediate canvas was never
+    // re-used.)
+    Forest.drawUndergrowth(sctx, W, H, time, 'far');
+    var _farPos = [];
+    for (var i = 0; i < Forest.farTrees.length; i++) {
+      var t = Forest.farTrees[i];
+      var tx = ((t.nx * 1.5 - 0.25) * W + W * 3) % (W * 1.5) - W * 0.25;
+      if (tx < W * 0.33 && (i % 3 === 0)) { _farPos.push(null); continue; }
+      _farPos.push(tx);
+      Forest.drawTrunk(sctx, t, tx, W, H, time);
     }
-    sctx.drawImage(frame._farCache, 0, 0);
+    for (var i = 0; i < Forest.farTrees.length; i++) {
+      if (_farPos[i] === null) continue;
+      Forest.drawCanopy(sctx, Forest.farTrees[i], _farPos[i], W, H, time, 0.88);
+    }
 
     // Atmospheric haze (cached on resize)
     if (!frame._hazeG || frame._hazeW !== W || frame._hazeH !== H) {
@@ -1124,28 +1120,20 @@ try {
       sctx.fill();
     }
 
-    // MID undergrowth + trees (cached, refreshed every 2s)
-    if (!frame._midCache || frame._midW !== W || frame._midH !== H || !frame._midTime) {
-      var mc = frame._midCache || document.createElement('canvas');
-      mc.width = W; mc.height = H;
-      var mctx = mc.getContext('2d');
-      mctx.clearRect(0, 0, W, H);
-      Forest.drawUndergrowth(mctx, W, H, time, 'mid');
-      var _midPos = [];
-      for (var i = 0; i < Forest.midTrees.length; i++) {
-        var t = Forest.midTrees[i];
-        var tx = ((t.nx * 1.4 - 0.2) * W + W * 3) % (W * 1.4) - W * 0.2;
-        if (tx < W * 0.33 && (i % 3 === 0)) { _midPos.push(null); continue; }
-        _midPos.push(tx);
-        Forest.drawTrunk(mctx, t, tx, W, H, time);
-      }
-      for (var i = 0; i < Forest.midTrees.length; i++) {
-        if (_midPos[i] === null) continue;
-        Forest.drawCanopy(mctx, Forest.midTrees[i], _midPos[i], W, H, time, 0.82);
-      }
-      frame._midCache = mc; frame._midW = W; frame._midH = H; frame._midTime = time;
+    // MID undergrowth + trees — drawn directly into the scene cache.
+    Forest.drawUndergrowth(sctx, W, H, time, 'mid');
+    var _midPos = [];
+    for (var i = 0; i < Forest.midTrees.length; i++) {
+      var t = Forest.midTrees[i];
+      var tx = ((t.nx * 1.4 - 0.2) * W + W * 3) % (W * 1.4) - W * 0.2;
+      if (tx < W * 0.33 && (i % 3 === 0)) { _midPos.push(null); continue; }
+      _midPos.push(tx);
+      Forest.drawTrunk(sctx, t, tx, W, H, time);
     }
-    sctx.drawImage(frame._midCache, 0, 0);
+    for (var i = 0; i < Forest.midTrees.length; i++) {
+      if (_midPos[i] === null) continue;
+      Forest.drawCanopy(sctx, Forest.midTrees[i], _midPos[i], W, H, time, 0.82);
+    }
 
     // Golden atmosphere between mid and fg (cached on resize)
     if (!frame._midGlow || frame._mgW !== W || frame._mgH !== H) {
@@ -1209,15 +1197,11 @@ try {
       sctx.fill();
     }
 
-    // FG layer: undergrowth + depth-sorted scene + trees (cached once)
-    if (!frame._fgCache || frame._fgCW !== W || frame._fgCH !== H) {
-      var fgc = frame._fgCache || document.createElement('canvas');
-      fgc.width = W; fgc.height = H;
-      var fgctx = fgc.getContext('2d');
-      fgctx.clearRect(0, 0, W, H);
+    // FG layer: undergrowth + depth-sorted scene + trees. Drawn directly
+    // into the scene cache (used to go through a dead _fgCache offscreen).
 
     // FG undergrowth
-    Forest.drawUndergrowth(fgctx, W, H, time, 'fg');
+    Forest.drawUndergrowth(sctx, W, H, time, 'fg');
 
     // Depth-sorted FG scene: trees + undergrowth
     if (!frame._fgUG || frame._fgUGW !== W || frame._fgUGH !== H) {
@@ -1300,10 +1284,10 @@ try {
           var bcx = item.x + (bR2() - 0.5) * item.sz * 2.8;
           var bcy = item.y + (bR2() - 0.5) * item.sz * 0.6 - item.sz * 0.4;
           var bcr = item.sz * (0.45 + bR2() * 0.55);
-          fgctx.beginPath();
-          fgctx.arc(bcx, bcy, bcr, 0, 6.28);
-          fgctx.fillStyle = Forest.rgb(Forest.mix(bDark, item.col, bR2() * 0.5), 0.55 + item.depth * 0.25);
-          fgctx.fill();
+          sctx.beginPath();
+          sctx.arc(bcx, bcy, bcr, 0, 6.28);
+          sctx.fillStyle = Forest.rgb(Forest.mix(bDark, item.col, bR2() * 0.5), 0.55 + item.depth * 0.25);
+          sctx.fill();
         }
 
       } else if (item.type === 'grass') {
@@ -1311,93 +1295,87 @@ try {
         for (var gb = 0; gb < item.blades; gb++) {
           var gbx = item.x + (gb - item.blades / 2) * (2 + item.depth * 1.5);
           var gba = (gb - item.blades / 2) * 0.15 + gSw * 0.07;
-          fgctx.beginPath();
-          fgctx.moveTo(gbx, item.y);
-          fgctx.quadraticCurveTo(gbx + gba * 4, item.y - item.h * 0.6, gbx + Math.sin(gba) * item.h * 0.5, item.y - item.h);
-          fgctx.lineWidth = 0.8 + item.depth * 0.8;
-          fgctx.strokeStyle = Forest.rgb(item.col, 0.5 + item.depth * 0.25);
-          fgctx.stroke();
+          sctx.beginPath();
+          sctx.moveTo(gbx, item.y);
+          sctx.quadraticCurveTo(gbx + gba * 4, item.y - item.h * 0.6, gbx + Math.sin(gba) * item.h * 0.5, item.y - item.h);
+          sctx.lineWidth = 0.8 + item.depth * 0.8;
+          sctx.strokeStyle = Forest.rgb(item.col, 0.5 + item.depth * 0.25);
+          sctx.stroke();
         }
 
       } else if (item.type === 'stick') {
         var stEx = item.x + Math.cos(item.angle) * item.len;
         var stEy = item.y + Math.sin(item.angle) * item.len * 0.2;
-        fgctx.beginPath();
-        fgctx.moveTo(item.x, item.y);
-        fgctx.lineTo(stEx, stEy);
-        fgctx.lineWidth = item.lw;
-        fgctx.strokeStyle = 'rgba(75,58,32,' + (0.3 + item.depth * 0.3).toFixed(3) + ')';
-        fgctx.stroke();
+        sctx.beginPath();
+        sctx.moveTo(item.x, item.y);
+        sctx.lineTo(stEx, stEy);
+        sctx.lineWidth = item.lw;
+        sctx.strokeStyle = 'rgba(75,58,32,' + (0.3 + item.depth * 0.3).toFixed(3) + ')';
+        sctx.stroke();
         if (item.fork) {
           var fkx = item.x + (stEx - item.x) * 0.55;
           var fky = item.y + (stEy - item.y) * 0.55;
-          fgctx.beginPath();
-          fgctx.moveTo(fkx, fky);
-          fgctx.lineTo(fkx + Math.cos(item.fAngle + item.angle) * item.len * 0.4, fky + Math.sin(item.fAngle + item.angle) * item.len * 0.1);
-          fgctx.lineWidth = item.lw * 0.6;
-          fgctx.strokeStyle = 'rgba(68,52,30,' + (0.25 + item.depth * 0.25).toFixed(3) + ')';
-          fgctx.stroke();
+          sctx.beginPath();
+          sctx.moveTo(fkx, fky);
+          sctx.lineTo(fkx + Math.cos(item.fAngle + item.angle) * item.len * 0.4, fky + Math.sin(item.fAngle + item.angle) * item.len * 0.1);
+          sctx.lineWidth = item.lw * 0.6;
+          sctx.strokeStyle = 'rgba(68,52,30,' + (0.25 + item.depth * 0.25).toFixed(3) + ')';
+          sctx.stroke();
         }
 
       } else if (item.type === 'leaf') {
-        fgctx.save();
-        fgctx.translate(item.x, item.y);
-        fgctx.rotate(item.rot);
-        fgctx.beginPath();
-        fgctx.ellipse(0, 0, item.sz, item.sz * 0.4, 0, 0, 6.28);
-        fgctx.fillStyle = Forest.rgb(Forest.mix(item.col, [35, 45, 22], 0.2), 0.4 + item.depth * 0.25);
-        fgctx.fill();
-        fgctx.restore();
+        sctx.save();
+        sctx.translate(item.x, item.y);
+        sctx.rotate(item.rot);
+        sctx.beginPath();
+        sctx.ellipse(0, 0, item.sz, item.sz * 0.4, 0, 0, 6.28);
+        sctx.fillStyle = Forest.rgb(Forest.mix(item.col, [35, 45, 22], 0.2), 0.4 + item.depth * 0.25);
+        sctx.fill();
+        sctx.restore();
 
       } else if (item.type === 'rock') {
-        fgctx.beginPath();
-        fgctx.ellipse(item.x, item.y, item.sz, item.sz * item.aspect, item.rot, 0, 6.28);
-        fgctx.fillStyle = 'rgba(80,74,52,' + (0.3 + item.depth * 0.3).toFixed(3) + ')';
-        fgctx.fill();
-        fgctx.beginPath();
-        fgctx.arc(item.x - item.sz * 0.2, item.y - item.sz * 0.2, item.sz * 0.3, 0, 6.28);
-        fgctx.fillStyle = 'rgba(125,118,88,0.15)';
-        fgctx.fill();
+        sctx.beginPath();
+        sctx.ellipse(item.x, item.y, item.sz, item.sz * item.aspect, item.rot, 0, 6.28);
+        sctx.fillStyle = 'rgba(80,74,52,' + (0.3 + item.depth * 0.3).toFixed(3) + ')';
+        sctx.fill();
+        sctx.beginPath();
+        sctx.arc(item.x - item.sz * 0.2, item.y - item.sz * 0.2, item.sz * 0.3, 0, 6.28);
+        sctx.fillStyle = 'rgba(125,118,88,0.15)';
+        sctx.fill();
 
       } else if (item.type === 'flower') {
-        fgctx.beginPath();
-        fgctx.moveTo(item.x, item.y);
-        fgctx.lineTo(item.x, item.y - item.sz * 4);
-        fgctx.lineWidth = 0.6 + item.depth * 0.4;
-        fgctx.strokeStyle = 'rgba(50,90,30,0.5)';
-        fgctx.stroke();
+        sctx.beginPath();
+        sctx.moveTo(item.x, item.y);
+        sctx.lineTo(item.x, item.y - item.sz * 4);
+        sctx.lineWidth = 0.6 + item.depth * 0.4;
+        sctx.strokeStyle = 'rgba(50,90,30,0.5)';
+        sctx.stroke();
         var fpy = item.y - item.sz * 4;
         for (var fp = 0; fp < 5; fp++) {
           var pa = fp * 1.256;
-          fgctx.beginPath();
-          fgctx.arc(item.x + Math.cos(pa) * item.sz * 0.6, fpy + Math.sin(pa) * item.sz * 0.6, item.sz * 0.5, 0, 6.28);
-          fgctx.fillStyle = 'rgba(' + item.petalCol[0] + ',' + item.petalCol[1] + ',' + item.petalCol[2] + ',' + (0.35 + item.depth * 0.25).toFixed(3) + ')';
-          fgctx.fill();
+          sctx.beginPath();
+          sctx.arc(item.x + Math.cos(pa) * item.sz * 0.6, fpy + Math.sin(pa) * item.sz * 0.6, item.sz * 0.5, 0, 6.28);
+          sctx.fillStyle = 'rgba(' + item.petalCol[0] + ',' + item.petalCol[1] + ',' + item.petalCol[2] + ',' + (0.35 + item.depth * 0.25).toFixed(3) + ')';
+          sctx.fill();
         }
-        fgctx.beginPath();
-        fgctx.arc(item.x, fpy, item.sz * 0.35, 0, 6.28);
-        fgctx.fillStyle = 'rgba(240,230,105,0.45)';
-        fgctx.fill();
+        sctx.beginPath();
+        sctx.arc(item.x, fpy, item.sz * 0.35, 0, 6.28);
+        sctx.fillStyle = 'rgba(240,230,105,0.45)';
+        sctx.fill();
       }
     }
 
     // Draw FG trees on top of undergrowth
     for (var fi = 0; fi < _fgTreeItems.length; fi++) {
       var ti = _fgTreeItems[fi];
-      Forest.drawTrunk(fgctx, ti.tree, ti.tx, W, H, time);
-      Forest.drawCanopy(fgctx, ti.tree, ti.tx, W, H, time, 1.0);
+      Forest.drawTrunk(sctx, ti.tree, ti.tx, W, H, time);
+      Forest.drawCanopy(sctx, ti.tree, ti.tx, W, H, time, 1.0);
     }
 
-      frame._fgCache = fgc; frame._fgCW = W; frame._fgCH = H;
-    }
-    sctx.drawImage(frame._fgCache, 0, 0);
+    // (end fg layer — directly rendered into sctx, no intermediate cache)
 
-    // Dense canopy fill + hanging drips (cached, refreshed every 2s)
-    if (!frame._canopyCache || frame._canopyW !== W || frame._canopyH !== H || !frame._canopyTime) {
-      var cc = frame._canopyCache || document.createElement('canvas');
-      cc.width = W; cc.height = H;
-      var cctx = cc.getContext('2d');
-      cctx.clearRect(0, 0, W, H);
+    // Dense canopy fill + hanging drips — drawn directly into scene cache.
+    {
       var cR = Forest.mkRng(333);
       for (var ci = 0; ci < 30; ci++) {
         var cx = cR() * W * 1.3 - W * 0.15;
@@ -1406,10 +1384,10 @@ try {
         var col = Forest.CANOPY[Math.floor(cR() * Forest.CANOPY.length)];
         col = Forest.mix(col, [35, 60, 35], 0.2);
         var sway = Math.sin(time * 0.25 + ci * 0.9) * 1.2 + wind * 1.5;
-        cctx.beginPath();
-        cctx.ellipse(cx + sway, cy, cr * (1.0 + cR() * 0.4), cr * (0.6 + cR() * 0.3), (cR()-0.5)*0.4, 0, 6.28);
-        cctx.fillStyle = Forest.rgb(col, 0.92);
-        cctx.fill();
+        sctx.beginPath();
+        sctx.ellipse(cx + sway, cy, cr * (1.0 + cR() * 0.4), cr * (0.6 + cR() * 0.3), (cR()-0.5)*0.4, 0, 6.28);
+        sctx.fillStyle = Forest.rgb(col, 0.92);
+        sctx.fill();
       }
       cR = Forest.mkRng(444);
       for (var ci = 0; ci < 50; ci++) {
@@ -1420,18 +1398,18 @@ try {
         var isAcc = cR() < 0.07;
         if (isAcc) col = Forest.CANOPY_ACCENT[Math.floor(cR() * Forest.CANOPY_ACCENT.length)];
         var sway = Math.sin(time * 0.3 + ci * 0.7) * 1.8 + wind * 2;
-        cctx.beginPath();
-        cctx.ellipse(cx + sway, cy, cr * (0.85 + cR() * 0.35), cr * (0.55 + cR() * 0.35), (cR()-0.5)*0.5, 0, 6.28);
-        cctx.fillStyle = Forest.rgb(col, 0.88);
-        cctx.fill();
-        cctx.beginPath();
-        cctx.arc(cx + sway - cr * 0.18, cy - cr * 0.12, cr * 0.42, 0, 6.28);
-        cctx.fillStyle = Forest.rgb(Forest.mix(col, [155,200,115], 0.22), 0.38);
-        cctx.fill();
-        cctx.beginPath();
-        cctx.arc(cx + sway + cr * 0.12, cy + cr * 0.14, cr * 0.38, 0, 6.28);
-        cctx.fillStyle = Forest.rgb(Forest.mix(col, [18, 30, 15], 0.35), 0.28);
-        cctx.fill();
+        sctx.beginPath();
+        sctx.ellipse(cx + sway, cy, cr * (0.85 + cR() * 0.35), cr * (0.55 + cR() * 0.35), (cR()-0.5)*0.5, 0, 6.28);
+        sctx.fillStyle = Forest.rgb(col, 0.88);
+        sctx.fill();
+        sctx.beginPath();
+        sctx.arc(cx + sway - cr * 0.18, cy - cr * 0.12, cr * 0.42, 0, 6.28);
+        sctx.fillStyle = Forest.rgb(Forest.mix(col, [155,200,115], 0.22), 0.38);
+        sctx.fill();
+        sctx.beginPath();
+        sctx.arc(cx + sway + cr * 0.12, cy + cr * 0.14, cr * 0.38, 0, 6.28);
+        sctx.fillStyle = Forest.rgb(Forest.mix(col, [18, 30, 15], 0.35), 0.28);
+        sctx.fill();
       }
       cR = Forest.mkRng(555);
       for (var ci = 0; ci < 35; ci++) {
@@ -1440,10 +1418,10 @@ try {
         var cr = H * (0.015 + cR() * 0.035);
         var col = Forest.CANOPY[Math.floor(cR() * Forest.CANOPY.length)];
         var sway = Math.sin(time * 0.35 + ci * 1.1) * 1.2 + wind * 1.5;
-        cctx.beginPath();
-        cctx.arc(cx + sway, cy, cr, 0, 6.28);
-        cctx.fillStyle = Forest.rgb(Forest.mix(col, [120, 170, 90], 0.15), 0.85);
-        cctx.fill();
+        sctx.beginPath();
+        sctx.arc(cx + sway, cy, cr, 0, 6.28);
+        sctx.fillStyle = Forest.rgb(Forest.mix(col, [120, 170, 90], 0.15), 0.85);
+        sctx.fill();
       }
       cR = Forest.mkRng(666);
       for (var di = 0; di < 20; di++) {
@@ -1452,15 +1430,14 @@ try {
         var dLen = H * (0.02 + cR() * 0.05);
         var col = Forest.CANOPY[Math.floor(cR() * Forest.CANOPY.length)];
         var sway = Math.sin(time * 0.4 + di * 1.3) * 1.5 + wind;
-        cctx.beginPath();
-        cctx.moveTo(dx + sway - 4, dy);
-        cctx.quadraticCurveTo(dx + sway, dy + dLen, dx + sway + 4, dy);
-        cctx.fillStyle = Forest.rgb(col, 0.7);
-        cctx.fill();
+        sctx.beginPath();
+        sctx.moveTo(dx + sway - 4, dy);
+        sctx.quadraticCurveTo(dx + sway, dy + dLen, dx + sway + 4, dy);
+        sctx.fillStyle = Forest.rgb(col, 0.7);
+        sctx.fill();
       }
-      frame._canopyCache = cc; frame._canopyW = W; frame._canopyH = H; frame._canopyTime = time;
     }
-    sctx.drawImage(frame._canopyCache, 0, 0);
+    // (end canopy passes — directly in sctx)
 
     // Volumetric light rays
     sctx.save();
@@ -1536,7 +1513,13 @@ try {
     for (var i = Forest.particles.length - 1; i >= 0; i--) {
       var p = Forest.particles[i];
       p.life--;
-      if (p.life <= 0) { Forest.particles[i] = Forest.particles[Forest.particles.length - 1]; Forest.particles.pop(); continue; }
+      if (p.life <= 0) {
+        // Dead — swap-remove + return slot to the pool so spawnP reuses it.
+        Forest.particles[i] = Forest.particles[Forest.particles.length - 1];
+        Forest.particles.pop();
+        Forest._recycleParticle(p);
+        continue;
+      }
       var lr = p.life / p.ml;
       var a = lr < 0.15 ? lr/0.15 : (lr > 0.85 ? (1-lr)/0.15 : 1);
 

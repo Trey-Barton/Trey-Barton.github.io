@@ -21,7 +21,8 @@
   <link rel="stylesheet" href="css/responsive.css" />
 
   <!-- Script bundle — `defer` preserves order but doesn't block parsing.
-       Load order: palette → generators → drawers → scene → core → ui. -->
+       Load order: scheduler → palette → generators → drawers → scene → core → ui. -->
+  <script src="js/scheduler.js" defer></script>
   <script src="js/forest-palette.js" defer></script>
   <script src="js/forest-tree-gen.js" defer></script>
   <script src="js/forest-undergrowth-gen.js" defer></script>

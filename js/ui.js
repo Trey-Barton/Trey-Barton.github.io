@@ -10,10 +10,8 @@ document.documentElement.classList.add('js-ready');
     var shouldScroll = window.scrollY > 40;
     if (shouldScroll !== navScrolled) { navScrolled = shouldScroll; nav.classList.toggle('scrolled', shouldScroll); }
   }
-  var navTicking = false;
-  window.addEventListener('scroll', function() {
-    if (!navTicking) { navTicking = true; requestAnimationFrame(function() { updateNav(); navTicking = false; }); }
-  }, { passive: true });
+  // Registered with the shared scheduler — one RAF for nav + wires + cube.
+  UI.scheduler.onScroll('nav', updateNav);
   updateNav();
   // Always start at the top on page load
   if (window.location.hash) { history.replaceState(null, '', window.location.pathname); }
@@ -171,7 +169,7 @@ document.documentElement.classList.add('js-ready');
   }
 
   centerVisuals();
-  window.addEventListener('resize', function() { centerVisuals(); updateCube(); });
+  UI.scheduler.onResize('cube-geom', function () { centerVisuals(); updateCube(); });
 
   function updateCube() {
     cubeCurrentDeg = -cubeIdx * 90;
@@ -399,8 +397,8 @@ document.documentElement.classList.add('js-ready');
 
   updateAllWires();
 
-  window.addEventListener('resize', updateAllWires);
-  // Only reposition wires on scroll for desktop, AND only when projects section visible
+  UI.scheduler.onResize('wires', updateAllWires);
+  // Only reposition wires on scroll for desktop, AND only when projects visible.
   if (window.innerWidth > 768) {
     var projectsVisible = false;
     var projectsObs = new IntersectionObserver(function(entries) {
@@ -409,11 +407,9 @@ document.documentElement.classList.add('js-ready');
     }, { rootMargin: '200px' });
     projectsObs.observe(document.querySelector('#projects'));
 
-    var wireTicking = false;
-    window.addEventListener('scroll', function() {
-      if (!projectsVisible || wireTicking) return;
-      wireTicking = true;
-      requestAnimationFrame(function() { updateAllWires(); wireTicking = false; });
+    UI.scheduler.register('wires-scroll', function () { if (projectsVisible) updateAllWires(); });
+    window.addEventListener('scroll', function () {
+      if (projectsVisible) UI.scheduler.markDirty('wires-scroll');
     }, { passive: true });
   }
 })();

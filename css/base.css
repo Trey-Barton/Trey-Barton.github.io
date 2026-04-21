@@ -70,11 +70,13 @@ body {
 }
 .nav-links a:hover { color: #fff; }
 
-/* Glass card */
+/* Glass card — base panel shared by about/contact/project cards.
+   NOTE: backdrop-filter intentionally absent. Every concrete variant
+   (.about-card/.contact-card/.project-card) overrides with a solid-ish
+   rgba background, and a live blur over scrolling content is the
+   single most expensive CSS property on mobile Safari. */
 .glass-card {
   background: var(--glass-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
   contain: layout style paint;
   border: 1px solid var(--glass-border);
   border-radius: 20px;
