@@ -1086,12 +1086,10 @@ try {
     // after the scene cache blits — they're animated, so they can't live
     // inside the cache.)
 
-    // Camera pan: shift every tree + undergrowth + canopy rightward so the
-    // "camera" reads as panned left. Sky, hills, ground stay put (they're
-    // drawn above this translate or fill-rect the whole canvas).
-    var CAMERA_X = W * 0.15;
+    // Camera pan removed (was shifting the scene 15% rightward which read as
+    // "zoomed in on the right" — trees got clipped at the right edge). save()
+    // kept as a paired no-op so the matching restore() later is harmless.
     sctx.save();
-    sctx.translate(CAMERA_X, 0);
 
     // FAR undergrowth + trees — drawn directly into the scene cache.
     // (Was: dedicated _farCache offscreen canvas then blitted. Dead level
