@@ -11,7 +11,7 @@ portfolio/
 ├── index.html            Markup only; <link>/<script> references below.
 ├── ARCHITECTURE.md       This file.
 ├── CLAUDE.md             Quick dev guide (common tasks).
-├── bounce_loop.mp4       1.1 MB profile video (H.264 baseline, muted).
+├── bounce_loop.mp4       1.5 MB profile video (H.264 baseline, muted).
 ├── bounce_loop.jpg       Poster frame shown if autoplay is blocked.
 ├── css/
 │   ├── tokens.css        :root variables — all sizing/color tokens.
@@ -22,19 +22,21 @@ portfolio/
 │   ├── contact.css       Contact card + social links.
 │   └── responsive.css    @media breakpoint overrides.
 └── js/
-    ├── scheduler.js      One master RAF + dirty-flag coalescer.
-    ├── tokens.js         Reads CSS custom properties into window.UI.tokens.
-    ├── forest-palette.js BARK / CANOPY / LEAF_COLORS / FERN_COLORS + utils.
-    ├── forest-tree.js    Tree generation + trunk/branch/root drawing.
-    ├── forest-undergrowth.js Ferns, bushes, grass, mushrooms undergrowth.
-    ├── forest-canopy.js  Canopy blob rendering.
-    ├── forest-scene.js   Tree layer instances (far/mid/fg).
-    ├── particles.js      Ring-buffer particle pool.
-    ├── critters.js       Jaguar sprite + snake + crocodile + big vines.
-    ├── canvas-core.js    Canvas setup + scene-cache + render loop.
-    ├── cube.js           3D cube carousel + WIRE_CONFIG + attachment points.
-    ├── wires.js          Chandelier wire geometry + positioning math.
-    └── ui.js             Nav, smooth-scroll, video autoplay, reveals.
+    ├── scheduler.js                  One master RAF + dirty-flag coalescer.
+    ├── forest-palette.js             BARK / CANOPY / LEAF_COLORS / FERN_COLORS + utils.
+    ├── forest-tree-gen.js            Tree generation (trunk/branch/root/canopy params).
+    ├── forest-undergrowth-gen.js     Undergrowth generation (ferns, bushes, grass, mushrooms).
+    ├── forest-draw-trunk.js          Trunk + branch + root rendering; sway math.
+    ├── forest-draw-canopy.js         Canopy blob rendering.
+    ├── forest-draw-undergrowth.js    Undergrowth rendering.
+    ├── forest-particles.js           Ring-buffer particle pool.
+    ├── forest-scene.js               Tree layer instances (far/mid/fg).
+    ├── canvas-core.js                Canvas setup + scene cache + render loop.
+    │                                 Also hosts critters (jaguar, snake, crocodile),
+    │                                 river, big vines, light rays, vignette.
+    └── ui.js                         Nav, smooth-scroll, video autoplay, reveals.
+                                      Also hosts cube carousel, WIRE_CONFIG, and
+                                      chandelier wire geometry/positioning.
 ```
 
 All modules hang off the `window.UI` and `window.Forest` namespaces. No
@@ -120,18 +122,18 @@ When you say…                          | …I'll change:
 "top wires: T-point out"              | `WIRE_CONFIG.topWires.tPointSpreadDeg`  (spread UPPER end of each wire)
 "top wires: B-point out"              | `WIRE_CONFIG.topWires.bPointSpreadDeg`  (spread LOWER end / corner side)
 "mini wires land too far outside"     | `WIRE_CONFIG.miniWires.cornerSpread` in `js/ui.js`
-"bottom wires land too far outside"   | `WIRE_CONFIG.bottomWires.cornerSpread`
+"bottom wires land too far outside"   | `WIRE_CONFIG.bottomWires.cornerSpread` in `js/ui.js`
 /* T-point = TOP of the wire (upper end in space, higher on page).
    B-point = BOTTOM of the wire (lower end in space, lower on page). */
 "move the project cube down"          | `#projects { margin-top: ... }` in `css/projects.css`
-"trees smaller"                       | `genTree` `trunkW` ranges in `js/forest-tree.js`
+"trees smaller"                       | `genTree` `trunkW` ranges in `js/forest-tree-gen.js`
 "fewer trees"                         | Counts in `js/forest-scene.js`
-"roots longer/flatter"                | Root `spread`/`height` in `js/forest-tree.js`
-"branches sway less"                  | `swayAmpBase` in `js/forest-tree.js` drawTrunk
-"bigger leaf tufts"                   | `lclR` in `js/forest-tree.js` tertiary-tip block
-"jaguar smaller/faster"               | `_jagSprite` size OR `_jag.vx` in `js/critters.js`
-"snake thicker"                       | `bodyW(t)` in `js/critters.js`
-"river higher/lower"                  | `rivY` constant in `js/critters.js` drawRiverBase
+"roots longer/flatter"                | Root `spread`/`height` in `js/forest-tree-gen.js`
+"branches sway less"                  | `swayAmpBase` in `js/forest-draw-trunk.js` drawTrunk
+"bigger leaf tufts"                   | `lclR` in `js/forest-draw-trunk.js` tertiary-tip block
+"jaguar smaller/faster"               | `_jagSprite` size OR `_jag.vx` in `js/canvas-core.js`
+"snake thicker"                       | `bodyW(t)` in `js/canvas-core.js`
+"river higher/lower"                  | `rivY` constant in `js/canvas-core.js` drawRiverBase
 "about card less transparent"         | `--glass-bg` in `css/tokens.css`
 "hero text bigger"                    | `--h1` in `css/tokens.css`
 
