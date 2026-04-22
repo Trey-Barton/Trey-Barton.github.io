@@ -1,30 +1,76 @@
 # Trey Barton Portfolio — Developer Guide
 
-## Architecture
-Static GitHub Pages site. Vanilla JS, no build tools, no frameworks. **Everything — HTML, CSS, JS — lives inline in `index.html`**. There is no external stylesheet or script file.
+Static GitHub Pages site. Vanilla HTML/CSS/JS, no framework, no build step.
+`index.html` is markup only; styles live in `css/`, scripts in `js/`.
 
-## File Map
-- `index.html` — All markup, styles, and scripts. Only local file the browser loads.
-  - `<style>` block: reset, design tokens (`:root`), nav, hero, about, projects, cube, contact, footer, responsive tweaks.
-  - First `<script>` block (around lines ~712–2429): Canvas forest — palette, RNG, tree generation, branch/root drawing, canopy, undergrowth, particles, main render loop.
-  - Second `<script>` block (around lines ~2431–end): Nav scroll state, smooth scrolling, year, profile-video autoplay, reveal animations, cube carousel, chandelier wire positioning.
-- `bounce_loop.mp4` — Profile video loop (~1.1 MB, H.264 baseline, 900 px tall, 30 fps, no audio).
-- `.gitignore` — excludes `bounce.mov` / `bounce.mp4` (raw source videos) and `.gstack/`.
+See `ARCHITECTURE.md` for the full file map, element vocabulary, canvas draw
+order, and the "knobs cheat sheet" that maps natural-language requests to
+specific files and variables.
 
-## Common Tasks
-All edits are grep → edit in `index.html`.
+## Orientation
 
-- **Change a color**: search the palette arrays (`BARK`, `CANOPY`, `CANOPY_ACCENT`, `LEAF_COLORS`, `FERN_COLORS`) or the sky gradient `addColorStop` calls.
-- **Change text sizes**: edit the `clamp()` values in the `:root` block near the top of `<style>`.
-- **Adjust cube geometry / wires**: the cube carousel + wire system lives in the second `<script>` block. `WIRE_CONFIG` at the top of that block controls attachment points (`bc` / `tc` / etc — `t/m/b` × `l/c/r`).
-- **Add a project card**: add another `<div class="cube-face">…</div>` inside `#cube-scene` and bump the dot count.
-- **Tune the sway / branch density**: `genTree` and `drawTrunk` in the first `<script>` block. Layer-aware sway amplitude is set from `tree.layer` (`fg`/`mid`/`far`). Recursive `growBranch` produces the fractal branch tree; right-leaning branches (angle > 0) get +1 child fork.
+- `index.html` — Markup only. Loads 7 CSS files and 11 JS files in a fixed
+  order via `<link>` and `<script defer>`. Order matters (tokens first;
+  scheduler → palette → generators → drawers → scene → core → ui).
+- `bounce_loop.mp4` — Profile video loop in the About photo-ring.
+- `bounce_loop.jpg` — Poster frame if autoplay is blocked (iOS cold starts).
 
-## Key Conventions
-- All sizing uses CSS `clamp()` for fluid scaling. No per-breakpoint sizing hacks.
-- Canvas buffer is **locked at init** — window resize never touches `canvas.width` / `canvas.height` (that wipe caused the blue/green flash mid-scroll / mid-resize). CSS `object-fit: cover` handles display reshape.
-- Canvas frame loop **never** skips frames based on scroll position (that caused the same flash on scroll).
-- iOS-safe: `100dvh` hero with `100vh` fallback, `100lvh` canvas, `env(safe-area-inset-*)` on nav/footer, `overscroll-behavior-y: none`, `-webkit-tap-highlight-color: transparent`, `touch-action: manipulation` on interactives.
-- `#bg-canvas` is promoted to a GPU compositor layer (`transform: translateZ(0)` + `backface-visibility: hidden`) so position:fixed doesn't "fall off" mid-scroll on mobile browsers.
-- Profile video: `muted playsinline autoplay preload="auto"` with a JS fallback that re-attempts `play()` on every readiness event + user interaction (iOS blocks cold autoplay more often than you'd think).
-- Wire positions recalculate on scroll and resize via `positionTopWires` / `positionBottomWires` / `positionHeadingWires`.
+### `css/`
+`tokens.css` (design tokens in `:root`), `base.css` (reset, nav, glass-card,
+footer), `hero.css`, `about.css`, `projects.css` (cube, wires, chandelier),
+`contact.css`, `responsive.css`.
+
+### `js/`
+- `scheduler.js` — single master RAF + dirty-flag coalescer.
+- `forest-palette.js` — BARK / CANOPY / LEAF / FERN colors + utils.
+- `forest-tree-gen.js`, `forest-undergrowth-gen.js` — procedural generation.
+- `forest-draw-trunk.js`, `forest-draw-canopy.js`, `forest-draw-undergrowth.js`
+  — rendering.
+- `forest-particles.js` — ring-buffer particle pool.
+- `forest-scene.js` — instantiates far/mid/fg tree layers.
+- `canvas-core.js` — canvas setup, scene caches, sky/ground/hills/river,
+  critters (jaguar, snake, crocodile), vines, light rays, grading, vignette,
+  master render loop.
+- `ui.js` — nav scroll state, smooth-scroll, year, profile-video autoplay
+  fallback, reveal animations, cube carousel, `WIRE_CONFIG`, and chandelier-
+  wire positioning math.
+
+## Common tasks
+
+Edits are grep → edit in the relevant `css/` or `js/` file. For the full
+mapping of "when you say X, change Y," see the knobs cheat sheet in
+`ARCHITECTURE.md`.
+
+- **Change a color** — palette arrays in `js/forest-palette.js`, or sky
+  gradient `addColorStop` calls in `js/canvas-core.js`.
+- **Change text sizes** — `clamp()` values in `css/tokens.css`.
+- **Adjust cube / wires** — `WIRE_CONFIG` at the top of `js/ui.js` (wire
+  attachment points use `t/m/b` × `l/c/r`).
+- **Add a project card** — add another `<div class="cube-face">…</div>` in
+  `#cube-scene` in `index.html` and bump the dot count.
+- **Tune sway / branch density** — `js/forest-tree-gen.js` (generation) and
+  `js/forest-draw-trunk.js` (drawing). Layer-aware sway amplitude is driven
+  by `tree.layer` (`fg`/`mid`/`far`).
+
+## Key conventions
+
+- **Canvas buffer is locked at init.** Never set `canvas.width` /
+  `canvas.height` after load — CSS `object-fit: cover` handles reshape.
+  Writing to those caused a blue/green flash mid-scroll/resize.
+- **Render loop never skips frames based on scroll position** (same flash).
+- All sizing uses CSS `clamp()`. No per-breakpoint magic numbers.
+- One tokens file (`css/tokens.css`) drives every color and fluid size.
+- iOS-safe primitives: `100dvh` hero with `100vh` fallback, `100lvh` canvas,
+  `env(safe-area-inset-*)` on nav/footer, `overscroll-behavior-y: none`,
+  `-webkit-tap-highlight-color: transparent`, `touch-action: manipulation`
+  on interactives.
+- `#bg-canvas` is promoted to a GPU compositor layer (`transform: translateZ(0)`
+  + `backface-visibility: hidden`) so `position: fixed` doesn't "fall off"
+  mid-scroll on mobile browsers.
+- No `backdrop-filter` on anything that scrolls over the canvas — only the
+  nav when scrolled.
+- Profile video: `muted playsinline autoplay preload="auto"` with a JS
+  fallback in `js/ui.js` that re-attempts `play()` on readiness events +
+  user interaction (iOS blocks cold autoplay).
+- Wire positions recalculate on scroll and resize via positioning functions
+  in `js/ui.js` (coordinated by `js/scheduler.js`).
