@@ -423,6 +423,137 @@ try {
     ctx.restore();
   }
 
+  // ─── Background swamp (bottom-third, left side) ─────────────────────────
+  // Static pond baked into hillCache so it sits behind every tree/undergrowth
+  // layer and reads as a backdrop. No critters or per-frame work — purely a
+  // visual element. Position: bottom third vertically, left ~40% horizontally.
+  function drawSwamp(hctx, W, H) {
+    var cxP = W * 0.18;
+    var cyP = H * 0.80;       // mid-point of the bottom third
+    var rxP = W * 0.22;
+    var ryP = H * 0.085;
+
+    // Irregular blob outline — low-frequency noise on the radius keeps the
+    // edge organic.
+    var pts = [];
+    for (var pa = 0; pa < 26; pa++) {
+      var ang = (pa / 26) * 6.283;
+      var noise = 1
+        + 0.18 * Math.sin(ang * 3 + 0.4)
+        + 0.10 * Math.cos(ang * 5 - 0.7);
+      pts.push({
+        x: cxP + Math.cos(ang) * rxP * noise,
+        y: cyP + Math.sin(ang) * ryP * noise,
+      });
+    }
+
+    // Water gradient — mossy green core fading to transparent at the edge so
+    // the surrounding ground texture peeks through.
+    var grad = hctx.createRadialGradient(cxP, cyP, 0, cxP, cyP, rxP);
+    grad.addColorStop(0,    'rgba(38,72,52,0.85)');
+    grad.addColorStop(0.55, 'rgba(32,62,46,0.78)');
+    grad.addColorStop(0.85, 'rgba(24,50,38,0.55)');
+    grad.addColorStop(1,    'rgba(24,50,38,0)');
+    hctx.fillStyle = grad;
+    hctx.beginPath();
+    hctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 1; i < pts.length; i++) hctx.lineTo(pts[i].x, pts[i].y);
+    hctx.closePath();
+    hctx.fill();
+
+    // Dark rim for the water edge.
+    hctx.beginPath();
+    hctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 1; i < pts.length; i++) hctx.lineTo(pts[i].x, pts[i].y);
+    hctx.closePath();
+    hctx.lineWidth = 1.2;
+    hctx.strokeStyle = 'rgba(15,32,20,0.55)';
+    hctx.stroke();
+
+    // Reeds — vertical strokes around the rim with optional seed-heads.
+    var reedRng = Forest.mkRng(8765);
+    for (var ri = 0; ri < 28; ri++) {
+      var ang = reedRng() * 6.283;
+      var radF = 0.88 + reedRng() * 0.28;
+      var rx = cxP + Math.cos(ang) * rxP * radF;
+      var ry = cyP + Math.sin(ang) * ryP * radF;
+      var rh = 10 + reedRng() * 22;
+      var rTilt = (reedRng() - 0.5) * 6;
+      hctx.beginPath();
+      hctx.moveTo(rx, ry);
+      hctx.quadraticCurveTo(rx + rTilt * 0.4, ry - rh * 0.5, rx + rTilt, ry - rh);
+      hctx.lineWidth = 1.0 + reedRng() * 0.6;
+      hctx.strokeStyle = 'rgba(78,104,46,' + (0.55 + reedRng() * 0.3).toFixed(3) + ')';
+      hctx.stroke();
+      if (reedRng() < 0.5) {
+        hctx.beginPath();
+        hctx.ellipse(rx + rTilt, ry - rh, 1.3, 4.5, 0, 0, 6.28);
+        hctx.fillStyle = 'rgba(118,86,48,0.7)';
+        hctx.fill();
+      }
+    }
+
+    // Lily pads — flat circles with the classic notch + occasional flower.
+    var lilyRng = Forest.mkRng(2024);
+    for (var li = 0; li < 12; li++) {
+      var ang = lilyRng() * 6.283;
+      var radF = lilyRng() * 0.85;
+      var lx = cxP + Math.cos(ang) * rxP * radF;
+      var ly = cyP + Math.sin(ang) * ryP * radF;
+      var lsz = 7 + lilyRng() * 12;
+      var lrot = lilyRng() * 6.283;
+
+      hctx.save();
+      hctx.translate(lx, ly);
+      hctx.rotate(lrot);
+      hctx.beginPath();
+      hctx.arc(0, 0, lsz, 0.45, 6.283 - 0.45);
+      hctx.lineTo(0, 0);
+      hctx.closePath();
+      hctx.fillStyle = lilyRng() < 0.35
+        ? 'rgba(70,108,52,0.85)'
+        : 'rgba(85,128,60,0.85)';
+      hctx.fill();
+      // Highlight
+      hctx.beginPath();
+      hctx.ellipse(-lsz * 0.22, -lsz * 0.22, lsz * 0.5, lsz * 0.3, 0, 0, 6.28);
+      hctx.fillStyle = 'rgba(150,180,90,0.25)';
+      hctx.fill();
+      // Vein
+      hctx.beginPath();
+      hctx.moveTo(0, 0);
+      hctx.lineTo(lsz, 0);
+      hctx.lineWidth = 0.5;
+      hctx.strokeStyle = 'rgba(28,52,28,0.5)';
+      hctx.stroke();
+      // Occasional flower
+      if (lilyRng() < 0.30) {
+        var flR = lsz * 0.42;
+        for (var fp = 0; fp < 6; fp++) {
+          var fpA = (fp / 6) * 6.283;
+          hctx.beginPath();
+          hctx.ellipse(
+            Math.cos(fpA) * flR * 0.4,
+            Math.sin(fpA) * flR * 0.4,
+            flR * 0.5, flR * 0.25, fpA, 0, 6.283);
+          hctx.fillStyle = 'rgba(245,222,232,0.85)';
+          hctx.fill();
+        }
+        hctx.beginPath();
+        hctx.arc(0, 0, flR * 0.27, 0, 6.283);
+        hctx.fillStyle = 'rgba(240,205,90,0.95)';
+        hctx.fill();
+      }
+      hctx.restore();
+    }
+
+    // Soft surface highlight.
+    hctx.beginPath();
+    hctx.ellipse(cxP - rxP * 0.18, cyP - ryP * 0.22, rxP * 0.4, ryP * 0.10, -0.2, 0, 6.283);
+    hctx.fillStyle = 'rgba(180,220,200,0.12)';
+    hctx.fill();
+  }
+
   // ─── River + crocodile (distant) ────────────────────────────────────────
   // River shape: horizontal band with slight sinuous curvature at y ~gY.
   // Baked into hillCache; ripples + croc draw per-frame.
@@ -619,14 +750,15 @@ try {
     var W = canvas.width / dpr, H = canvas.height / dpr;
     var wind = Math.sin(windPhase) * 0.5 + Math.sin(windPhase * 2.3) * 0.2;
 
-    // ═══ FULL SCENE CACHE: render everything except particles once ═══
-    // Rebuild the scene cache every ~300 ms so branch sway actually shows on
-    // screen (trees draw inside the cache; if we never refreshed, sway would
-    // be frozen in a single frame). ~3 fps of tree redraw is plenty for
-    // natural motion without burning the mobile GPU.
-    var _sceneStale = !frame._sceneT || (time - frame._sceneT) > 0.3;
-    if (!frame._sceneCache || frame._sceneW !== W || frame._sceneH !== H || _sceneStale) {
-      frame._sceneT = time;
+    // ═══ FULL SCENE CACHE: render everything except particles ═══
+    // Built once on resize and reused every frame. Previously rebuilt every
+    // ~300 ms for branch sway, but that was the sole source of the periodic
+    // stutter the user saw — rebuilding ~91 trees + ~1700 canopy blobs in a
+    // single frame every 18 frames = visible jank. Sway amplitude on far/mid
+    // trees is 1–2 px so freezing it is imperceptible. Animated cosmetic
+    // layers (mist, fog wisps, glow spots, light rays) are now drawn per-frame
+    // on the MAIN ctx after the cache blits — see below.
+    if (!frame._sceneCache || frame._sceneW !== W || frame._sceneH !== H) {
       var sc = frame._sceneCache || document.createElement('canvas');
       sc.width = W; sc.height = H;
       var sctx = sc.getContext('2d');
@@ -1084,6 +1216,9 @@ try {
       }
       // River — baked into the hill cache so the water surface is free per frame.
       drawRiverBase(hctx, W, H, gY);
+      // Background swamp (bottom-third left). Sits behind every tree/undergrowth
+      // layer because hillCache blits before far/mid/fg get drawn.
+      drawSwamp(hctx, W, H);
       frame._hillCache = hc;
       frame._hillW = W; frame._hillH = H;
     }
@@ -1130,21 +1265,7 @@ try {
     sctx.fillStyle = frame._hazeG;
     sctx.fillRect(0, 0, W, H);
 
-    // Golden glow spots between far and mid layers
-    for (var gli = 0; gli < 5; gli++) {
-      var glx = W * (0.1 + gli * 0.2);
-      var gly = H * (0.4 + Math.sin(time * 0.1 + gli * 1.5) * 0.03);
-      var glr = H * 0.12;
-      var glAlpha = 0.06 + Math.sin(time * 0.2 + gli * 2) * 0.02;
-      sctx.beginPath();
-      sctx.arc(glx, gly, glr * 0.5, 0, 6.28);
-      sctx.fillStyle = 'rgba(220,200,80,' + (glAlpha * 0.7).toFixed(3) + ')';
-      sctx.fill();
-      sctx.beginPath();
-      sctx.arc(glx, gly, glr, 0, 6.28);
-      sctx.fillStyle = 'rgba(200,185,70,' + (glAlpha * 0.2).toFixed(3) + ')';
-      sctx.fill();
-    }
+    // (Golden glow spots moved out of bake — drawn per-frame on main ctx.)
 
     // MID undergrowth + trees — drawn directly into the scene cache.
     Forest.drawUndergrowth(sctx, W, H, time, 'mid');
@@ -1177,26 +1298,7 @@ try {
     sctx.fillRect(0, H * 0.35, W, H * 0.3);
     sctx.restore();
 
-    // Mist puffs
-    for (var mi = 0; mi < Forest.mistPuffs.length; mi++) {
-      var mp = Forest.mistPuffs[mi];
-      var mx = ((mp.nx + time * mp.speed) % 1.8 - 0.2) * W;
-      var my = mp.ny * H + Math.sin(time * 0.2 + mp.phase) * 10;
-      var mr = mp.r * H * 1.2;
-      var mAlpha = mp.alpha * (0.75 + Math.sin(time * 0.12 + mp.phase) * 0.25);
-      sctx.beginPath();
-      sctx.arc(mx, my, mr * 0.4, 0, 6.28);
-      sctx.fillStyle = 'rgba(185,180,85,' + (mAlpha * 0.7).toFixed(3) + ')';
-      sctx.fill();
-      sctx.beginPath();
-      sctx.arc(mx, my, mr * 0.7, 0, 6.28);
-      sctx.fillStyle = 'rgba(170,165,75,' + (mAlpha * 0.25).toFixed(3) + ')';
-      sctx.fill();
-      sctx.beginPath();
-      sctx.arc(mx, my, mr, 0, 6.28);
-      sctx.fillStyle = 'rgba(155,150,65,' + (mAlpha * 0.08).toFixed(3) + ')';
-      sctx.fill();
-    }
+    // (Mist puffs moved out of bake — drawn per-frame on main ctx.)
 
     // Ground fog band (cached on resize)
     if (!frame._fogG || frame._fogW !== W || frame._fogH !== H) {
@@ -1212,16 +1314,7 @@ try {
     sctx.fillStyle = frame._fogG;
     sctx.fillRect(0, gY - 50, W, 120);
 
-    // Moving fog wisps
-    for (var fi = 0; fi < 6; fi++) {
-      var fx = ((fi * 0.18 + time * 0.008 * (1 + fi * 0.3)) % 1.4 - 0.2) * W;
-      var fy = gY + H * 0.01;
-      var fr = H * (0.04 + fi * 0.01);
-      sctx.beginPath();
-      sctx.arc(fx, fy, fr, 0, 6.28);
-      sctx.fillStyle = 'rgba(185,180,80,0.04)';
-      sctx.fill();
-    }
+    // (Moving fog wisps moved out of bake — drawn per-frame on main ctx.)
 
     // FG layer: undergrowth + depth-sorted scene + trees. Drawn directly
     // into the scene cache (used to go through a dead _fgCache offscreen).
@@ -1465,31 +1558,7 @@ try {
     }
     // (end canopy passes — directly in sctx)
 
-    // Volumetric light rays
-    sctx.save();
-    sctx.globalCompositeOperation = 'screen';
-    for (var ri = 0; ri < 8; ri++) {
-      var rx = W * (0.05 + ri * 0.13);
-      var rPulse = Math.sin(time * 0.15 + ri * 2.1);
-      var ra = 0.02 + rPulse * 0.015;
-      if (ra < 0.005) continue;
-      var rayW = W * (0.025 + Math.abs(rPulse) * 0.015);
-      sctx.beginPath();
-      sctx.moveTo(rx - rayW * 0.3, 0);
-      sctx.lineTo(rx + rayW * 0.3, H * 0.25);
-      sctx.lineTo(rx - rayW * 0.5, H * 0.25);
-      sctx.closePath();
-      sctx.fillStyle = 'rgba(255,240,130,' + ra.toFixed(3) + ')';
-      sctx.fill();
-      sctx.beginPath();
-      sctx.moveTo(rx - rayW * 0.5, H * 0.25);
-      sctx.lineTo(rx + rayW * 1.5, H * 0.7);
-      sctx.lineTo(rx - rayW * 0.8, H * 0.7);
-      sctx.closePath();
-      sctx.fillStyle = 'rgba(255,230,100,' + (ra * 0.3).toFixed(3) + ')';
-      sctx.fill();
-    }
-    sctx.restore();
+    // (Volumetric light rays moved out of bake — drawn per-frame on main ctx.)
 
     // Warm color grading
     sctx.save();
@@ -1517,6 +1586,85 @@ try {
     }
     // Draw cached scene (one drawImage instead of ~300 draw calls)
     ctx.drawImage(frame._sceneCache, 0, 0);
+
+    // ═══ ANIMATED OVERLAYS (on main ctx, per-frame @ 60 fps) ═══
+    // Previously baked into the scene cache and re-rendered every 300 ms —
+    // which both ate CPU and made these elements chop-chop instead of drift.
+    var _gY = H * 0.58;
+
+    // Golden glow spots between layers (pulse + subtle drift)
+    for (var gli = 0; gli < 5; gli++) {
+      var glx = W * (0.1 + gli * 0.2);
+      var gly = H * (0.4 + Math.sin(time * 0.1 + gli * 1.5) * 0.03);
+      var glr = H * 0.12;
+      var glAlpha = 0.06 + Math.sin(time * 0.2 + gli * 2) * 0.02;
+      ctx.beginPath();
+      ctx.arc(glx, gly, glr * 0.5, 0, 6.28);
+      ctx.fillStyle = 'rgba(220,200,80,' + (glAlpha * 0.7).toFixed(3) + ')';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(glx, gly, glr, 0, 6.28);
+      ctx.fillStyle = 'rgba(200,185,70,' + (glAlpha * 0.2).toFixed(3) + ')';
+      ctx.fill();
+    }
+
+    // Mist puffs (drift horizontally)
+    for (var mi = 0; mi < Forest.mistPuffs.length; mi++) {
+      var mp = Forest.mistPuffs[mi];
+      var mx = ((mp.nx + time * mp.speed) % 1.8 - 0.2) * W;
+      var my = mp.ny * H + Math.sin(time * 0.2 + mp.phase) * 10;
+      var mr = mp.r * H * 1.2;
+      var mAlpha = mp.alpha * (0.75 + Math.sin(time * 0.12 + mp.phase) * 0.25);
+      ctx.beginPath();
+      ctx.arc(mx, my, mr * 0.4, 0, 6.28);
+      ctx.fillStyle = 'rgba(185,180,85,' + (mAlpha * 0.7).toFixed(3) + ')';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(mx, my, mr * 0.7, 0, 6.28);
+      ctx.fillStyle = 'rgba(170,165,75,' + (mAlpha * 0.25).toFixed(3) + ')';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(mx, my, mr, 0, 6.28);
+      ctx.fillStyle = 'rgba(155,150,65,' + (mAlpha * 0.08).toFixed(3) + ')';
+      ctx.fill();
+    }
+
+    // Moving fog wisps near the ground
+    for (var fi = 0; fi < 6; fi++) {
+      var fx = ((fi * 0.18 + time * 0.008 * (1 + fi * 0.3)) % 1.4 - 0.2) * W;
+      var fy = _gY + H * 0.01;
+      var fr = H * (0.04 + fi * 0.01);
+      ctx.beginPath();
+      ctx.arc(fx, fy, fr, 0, 6.28);
+      ctx.fillStyle = 'rgba(185,180,80,0.04)';
+      ctx.fill();
+    }
+
+    // Volumetric light rays (pulse + width flicker)
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    for (var ri = 0; ri < 8; ri++) {
+      var rx = W * (0.05 + ri * 0.13);
+      var rPulse = Math.sin(time * 0.15 + ri * 2.1);
+      var ra = 0.02 + rPulse * 0.015;
+      if (ra < 0.005) continue;
+      var rayW = W * (0.025 + Math.abs(rPulse) * 0.015);
+      ctx.beginPath();
+      ctx.moveTo(rx - rayW * 0.3, 0);
+      ctx.lineTo(rx + rayW * 0.3, H * 0.25);
+      ctx.lineTo(rx - rayW * 0.5, H * 0.25);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,240,130,' + ra.toFixed(3) + ')';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(rx - rayW * 0.5, H * 0.25);
+      ctx.lineTo(rx + rayW * 1.5, H * 0.7);
+      ctx.lineTo(rx - rayW * 0.8, H * 0.7);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,230,100,' + (ra * 0.3).toFixed(3) + ')';
+      ctx.fill();
+    }
+    ctx.restore();
 
     // Animated critters + decorations — drawn on the main ctx AFTER the
     // scene cache blits so they actually animate (they'd freeze in cache).
@@ -1558,20 +1706,15 @@ try {
         p.vy += (Math.random()-0.5)*0.008;
         p.x += p.vx; p.y += p.vy;
         var fl = 0.25+Math.sin(p.ph)*0.6;
-        if (!Forest.isMobile) {
-          ctx.save();
-          ctx.shadowColor = 'rgba(200,255,100,' + (a*fl*0.6).toFixed(3) + ')';
-          ctx.shadowBlur = p.r * 12;
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 1.5, 0, 6.28);
-          ctx.fillStyle = 'rgba(200,255,100,' + (a*fl*0.5).toFixed(3) + ')';
-          ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.restore();
-        } else {
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3, 0, 6.28);
-          ctx.fillStyle = 'rgba(200,255,100,' + (a*fl*0.15).toFixed(3) + ')';
-          ctx.fill();
-        }
+        // Faked glow (2-circle layered alpha). Previously used ctx.shadowBlur
+        // on desktop, which is the priciest path in the per-particle loop —
+        // swapping for alpha circles gave back several ms/frame on laptops.
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3.2, 0, 6.28);
+        ctx.fillStyle = 'rgba(200,255,100,' + (a*fl*0.14).toFixed(3) + ')';
+        ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 1.6, 0, 6.28);
+        ctx.fillStyle = 'rgba(220,255,130,' + (a*fl*0.35).toFixed(3) + ')';
+        ctx.fill();
         ctx.beginPath(); ctx.arc(p.x,p.y,p.r*0.8,0,6.28);
         ctx.fillStyle = 'rgba(240,255,180,'+(a*fl*0.9).toFixed(3)+')'; ctx.fill();
       } else if (p.type === 'spore') {
