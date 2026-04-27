@@ -1,8 +1,8 @@
 #projects { text-align: center; margin-top: 8px; }
 .heading-viewport {
   perspective: 800px;
-  width: clamp(160px, 35vw, 200px);
-  height: clamp(44px, 7vw, 55px);
+  width: clamp(180px, 38vw, 230px);
+  height: clamp(54px, 8.5vw, 70px);
   margin: 0 auto clamp(20px, 3vw, 32px);
 }
 .projects-heading-scene {

@@ -154,7 +154,7 @@ document.documentElement.classList.add('js-ready');
   var cubeCurrentDeg = 0;
 
   // ── Cube & wire config ──
-  var WIRE_BORDER_INSET_RATIO = 0.083;
+  var WIRE_BORDER_INSET_RATIO = 0.087;
   var CUBE_HEIGHT_RATIO = 0.89;
   var CUBE_HEIGHT_MAX = 495;
   var CUBE_PERSPECTIVE_RATIO = 2.2;
@@ -277,7 +277,7 @@ document.documentElement.classList.add('js-ready');
       bCornerDropPx:   8,    // B-point (corner) downward (away from T-point) in px
     },
     // Mini wires (.chandelier-wire): cube top corners ↔ mini chandelier.
-    miniWires:   { from: 'B', on: '.about-card',   cornerSpread: 0, cornerYShift: 0 },
+    miniWires:   { from: 'B', on: '.about-card',   cornerSpread: 16, cornerYShift: 0 },
     // Bottom wires (.chandelier-wire-bottom): cube bottom corners → contact.
     // B-point (lower / contact-card) stays centered. T-point (upper / each
     // cube-bottom corner) mirrors the top-wires: out 15 px, UP 8 px (away
@@ -317,6 +317,12 @@ document.documentElement.classList.add('js-ready');
       { x: -(edgeZ + sp), z: edgeZ + sp }
     ];
 
+    // Cube-side overshoot: wire extends this many px past the cube corner
+    // (in the direction away from the convergence point) so it visually
+    // tucks into the rounded glass-card corner instead of stopping at the
+    // mathematical edge.
+    var CUBE_END_EXT = 5;
+
     corners.forEach(function(corner, i) {
       var dx, dy, dz, wireLen, dxz, azimuth, tilt;
 
@@ -329,7 +335,9 @@ document.documentElement.classList.add('js-ready');
         dxz = Math.sqrt(dx * dx + dz * dz);
         azimuth = Math.atan2(-corner.x, -corner.z) * (180 / Math.PI);
         tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
-        wires[i].style.height = wireLen + 'px';
+        // Anchor stays at convergence; just lengthen the wire so its
+        // bottom end overshoots the cube corner along the wire's direction.
+        wires[i].style.height = (wireLen + CUBE_END_EXT) + 'px';
         wires[i].style.transform = 'translate3d(0px,' + convY + 'px,0px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
       } else {
         // Wire starts at cube bottom corner, hangs down to convergence point below
@@ -340,8 +348,15 @@ document.documentElement.classList.add('js-ready');
         dxz = Math.sqrt(dx * dx + dz * dz);
         azimuth = Math.atan2(dx, dz) * (180 / Math.PI);
         tilt = Math.atan2(dxz, dy) * (180 / Math.PI);
-        wires[i].style.height = wireLen + 'px';
-        wires[i].style.transform = 'translate3d(' + corner.x + 'px,' + (cubeHalf + ys) + 'px,' + corner.z + 'px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
+        // Shift the anchor CUBE_END_EXT px in the direction AWAY from
+        // convergence (i.e., past the cube corner) and lengthen the wire
+        // by the same amount so its bottom still meets the convergence.
+        var ux = -dx / wireLen, uy = -dy / wireLen, uz = -dz / wireLen;
+        var ax = corner.x + ux * CUBE_END_EXT;
+        var ay = (cubeHalf + ys) + uy * CUBE_END_EXT;
+        var az = corner.z + uz * CUBE_END_EXT;
+        wires[i].style.height = (wireLen + CUBE_END_EXT) + 'px';
+        wires[i].style.transform = 'translate3d(' + ax.toFixed(1) + 'px,' + ay.toFixed(1) + 'px,' + az.toFixed(1) + 'px) rotateY(' + azimuth.toFixed(1) + 'deg) rotateX(' + tilt.toFixed(1) + 'deg)';
       }
     });
   }

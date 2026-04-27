@@ -8,6 +8,11 @@
   --card-pad-h: clamp(16px, 12px + 1.5vw, 36px);
   --card-gap:   clamp(8px,  6px + 0.8vw, 14px);
 
+  /* Heading mini-chandelier (Projects cube) text — currently mirrors
+     --card-h3 (matches project card titles). To diverge, replace the
+     reference with explicit clamp() values. */
+  --heading-h2: var(--card-h3);
+
   /* About section */
   --about-h2:   clamp(1.8rem, 1.4rem + 1.5vw, 2.4rem);
   --about-body:  clamp(1rem, 0.85rem + 0.6vw, 1.25rem);
@@ -31,6 +36,6 @@
   /* Medium blue translucent panel — shared by about-card, contact-card,
      project-card, and mini-chandelier heading faces. Edit this ONE value
      to re-tint every translucent panel on the page. */
-  --glass-bg: rgba(82, 125, 180, 0.48);
+  --glass-bg: rgba(1, 86, 105, 0.62);
   --glass-border: rgba(255,255,255,0.18);
 }
