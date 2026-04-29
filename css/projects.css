@@ -4,13 +4,12 @@
   width: clamp(180px, 38vw, 230px);
   height: clamp(54px, 8.5vw, 70px);
   margin: 0 auto clamp(20px, 3vw, 32px);
-  /* Half-extents of the mini-cube box. Width matches the historical
-     translateZ(85px) the side faces sit at; depth keeps the box thin so the
-     side panels read as a slim edge instead of a second wide face.
-     `--heading-half-depth` is also read by `js/ui.js` to pin the top wires
-     to the correct corners. */
+  /* Half-extents of the mini-cube box. Equal width and depth → square
+     cross-section: all four faces are the same size and carry the
+     "Projects" text. js/ui.js reads these to position the top wires at
+     the four real corners of the box. */
   --heading-half-width: 85px;
-  --heading-half-depth: 20px;
+  --heading-half-depth: 85px;
 }
 .projects-heading-scene {
   width: 100%;
@@ -62,13 +61,6 @@
 .projects-heading-text { margin-bottom: 0; font-size: var(--heading-h2); line-height: 1; }
 .pf-front  { transform: rotateY(0deg)   translateZ(var(--heading-half-depth)); }
 .pf-back   { transform: rotateY(180deg) translateZ(var(--heading-half-depth)); }
-.pf-right, .pf-left {
-  /* Side faces are the depth of the box — a slim edge slat. Centered by
-     overriding the inset that .projects-heading-face uses for front/back. */
-  width: calc(2 * var(--heading-half-depth));
-  left: calc(50% - var(--heading-half-depth));
-  overflow: hidden;
-}
 .pf-right  { transform: rotateY(90deg)  translateZ(var(--heading-half-width)); }
 .pf-left   { transform: rotateY(-90deg) translateZ(var(--heading-half-width)); }
 
