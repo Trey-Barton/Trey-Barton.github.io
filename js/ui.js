@@ -191,12 +191,20 @@ document.documentElement.classList.add('js-ready');
   var headingZ = Math.min(85, window.innerWidth * 0.12);
   var lastHeadingTs = null;
   var headingVisible = false;
+  // Honor OS-level reduced-motion preference: pin the heading to a static
+  // forward-facing pose instead of the perpetual 360° spin.
+  var reducedMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
   var headingObs = new IntersectionObserver(function(entries) {
     headingVisible = entries[0].isIntersecting;
     if (headingVisible) lastHeadingTs = null; // reset timing on re-enter
   }, { threshold: 0 });
   headingObs.observe(document.querySelector('.heading-viewport'));
   function animateHeading(ts) {
+    if (reducedMotionMQ.matches) {
+      headingScene.style.transform = 'translateZ(-' + headingZ + 'px) rotateY(0deg)';
+      requestAnimationFrame(animateHeading);
+      return;
+    }
     if (!headingVisible) { requestAnimationFrame(animateHeading); return; }
     if (lastHeadingTs === null) lastHeadingTs = ts;
     var dt = (ts - lastHeadingTs) / 1000;
@@ -416,12 +424,19 @@ document.documentElement.classList.add('js-ready');
     var headingHalf = headingVP.offsetHeight / 2;
     var borderRadius = 14;
     var inset = borderRadius * Math.cos(Math.PI / 4);
-    var edgeZ = headingZ - inset;
+    // Mini-cube is a thin slab (wide × short-depth). Half-extents come from
+    // the CSS custom properties on .heading-viewport so box geometry stays
+    // in sync between CSS faces and JS wire endpoints.
+    var hvStyle = getComputedStyle(headingVP);
+    var halfW = parseFloat(hvStyle.getPropertyValue('--heading-half-width')) || headingZ;
+    var halfD = parseFloat(hvStyle.getPropertyValue('--heading-half-depth')) || headingZ;
+    var edgeX = Math.max(0, halfW - inset);
+    var edgeZ = Math.max(0, halfD - Math.min(inset, halfD * 0.5));
     var corners = [
-      { x: edgeZ, z: edgeZ },
-      { x: edgeZ, z: -edgeZ },
-      { x: -edgeZ, z: -edgeZ },
-      { x: -edgeZ, z: edgeZ }
+      { x: edgeX, z: edgeZ },
+      { x: edgeX, z: -edgeZ },
+      { x: -edgeX, z: -edgeZ },
+      { x: -edgeX, z: edgeZ }
     ];
 
     // Pixel knobs — outward (XZ) and vertical (Y) shift of the B-point
