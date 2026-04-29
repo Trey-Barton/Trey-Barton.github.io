@@ -1,15 +1,14 @@
 #projects { text-align: center; margin-top: 8px; }
 .heading-viewport {
   perspective: 800px;
-  width: clamp(180px, 38vw, 230px);
+  width: 200px;
   height: clamp(54px, 8.5vw, 70px);
   margin: 0 auto clamp(20px, 3vw, 32px);
-  /* Half-extents of the mini-cube box. Equal width and depth → square
-     cross-section: all four faces are the same size and carry the
-     "Projects" text. js/ui.js reads these to position the top wires at
-     the four real corners of the box. */
-  --heading-half-width: 85px;
-  --heading-half-depth: 85px;
+  /* True cube: face width (200) == 2 × half-extents → adjacent faces meet
+     exactly at the corners with no front-vs-side overlap during rotation.
+     `js/ui.js` reads these to pin the top wires to the actual corners. */
+  --heading-half-width: 100px;
+  --heading-half-depth: 100px;
 }
 .projects-heading-scene {
   width: 100%;
@@ -21,11 +20,11 @@
 }
 .projects-heading-face {
   position: absolute;
-  /* Heading faces inset 15 px on each side (5 original + 10 more per your
-     ask). Authored at native scale so the --heading-scale transform
-     propagates the inset proportionally across viewports. */
-  width: calc(100% - 30px); height: 100%;
-  left: 15px;
+  /* Face fills the parent so face_width (= parent_width = 200) equals
+     2 × half-width. This makes the front face's edges coincide with the
+     side faces' near edges — no overlap during rotation. */
+  width: 100%; height: 100%;
+  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
