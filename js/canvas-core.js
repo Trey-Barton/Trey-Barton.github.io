@@ -423,54 +423,66 @@ try {
     ctx.restore();
   }
 
-  // ─── Background swamp (bottom-third, left side) ─────────────────────────
+  // ─── Background swamp (lower-left, with channel up to the river) ─────────
   // Static pond baked into hillCache so it sits behind every tree/undergrowth
-  // layer and reads as a backdrop. No critters or per-frame work — purely a
-  // visual element. Position: bottom third vertically, left ~40% horizontally.
+  // layer. Built from three overlapping organic blobs:
+  //   - main body : wide flat pond filling the lower-left area
+  //   - bridge    : softens the join between body and channel
+  //   - channel   : narrow tongue running up-left, meeting the river so the
+  //                 swamp visually feeds from it.
+  // Reeds / lily pads / surface highlight are only on the main body.
   function drawSwamp(hctx, W, H) {
-    var cxP = W * 0.18;
-    var cyP = H * 0.80;       // mid-point of the bottom third
-    var rxP = W * 0.22;
-    var ryP = H * 0.085;
-
-    // Irregular blob outline — low-frequency noise on the radius keeps the
-    // edge organic.
-    var pts = [];
-    for (var pa = 0; pa < 26; pa++) {
-      var ang = (pa / 26) * 6.283;
-      var noise = 1
-        + 0.18 * Math.sin(ang * 3 + 0.4)
-        + 0.10 * Math.cos(ang * 5 - 0.7);
-      pts.push({
-        x: cxP + Math.cos(ang) * rxP * noise,
-        y: cyP + Math.sin(ang) * ryP * noise,
-      });
+    function blobOutline(cxP, cyP, rxP, ryP, phaseSeed) {
+      var pts = [];
+      for (var pa = 0; pa < 26; pa++) {
+        var ang = (pa / 26) * 6.283;
+        var noise = 1
+          + 0.18 * Math.sin(ang * 3 + phaseSeed * 0.41)
+          + 0.10 * Math.cos(ang * 5 - phaseSeed * 0.73);
+        pts.push({
+          x: cxP + Math.cos(ang) * rxP * noise,
+          y: cyP + Math.sin(ang) * ryP * noise,
+        });
+      }
+      return pts;
     }
 
-    // Water gradient — mossy green core fading to transparent at the edge so
-    // the surrounding ground texture peeks through.
-    var grad = hctx.createRadialGradient(cxP, cyP, 0, cxP, cyP, rxP);
-    grad.addColorStop(0,    'rgba(38,72,52,0.85)');
-    grad.addColorStop(0.55, 'rgba(32,62,46,0.78)');
-    grad.addColorStop(0.85, 'rgba(24,50,38,0.55)');
-    grad.addColorStop(1,    'rgba(24,50,38,0)');
-    hctx.fillStyle = grad;
-    hctx.beginPath();
-    hctx.moveTo(pts[0].x, pts[0].y);
-    for (var i = 1; i < pts.length; i++) hctx.lineTo(pts[i].x, pts[i].y);
-    hctx.closePath();
-    hctx.fill();
+    function fillBlob(pts, cxP, cyP, rxP, ryP) {
+      var rad = Math.max(rxP, ryP);
+      var grad = hctx.createRadialGradient(cxP, cyP, 0, cxP, cyP, rad);
+      grad.addColorStop(0,    'rgba(38,72,52,0.85)');
+      grad.addColorStop(0.55, 'rgba(32,62,46,0.78)');
+      grad.addColorStop(0.85, 'rgba(24,50,38,0.55)');
+      grad.addColorStop(1,    'rgba(24,50,38,0)');
+      hctx.fillStyle = grad;
+      hctx.beginPath();
+      hctx.moveTo(pts[0].x, pts[0].y);
+      for (var i = 1; i < pts.length; i++) hctx.lineTo(pts[i].x, pts[i].y);
+      hctx.closePath();
+      hctx.fill();
+      hctx.beginPath();
+      hctx.moveTo(pts[0].x, pts[0].y);
+      for (var j = 1; j < pts.length; j++) hctx.lineTo(pts[j].x, pts[j].y);
+      hctx.closePath();
+      hctx.lineWidth = 1.2;
+      hctx.strokeStyle = 'rgba(15,32,20,0.55)';
+      hctx.stroke();
+    }
 
-    // Dark rim for the water edge.
-    hctx.beginPath();
-    hctx.moveTo(pts[0].x, pts[0].y);
-    for (var i = 1; i < pts.length; i++) hctx.lineTo(pts[i].x, pts[i].y);
-    hctx.closePath();
-    hctx.lineWidth = 1.2;
-    hctx.strokeStyle = 'rgba(15,32,20,0.55)';
-    hctx.stroke();
+    // ─── Body, bridge, channel — drawn back to front ───
+    // Channel: vertical tongue reaching up to the river. Drawn first so the
+    // body / bridge overlap-fade into it for a smooth join.
+    var ccx = W * 0.075, ccy = H * 0.66, crx = W * 0.06, cry = H * 0.105;
+    fillBlob(blobOutline(ccx, ccy, crx, cry, 2.1), ccx, ccy, crx, cry);
+    // Bridge: rounded link between channel and body.
+    var bcx = W * 0.13, bcy = H * 0.74, brx = W * 0.075, bry = H * 0.085;
+    fillBlob(blobOutline(bcx, bcy, brx, bry, 1.2), bcx, bcy, brx, bry);
+    // Main body — fills the bulk of the red outline.
+    var mcx = W * 0.22, mcy = H * 0.85, mrx = W * 0.25, mry = H * 0.115;
+    fillBlob(blobOutline(mcx, mcy, mrx, mry, 0.4), mcx, mcy, mrx, mry);
 
-    // Reeds — vertical strokes around the rim with optional seed-heads.
+    // Decorations (reeds + lily pads + highlight) — main body only.
+    var cxP = mcx, cyP = mcy, rxP = mrx, ryP = mry;
     var reedRng = Forest.mkRng(8765);
     for (var ri = 0; ri < 28; ri++) {
       var ang = reedRng() * 6.283;
@@ -493,16 +505,14 @@ try {
       }
     }
 
-    // Lily pads — flat circles with the classic notch + occasional flower.
     var lilyRng = Forest.mkRng(2024);
     for (var li = 0; li < 12; li++) {
-      var ang = lilyRng() * 6.283;
-      var radF = lilyRng() * 0.85;
-      var lx = cxP + Math.cos(ang) * rxP * radF;
-      var ly = cyP + Math.sin(ang) * ryP * radF;
+      var lang = lilyRng() * 6.283;
+      var lradF = lilyRng() * 0.85;
+      var lx = cxP + Math.cos(lang) * rxP * lradF;
+      var ly = cyP + Math.sin(lang) * ryP * lradF;
       var lsz = 7 + lilyRng() * 12;
       var lrot = lilyRng() * 6.283;
-
       hctx.save();
       hctx.translate(lx, ly);
       hctx.rotate(lrot);
@@ -514,19 +524,16 @@ try {
         ? 'rgba(70,108,52,0.85)'
         : 'rgba(85,128,60,0.85)';
       hctx.fill();
-      // Highlight
       hctx.beginPath();
       hctx.ellipse(-lsz * 0.22, -lsz * 0.22, lsz * 0.5, lsz * 0.3, 0, 0, 6.28);
       hctx.fillStyle = 'rgba(150,180,90,0.25)';
       hctx.fill();
-      // Vein
       hctx.beginPath();
       hctx.moveTo(0, 0);
       hctx.lineTo(lsz, 0);
       hctx.lineWidth = 0.5;
       hctx.strokeStyle = 'rgba(28,52,28,0.5)';
       hctx.stroke();
-      // Occasional flower
       if (lilyRng() < 0.30) {
         var flR = lsz * 0.42;
         for (var fp = 0; fp < 6; fp++) {
@@ -547,7 +554,6 @@ try {
       hctx.restore();
     }
 
-    // Soft surface highlight.
     hctx.beginPath();
     hctx.ellipse(cxP - rxP * 0.18, cyP - ryP * 0.22, rxP * 0.4, ryP * 0.10, -0.2, 0, 6.283);
     hctx.fillStyle = 'rgba(180,220,200,0.12)';
