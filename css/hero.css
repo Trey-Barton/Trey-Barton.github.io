@@ -38,7 +38,7 @@
  text-shadow:0 1px 8px rgba(0,0,0,0.4);
 }
 /* Hero CTAs — equal width, consistent spacing, match the About-panel teal. */
-.hero-cta + .hero-cta{margin-top:14px;}
+.hero-cta + .hero-cta{margin-top:6px;}
 .hero-cta{
  margin-top:18px;
  display:inline-block;
