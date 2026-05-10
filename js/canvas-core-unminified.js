@@ -236,29 +236,29 @@ try {
 
   // ─── Swamp (lower-left water body) ──────────────────────────────────────────
   function drawSwampBase(sctx, W, H, gY, time) {
-    var sw = W * 0.48;
-    var top = gY + H * 0.015;
+    var sw = W * 0.32;
+    var swampY = H * 0.80;
     var rng = Forest.mkRng(7777);
 
     // Clip to organic swamp polygon
     sctx.save();
     sctx.beginPath();
-    sctx.moveTo(-2, top + H * 0.19);
-    sctx.bezierCurveTo(W * 0.02, top + H * 0.07, W * 0.06, top + H * 0.08, W * 0.10, top + H * 0.07);
-    sctx.bezierCurveTo(W * 0.15, top + H * 0.05, W * 0.20, top + H * 0.07, W * 0.26, top + H * 0.06);
-    sctx.bezierCurveTo(W * 0.29, top + H * 0.05, sw - W * 0.015, top + H * 0.07, sw, top + H * 0.10);
-    sctx.bezierCurveTo(sw + W * 0.01, top + H * 0.14, sw - W * 0.01, H * 0.68, W * 0.30, H * 0.74);
-    sctx.bezierCurveTo(W * 0.26, H * 0.80, W * 0.20, H * 0.84, W * 0.12, H * 0.86);
-    sctx.lineTo(-2, H * 0.88);
+    sctx.moveTo(-2, swampY + H * 0.04);
+    sctx.bezierCurveTo(W * 0.02, swampY + H * 0.015, W * 0.06, swampY + H * 0.02, W * 0.10, swampY + H * 0.07);
+    sctx.bezierCurveTo(W * 0.15, swampY + H * 0.01, W * 0.20, swampY + H * 0.015, W * 0.26, swampY + H * 0.01);
+    sctx.bezierCurveTo(W * 0.29, swampY + H * 0.01, sw - W * 0.015, swampY + H * 0.015, sw, swampY + H * 0.025);
+    sctx.bezierCurveTo(sw + W * 0.01, swampY + H * 0.05, sw - W * 0.01, swampY + H * 0.12, W * 0.30, swampY + H * 0.14);
+    sctx.bezierCurveTo(W * 0.26, swampY + H * 0.16, W * 0.20, swampY + H * 0.17, W * 0.12, swampY + H * 0.18);
+    sctx.lineTo(-2, swampY + H * 0.19);
     sctx.closePath();
     sctx.clip();
 
     // Outer shallows fill
     sctx.fillStyle = 'rgba(35, 62, 56, 0.5)';
-    sctx.fillRect(-2, top - H * 0.02, sw + 4, H - top + H * 0.02);
+    sctx.fillRect(-2, swampY - H * 0.02, sw + 4, H - swampY + H * 0.02);
 
     // Main water gradient — richer green-blue tones
-    var wg = sctx.createLinearGradient(0, top, 0, H);
+    var wg = sctx.createLinearGradient(0, swampY, 0, H);
     wg.addColorStop(0,    'rgba(42, 82, 76, 0.82)');
     wg.addColorStop(0.12, 'rgba(48, 95, 86, 0.88)');
     wg.addColorStop(0.30, 'rgba(40, 78, 72, 0.92)');
@@ -266,13 +266,13 @@ try {
     wg.addColorStop(0.80, 'rgba(24, 48, 44, 0.97)');
     wg.addColorStop(1,    'rgba(20, 36, 34, 0.99)');
     sctx.fillStyle = wg;
-    sctx.fillRect(-2, top - H * 0.02, sw + 4, H - top + H * 0.02);
+    sctx.fillRect(-2, swampY - H * 0.02, sw + 4, H - swampY + H * 0.02);
 
     // Painterly mottling blobs — richer underwater texture
     var mottRng = Forest.mkRng(1111);
     for (var mi = 0; mi < 45; mi++) {
       var mx = mottRng() * sw * 0.95;
-      var my = top + H * 0.03 + mottRng() * (H - top - H * 0.05);
+      var my = swampY + H * 0.03 + mottRng() * (H - swampY - H * 0.05);
       var mrx = W * (0.012 + mottRng() * 0.08);
       var mry = mrx * (0.3 + mottRng() * 0.6);
       var mt = mottRng();
@@ -285,7 +285,7 @@ try {
     // Brighter surface highlight swaths — painterly light patches
     for (var hi = 0; hi < 8; hi++) {
       var hx = mottRng() * sw * 0.75;
-      var hy = top + H * 0.02 + mottRng() * H * 0.25;
+      var hy = swampY + H * 0.02 + mottRng() * H * 0.25;
       var hrx = W * (0.025 + mottRng() * 0.06);
       var hry = hrx * (0.2 + mottRng() * 0.3);
       sctx.beginPath();
@@ -296,7 +296,7 @@ try {
 
     // Horizontal water surface streaks — darker undertones
     for (var wi = 0; wi < 14; wi++) {
-      var wy = top + H * 0.05 + rng() * (H * 0.48);
+      var wy = swampY + H * 0.05 + rng() * (H * 0.48);
       var wx1 = rng() * sw * 0.3;
       var wx2 = wx1 + sw * (0.15 + rng() * 0.35);
       sctx.beginPath();
@@ -310,7 +310,7 @@ try {
     // Brighter light dapples — sun reflections on water surface
     for (var di = 0; di < 10; di++) {
       var dx = rng() * sw * 0.85;
-      var dy = top + H * 0.04 + rng() * H * 0.30;
+      var dy = swampY + H * 0.04 + rng() * H * 0.30;
       sctx.beginPath();
       sctx.ellipse(dx, dy, 1.5 + rng() * 3, 0.6 + rng() * 1.5, rng() * 3.14, 0, 6.28);
       sctx.fillStyle = 'rgba(160, 200, 165, ' + (0.08 + rng() * 0.12).toFixed(3) + ')';
@@ -320,7 +320,7 @@ try {
     // Trunk reflections — dark vertical smears
     for (var ri = 0; ri < 4; ri++) {
       var rx = W * (0.06 + rng() * 0.28);
-      var ry = top + H * 0.06 + rng() * H * 0.12;
+      var ry = swampY + H * 0.06 + rng() * H * 0.12;
       var rLen = H * (0.10 + rng() * 0.18);
       var rW = W * (0.006 + rng() * 0.012);
       var rg = sctx.createLinearGradient(rx, ry, rx, ry + rLen);
@@ -339,8 +339,8 @@ try {
     }
 
     // Fallen log — partially submerged, angled across the water
-    var logX1 = W * 0.12, logY1 = top + H * 0.11;
-    var logX2 = W * 0.41, logY2 = top + H * 0.22;
+    var logX1 = W * 0.12, logY1 = swampY + H * 0.03;
+    var logX2 = W * 0.41, logY2 = swampY + H * 0.06;
     var logAng = Math.atan2(logY2 - logY1, logX2 - logX1);
     var logLen = Math.sqrt(Math.pow(logX2 - logX1, 2) + Math.pow(logY2 - logY1, 2));
     sctx.save();
@@ -400,11 +400,11 @@ try {
 
     // Lily pads (5, with wedge notch)
     var pads = [
-      {x: W * 0.08, y: top + H * 0.22, r: 11 + rng() * 4},
-      {x: W * 0.26, y: top + H * 0.28, r: 13 + rng() * 4},
-      {x: W * 0.14, y: top + H * 0.36, r: 10 + rng() * 4},
-      {x: W * 0.33, y: top + H * 0.18, r: 12 + rng() * 3},
-      {x: W * 0.05, y: top + H * 0.42, r: 9 + rng() * 4},
+      {x: W * 0.08, y: swampY + H * 0.05, r: 11 + rng() * 4},
+      {x: W * 0.26, y: swampY + H * 0.07, r: 13 + rng() * 4},
+      {x: W * 0.14, y: swampY + H * 0.09, r: 10 + rng() * 4},
+      {x: W * 0.33, y: swampY + H * 0.04, r: 12 + rng() * 3},
+      {x: W * 0.05, y: swampY + H * 0.11, r: 9 + rng() * 4},
     ];
     for (var li = 0; li < pads.length; li++) {
       var lp = pads[li];
@@ -480,7 +480,7 @@ try {
     // Duckweed — tiny floating green dots scattered on water surface
     for (var dw = 0; dw < 35; dw++) {
       var dwx = W * (0.015 + rng() * 0.44);
-      var dwy = top + H * (0.02 + rng() * 0.55);
+      var dwy = swampY + H * (0.02 + rng() * 0.55);
       sctx.beginPath();
       sctx.arc(dwx, dwy, 0.7 + rng() * 1.2, 0, 6.28);
       sctx.fillStyle = 'rgba(75, 130, 78, ' + (0.18 + rng() * 0.22).toFixed(3) + ')';
@@ -500,7 +500,7 @@ try {
     ];
     for (var rci = 0; rci < reedClusters.length; rci++) {
       var rc = reedClusters[rci];
-      var baseY = top + H * (0.03 + rng() * 0.06);
+      var baseY = swampY + H * (0.03 + rng() * 0.06);
       for (var rj = 0; rj < rc.n; rj++) {
         var rrx = rc.x + (rng() - 0.5) * 14;
         var rrh = H * (0.022 + rng() * 0.035);
@@ -523,7 +523,7 @@ try {
     // Emergent water plants — reeds and grasses rising from the water
     for (var ei = 0; ei < 10; ei++) {
       var ex = W * (0.015 + ei * 0.045);
-      var ey = top + H * (0.05 + ei * 0.05);
+      var ey = swampY + H * (0.05 + ei * 0.05);
       var eh = H * (0.015 + ei % 4 * 0.012);
       var esway = (ei % 3 - 1) * 3;
       // Main stem
@@ -540,7 +540,7 @@ try {
       sctx.lineWidth = 0.4;
       sctx.strokeStyle = 'rgba(38, 58, 30, 0.40)';
       sctx.stroke();
-      // Small leaf cluster at top
+      // Small leaf cluster at swampY
       if (ei % 3 === 0) {
         sctx.beginPath();
         sctx.ellipse(ex + esway * 1.5, ey - eh * 0.9, 3, 1.2, 0.2, 0, 6.28);
@@ -627,13 +627,13 @@ try {
 
     // Feathered rim — soft dark edge gradient to blend water into ground
     sctx.beginPath();
-    sctx.moveTo(-2, top + H * 0.19);
-    sctx.bezierCurveTo(W * 0.02, top + H * 0.07, W * 0.06, top + H * 0.08, W * 0.10, top + H * 0.07);
-    sctx.bezierCurveTo(W * 0.15, top + H * 0.05, W * 0.20, top + H * 0.07, W * 0.26, top + H * 0.06);
-    sctx.bezierCurveTo(W * 0.29, top + H * 0.05, sw - W * 0.015, top + H * 0.07, sw, top + H * 0.10);
-    sctx.bezierCurveTo(sw + W * 0.01, top + H * 0.14, sw - W * 0.01, H * 0.68, W * 0.30, H * 0.74);
-    sctx.bezierCurveTo(W * 0.26, H * 0.80, W * 0.20, H * 0.84, W * 0.12, H * 0.86);
-    sctx.lineTo(-2, H * 0.88);
+    sctx.moveTo(-2, swampY + H * 0.04);
+    sctx.bezierCurveTo(W * 0.02, swampY + H * 0.015, W * 0.06, swampY + H * 0.02, W * 0.10, swampY + H * 0.07);
+    sctx.bezierCurveTo(W * 0.15, swampY + H * 0.01, W * 0.20, swampY + H * 0.015, W * 0.26, swampY + H * 0.01);
+    sctx.bezierCurveTo(W * 0.29, swampY + H * 0.01, sw - W * 0.015, swampY + H * 0.015, sw, swampY + H * 0.025);
+    sctx.bezierCurveTo(sw + W * 0.01, swampY + H * 0.05, sw - W * 0.01, swampY + H * 0.12, W * 0.30, swampY + H * 0.14);
+    sctx.bezierCurveTo(W * 0.26, swampY + H * 0.16, W * 0.20, swampY + H * 0.17, W * 0.12, swampY + H * 0.18);
+    sctx.lineTo(-2, swampY + H * 0.19);
     sctx.closePath();
     sctx.lineWidth = H * 0.04;
     sctx.strokeStyle = 'rgba(18, 28, 22, 0.45)';
@@ -649,7 +649,7 @@ try {
     var vegRng = Forest.mkRng(4444);
     for (var vi = 0; vi < 22; vi++) {
       var vx = W * (0.01 + vegRng() * 0.47);
-      var vy = top + H * (0.002 + vegRng() * 0.08);
+      var vy = swampY + H * (0.002 + vegRng() * 0.08);
       var vh = H * (0.008 + vegRng() * 0.022);
       sctx.beginPath();
       sctx.moveTo(vx, vy);
@@ -675,7 +675,7 @@ try {
     // Larger shoreline ferns
     for (var fi2 = 0; fi2 < 5; fi2++) {
       var fvx = W * (0.05 + fi2 * 0.08);
-      var fvy = top + H * (0.02 + fi2 * 0.015);
+      var fvy = swampY + H * (0.02 + fi2 * 0.015);
       var fvh = H * (0.018 + fi2 * 0.005);
       for (var fr = 0; fr < 5; fr++) {
         var fang = -0.8 + fr * 0.4;
@@ -688,11 +688,11 @@ try {
       }
     }
 
-    // Shoreline edge highlight (after rim + veg so it sits on top)
+    // Shoreline edge highlight (after rim + veg so it sits on swampY)
     sctx.beginPath();
-    sctx.moveTo(W * 0.02, top + H * 0.17);
-    sctx.bezierCurveTo(W * 0.06, top + H * 0.09, W * 0.15, top + H * 0.07, W * 0.26, top + H * 0.07);
-    sctx.bezierCurveTo(W * 0.29, top + H * 0.06, sw - W * 0.015, top + H * 0.07, sw, top + H * 0.10);
+    sctx.moveTo(W * 0.02, swampY + H * 0.17);
+    sctx.bezierCurveTo(W * 0.06, swampY + H * 0.09, W * 0.15, swampY + H * 0.07, W * 0.26, swampY + H * 0.07);
+    sctx.bezierCurveTo(W * 0.29, swampY + H * 0.06, sw - W * 0.015, swampY + H * 0.07, sw, swampY + H * 0.10);
     sctx.lineWidth = 1.0;
     sctx.strokeStyle = 'rgba(72, 115, 98, 0.30)';
     sctx.stroke();
@@ -701,25 +701,25 @@ try {
   }
 
   function drawSwampAnimated(ctx, W, H, gY, time) {
-    var sw = W * 0.48;
-    var top = gY + H * 0.015;
+    var sw = W * 0.32;
+    var swampY = H * 0.80;
     ctx.save();
     // Match the organic swamp polygon from drawSwampBase
     ctx.beginPath();
-    ctx.moveTo(-2, top + H * 0.19);
-    ctx.bezierCurveTo(W * 0.02, top + H * 0.07, W * 0.06, top + H * 0.08, W * 0.10, top + H * 0.07);
-    ctx.bezierCurveTo(W * 0.15, top + H * 0.05, W * 0.20, top + H * 0.07, W * 0.26, top + H * 0.06);
-    ctx.bezierCurveTo(W * 0.29, top + H * 0.05, sw - W * 0.015, top + H * 0.07, sw, top + H * 0.10);
-    ctx.bezierCurveTo(sw + W * 0.01, top + H * 0.14, sw - W * 0.01, H * 0.68, W * 0.30, H * 0.74);
-    ctx.bezierCurveTo(W * 0.26, H * 0.80, W * 0.20, H * 0.84, W * 0.12, H * 0.86);
-    ctx.lineTo(-2, H * 0.88);
+    ctx.moveTo(-2, swampY + H * 0.04);
+    ctx.bezierCurveTo(W * 0.02, swampY + H * 0.015, W * 0.06, swampY + H * 0.02, W * 0.10, swampY + H * 0.07);
+    ctx.bezierCurveTo(W * 0.15, swampY + H * 0.01, W * 0.20, swampY + H * 0.015, W * 0.26, swampY + H * 0.01);
+    ctx.bezierCurveTo(W * 0.29, swampY + H * 0.01, sw - W * 0.015, swampY + H * 0.015, sw, swampY + H * 0.025);
+    ctx.bezierCurveTo(sw + W * 0.01, swampY + H * 0.05, sw - W * 0.01, swampY + H * 0.12, W * 0.30, swampY + H * 0.14);
+    ctx.bezierCurveTo(W * 0.26, swampY + H * 0.16, W * 0.20, swampY + H * 0.17, W * 0.12, swampY + H * 0.18);
+    ctx.lineTo(-2, swampY + H * 0.19);
     ctx.closePath();
     ctx.clip();
 
     // Water shimmer lines (slow horizontal drift)
     for (var si = 0; si < 14; si++) {
       var sx = ((si * W * 0.04 + time * 8) % (sw * 1.15)) - W * 0.03;
-      var sy = top + H * (0.03 + si * 0.038);
+      var sy = swampY + H * (0.03 + si * 0.038);
       var sLen = W * (0.02 + (si % 4) * 0.02);
       var sAlpha = 0.04 + Math.sin(time * 0.45 + si * 1.4) * 0.03;
       ctx.beginPath();
@@ -732,7 +732,7 @@ try {
     // Occasional brighter sparkle glints
     for (var gi = 0; gi < 5; gi++) {
       var gx = W * (0.03 + gi * 0.10) + Math.sin(time * 0.22 + gi * 3.1) * W * 0.015;
-      var gy = top + H * (0.06 + gi * 0.07) + Math.cos(time * 0.17 + gi * 2.7) * H * 0.008;
+      var gy = swampY + H * (0.06 + gi * 0.07) + Math.cos(time * 0.17 + gi * 2.7) * H * 0.008;
       var gAlpha = Math.max(0, Math.sin(time * 0.7 + gi * 4.2)) * 0.18;
       if (gAlpha > 0.01) {
         ctx.beginPath();
@@ -745,7 +745,7 @@ try {
     // Firefly orbs above swamp — organic drift patterns
     for (var fi = 0; fi < 12; fi++) {
       var fx = W * (0.02 + fi * 0.042) + Math.sin(time * 0.18 + fi * 2.3) * W * 0.028;
-      var fy = top + H * (0.02 + fi * 0.055) + Math.cos(time * 0.13 + fi * 1.9) * H * 0.02;
+      var fy = swampY + H * (0.02 + fi * 0.055) + Math.cos(time * 0.13 + fi * 1.9) * H * 0.02;
       var fAlpha = 0.18 + Math.sin(time * 0.55 + fi * 3.5) * 0.22;
       if (fAlpha < 0.03) continue;
       // Outer glow
