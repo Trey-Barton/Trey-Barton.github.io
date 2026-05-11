@@ -235,6 +235,28 @@ try {
   }
 
   // ─── Swamp (lower-left water body) ──────────────────────────────────────────
+  var SWAMP_POLY = [
+    [0.105, 0.555], [0.135, 0.485], [0.165, 0.535], [0.205, 0.475],
+    [0.255, 0.560], [0.310, 0.640], [0.340, 0.740], [0.355, 0.810],
+    [0.420, 0.795], [0.475, 0.815], [0.460, 0.860], [0.405, 0.880],
+    [0.340, 0.895], [0.250, 0.915], [0.140, 0.918], [0.050, 0.895],
+    [0.010, 0.830], [0.005, 0.745], [0.030, 0.660], [0.065, 0.605]
+  ];
+  function drawSwampPath(cx, W, H) {
+    var pts = [];
+    for (var i = 0; i < SWAMP_POLY.length; i++) {
+      pts.push([SWAMP_POLY[i][0] * W, SWAMP_POLY[i][1] * H]);
+    }
+    var n = pts.length;
+    var first = pts[0], last = pts[n - 1];
+    cx.moveTo((last[0] + first[0]) / 2, (last[1] + first[1]) / 2);
+    for (var i = 0; i < n; i++) {
+      var curr = pts[i];
+      var next = pts[(i + 1) % n];
+      cx.quadraticCurveTo(curr[0], curr[1], (curr[0] + next[0]) / 2, (curr[1] + next[1]) / 2);
+    }
+    cx.closePath();
+  }
   function drawSwampBase(sctx, W, H, gY, time) {
     var sw = W * 0.32;
     var swampY = H * 0.80;
@@ -242,15 +264,7 @@ try {
 
     // Clip to organic swamp polygon
     sctx.save();
-    sctx.beginPath();
-    sctx.moveTo(-2, swampY + H * 0.04);
-    sctx.bezierCurveTo(W * 0.02, swampY + H * 0.015, W * 0.06, swampY + H * 0.02, W * 0.10, swampY + H * 0.07);
-    sctx.bezierCurveTo(W * 0.15, swampY + H * 0.01, W * 0.20, swampY + H * 0.015, W * 0.26, swampY + H * 0.01);
-    sctx.bezierCurveTo(W * 0.29, swampY + H * 0.01, sw - W * 0.015, swampY + H * 0.015, sw, swampY + H * 0.025);
-    sctx.bezierCurveTo(sw + W * 0.01, swampY + H * 0.05, sw - W * 0.01, swampY + H * 0.12, W * 0.30, swampY + H * 0.14);
-    sctx.bezierCurveTo(W * 0.26, swampY + H * 0.16, W * 0.20, swampY + H * 0.17, W * 0.12, swampY + H * 0.18);
-    sctx.lineTo(-2, swampY + H * 0.19);
-    sctx.closePath();
+    drawSwampPath(sctx, W, H);
     sctx.clip();
 
     // Outer shallows fill
@@ -626,15 +640,7 @@ try {
     sctx.restore();
 
     // Feathered rim — soft dark edge gradient to blend water into ground
-    sctx.beginPath();
-    sctx.moveTo(-2, swampY + H * 0.04);
-    sctx.bezierCurveTo(W * 0.02, swampY + H * 0.015, W * 0.06, swampY + H * 0.02, W * 0.10, swampY + H * 0.07);
-    sctx.bezierCurveTo(W * 0.15, swampY + H * 0.01, W * 0.20, swampY + H * 0.015, W * 0.26, swampY + H * 0.01);
-    sctx.bezierCurveTo(W * 0.29, swampY + H * 0.01, sw - W * 0.015, swampY + H * 0.015, sw, swampY + H * 0.025);
-    sctx.bezierCurveTo(sw + W * 0.01, swampY + H * 0.05, sw - W * 0.01, swampY + H * 0.12, W * 0.30, swampY + H * 0.14);
-    sctx.bezierCurveTo(W * 0.26, swampY + H * 0.16, W * 0.20, swampY + H * 0.17, W * 0.12, swampY + H * 0.18);
-    sctx.lineTo(-2, swampY + H * 0.19);
-    sctx.closePath();
+    drawSwampPath(sctx, W, H);
     sctx.lineWidth = H * 0.04;
     sctx.strokeStyle = 'rgba(18, 28, 22, 0.45)';
     sctx.stroke();
@@ -689,10 +695,7 @@ try {
     }
 
     // Shoreline edge highlight (after rim + veg so it sits on swampY)
-    sctx.beginPath();
-    sctx.moveTo(W * 0.02, swampY + H * 0.17);
-    sctx.bezierCurveTo(W * 0.06, swampY + H * 0.09, W * 0.15, swampY + H * 0.07, W * 0.26, swampY + H * 0.07);
-    sctx.bezierCurveTo(W * 0.29, swampY + H * 0.06, sw - W * 0.015, swampY + H * 0.07, sw, swampY + H * 0.10);
+    drawSwampPath(sctx, W, H);
     sctx.lineWidth = 1.0;
     sctx.strokeStyle = 'rgba(72, 115, 98, 0.30)';
     sctx.stroke();
@@ -701,19 +704,9 @@ try {
   }
 
   function drawSwampAnimated(ctx, W, H, gY, time) {
-    var sw = W * 0.32;
     var swampY = H * 0.80;
     ctx.save();
-    // Match the organic swamp polygon from drawSwampBase
-    ctx.beginPath();
-    ctx.moveTo(-2, swampY + H * 0.04);
-    ctx.bezierCurveTo(W * 0.02, swampY + H * 0.015, W * 0.06, swampY + H * 0.02, W * 0.10, swampY + H * 0.07);
-    ctx.bezierCurveTo(W * 0.15, swampY + H * 0.01, W * 0.20, swampY + H * 0.015, W * 0.26, swampY + H * 0.01);
-    ctx.bezierCurveTo(W * 0.29, swampY + H * 0.01, sw - W * 0.015, swampY + H * 0.015, sw, swampY + H * 0.025);
-    ctx.bezierCurveTo(sw + W * 0.01, swampY + H * 0.05, sw - W * 0.01, swampY + H * 0.12, W * 0.30, swampY + H * 0.14);
-    ctx.bezierCurveTo(W * 0.26, swampY + H * 0.16, W * 0.20, swampY + H * 0.17, W * 0.12, swampY + H * 0.18);
-    ctx.lineTo(-2, swampY + H * 0.19);
-    ctx.closePath();
+    drawSwampPath(ctx, W, H);
     ctx.clip();
 
     // Water shimmer lines (slow horizontal drift)
