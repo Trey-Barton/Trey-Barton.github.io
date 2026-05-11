@@ -715,7 +715,7 @@ try {
     var _farPos = [];
     for (var i = 0; i < Forest.farTrees.length; i++) {
       var t = Forest.farTrees[i];
-      var tx = ((t.nx * 1.5 - 0.25) * W + W * 3) % (W * 1.5) - W * 0.25;
+      var tx = W * (((i + 0.5) / Forest.farTrees.length + (t.nx - 0.5) * 0.12) * 1.5 - 0.25);
       if (tx < W * 0.33 && (i % 3 === 0)) { _farPos.push(null); continue; }
       _farPos.push(tx);
       Forest.drawTrunk(sctx, t, tx, W, H, time);
@@ -746,7 +746,7 @@ try {
     var _midPos = [];
     for (var i = 0; i < Forest.midTrees.length; i++) {
       var t = Forest.midTrees[i];
-      var tx = ((t.nx * 1.4 - 0.2) * W + W * 3) % (W * 1.4) - W * 0.2;
+      var tx = W * (((i + 0.5) / Forest.midTrees.length + (t.nx - 0.5) * 0.12) * 1.4 - 0.2);
       if (tx < W * 0.33 && (i % 3 === 0)) { _midPos.push(null); continue; }
       _midPos.push(tx);
       Forest.drawTrunk(sctx, t, tx, W, H, time);
@@ -858,7 +858,7 @@ try {
     var _fgTreeItems = [];
     for (var i = 0; i < Forest.fgTrees.length; i++) {
       var t = Forest.fgTrees[i];
-      var tx = ((t.nx * 1.6 - 0.3) * W + W * 3) % (W * 1.6) - W * 0.3;
+      var tx = W * (((i + 0.5) / Forest.fgTrees.length + (t.nx - 0.5) * 0.12) * 1.6 - 0.3);
       if (tx < W * 0.33 && (i % 3 === 0)) continue;
       _fgTreeItems.push({ tree: t, tx: tx, y: gY + t.nx * H * 0.03 });
     }
