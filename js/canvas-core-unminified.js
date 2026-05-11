@@ -963,6 +963,17 @@ try {
       var ti = _fgTreeItems[fi];
       Forest.drawTrunk(sctx, ti.tree, ti.tx, W, H, time);
       Forest.drawCanopy(sctx, ti.tree, ti.tx, W, H, time, 1.0);
+      // Root flare mound — anchors tree to ground
+      var rfmW = ti.tree.trunkW * W * 2.5;
+      var rfmH = ti.tree.trunkW * W * 1.2;
+      sctx.beginPath();
+      sctx.ellipse(ti.tx, ti.y, rfmW, rfmH, 0, 0, 6.28);
+      sctx.fillStyle = 'rgba(18,14,10,0.32)';
+      sctx.fill();
+      sctx.beginPath();
+      sctx.ellipse(ti.tx, ti.y - 2, rfmW * 0.55, rfmH * 0.55, 0, 0, 6.28);
+      sctx.fillStyle = 'rgba(26,20,14,0.22)';
+      sctx.fill();
     }
 
     // (end fg layer — directly rendered into sctx, no intermediate cache)
