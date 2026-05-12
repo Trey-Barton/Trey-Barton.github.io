@@ -58,8 +58,8 @@ try {
   // River shape: horizontal band with slight sinuous curvature at y ~gY.
   // Baked into hillCache; ripples + croc draw per-frame.
   function drawRiverBase(hctx, W, H, gY) {
-    var rivY = gY - H * 0.012;
-    var rivH = H * 0.025;
+    var rivY = gY - H * 0.02;
+    var rivH = H * 0.04;
     // Base water gradient.
     var rgrad = hctx.createLinearGradient(0, rivY, 0, rivY + rivH);
     rgrad.addColorStop(0,    'rgba(45,70,88,0.92)');
@@ -107,8 +107,8 @@ try {
 
   function drawRiverRipples(ctx, W, H, gY, time) {
     ensureRipples(W, H);
-    var rivY = gY - H * 0.012;
-    var rivH = H * 0.025;
+    var rivY = gY - H * 0.02;
+    var rivH = H * 0.04;
     ctx.save();
     for (var i = 0; i < _ripples.length; i++) {
       var r = _ripples[i];
