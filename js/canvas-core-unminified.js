@@ -659,7 +659,7 @@ try {
       hctx.fill();
 
       // Distant tree line silhouette — denser crowd.
-      for (var dti = 0; dti < 350; dti++) {
+      for (var dti = 0; dti < 550; dti++) {
         var dtx = hillRng() * W;
         var dty = gY - H * 0.01 - hillRng() * H * 0.045;
         var dth = H * (0.01 + hillRng() * 0.045);
@@ -675,7 +675,7 @@ try {
       }
 
       // Tiny background "saplings" — thin strokes of bright foliage spots.
-      for (var sdi = 0; sdi < 130; sdi++) {
+      for (var sdi = 0; sdi < 220; sdi++) {
         var sdx = hillRng() * W;
         var sdy = gY + hillRng() * H * 0.025;
         var sdh = H * (0.01 + hillRng() * 0.02);
@@ -693,7 +693,7 @@ try {
       }
 
       // Scattered distant bushes — more variety.
-      for (var dbi = 0; dbi < 120; dbi++) {
+      for (var dbi = 0; dbi < 200; dbi++) {
         var dbx = hillRng() * W;
         var dby = gY + hillRng() * H * 0.035;
         var dbr = H * (0.004 + hillRng() * 0.013);
@@ -703,6 +703,44 @@ try {
         hctx.fillStyle = Forest.rgb(Forest.mix(dbcol, [60, 80, 45], 0.4), 0.2 + hillRng() * 0.18);
         hctx.fill();
       }
+
+      // Far-distance grass tufts — thin strokes at the ground line.
+      for (var dgi = 0; dgi < 180; dgi++) {
+        var dgx = hillRng() * W;
+        var dgy = gY + hillRng() * H * 0.02;
+        var dgh = H * (0.005 + hillRng() * 0.012);
+        var dgsw = (hillRng() - 0.5) * 1.2;
+        hctx.beginPath();
+        hctx.moveTo(dgx, dgy);
+        hctx.quadraticCurveTo(dgx + dgsw, dgy - dgh * 0.5, dgx + dgsw * 0.6, dgy - dgh);
+        hctx.lineWidth = 0.5;
+        hctx.strokeStyle = 'rgba(80,105,55,' + (0.2 + hillRng() * 0.2).toFixed(3) + ')';
+        hctx.stroke();
+        if (hillRng() < 0.4) {
+          hctx.beginPath();
+          hctx.moveTo(dgx, dgy);
+          hctx.quadraticCurveTo(dgx - dgsw * 0.7, dgy - dgh * 0.4, dgx - dgsw * 0.4, dgy - dgh * 0.85);
+          hctx.strokeStyle = 'rgba(70,95,48,' + (0.18 + hillRng() * 0.18).toFixed(3) + ')';
+          hctx.stroke();
+        }
+      }
+
+      // Far-distance triangle grass patches
+      for (var tgi = 0; tgi < 140; tgi++) {
+        var tgx = hillRng() * W;
+        var tgy = gY + hillRng() * H * 0.018;
+        var tgh = H * (0.004 + hillRng() * 0.01);
+        var tgw = H * (0.002 + hillRng() * 0.004);
+        var tgcol = Forest.CANOPY[Math.floor(hillRng() * Forest.CANOPY.length)];
+        hctx.beginPath();
+        hctx.moveTo(tgx - tgw, tgy);
+        hctx.lineTo(tgx + (hillRng()-0.5)*tgh*0.3, tgy - tgh);
+        hctx.lineTo(tgx + tgw, tgy);
+        hctx.closePath();
+        hctx.fillStyle = Forest.rgb(Forest.mix(tgcol, [60,90,40], 0.35), 0.18 + hillRng() * 0.15);
+        hctx.fill();
+      }
+
       // River — baked into the hill cache so the water surface is free per frame.
       drawRiverBase(hctx, W, H, gY);
       frame._hillCache = hc;
@@ -861,6 +899,15 @@ try {
         frame._fgUG.push({ type: 'flower', x: fgU() * W, y: ufy, depth: depthT,
           sz: (2 + depthT * 3 + fgU() * 2), petalCol: pC });
       }
+      // Jungle grass triangles — dense triangular blades
+      for (var jgi = 0; jgi < 90; jgi++) {
+        var jgy = ugZoneTop + fgU() * ugRange;
+        var depthT = (jgy - ugZoneTop) / ugRange;
+        var jgcol = Forest.FERN_COLORS[Math.floor(fgU() * Forest.FERN_COLORS.length)];
+        frame._fgUG.push({ type: 'jungleGrass', x: fgU() * W, y: jgy, depth: depthT,
+          h: (5 + depthT * 14 + fgU() * 10), w: (2 + fgU() * 4 + depthT * 3),
+          lean: (fgU() - 0.5) * 1.2, col: jgcol, idx: jgi });
+      }
       frame._fgUG.sort(function(a, b) { return a.y - b.y; });
       frame._fgUGW = W; frame._fgUGH = H;
     }
@@ -966,14 +1013,40 @@ try {
         sctx.arc(item.x, fpy, item.sz * 0.35, 0, 6.28);
         sctx.fillStyle = 'rgba(240,230,105,0.45)';
         sctx.fill();
+
+      } else if (item.type === 'jungleGrass') {
+        var jgSw = Math.sin(time * 0.6 + item.idx * 0.8) * 0.6;
+        sctx.beginPath();
+        sctx.moveTo(item.x - item.w, item.y);
+        sctx.lineTo(item.x + item.lean + jgSw, item.y - item.h);
+        sctx.lineTo(item.x + item.w, item.y);
+        sctx.closePath();
+        sctx.fillStyle = Forest.rgb(item.col, 0.35 + item.depth * 0.35);
+        sctx.fill();
+        // Second smaller blade overlapping for density
+        if (item.depth > 0.3) {
+          sctx.beginPath();
+          sctx.moveTo(item.x - item.w * 0.6 + item.w * 0.3, item.y);
+          sctx.lineTo(item.x + item.lean * 0.7 + jgSw * 0.8, item.y - item.h * 0.75);
+          sctx.lineTo(item.x + item.w * 0.6 + item.w * 0.3, item.y);
+          sctx.closePath();
+          sctx.fillStyle = Forest.rgb(Forest.mix(item.col, [40, 65, 30], 0.2), 0.28 + item.depth * 0.3);
+          sctx.fill();
+        }
       }
     }
 
-    // Draw FG trees on top of undergrowth
+    // Draw FG trees on top of undergrowth — every other tree gets a companion
+    // offset to the side for thicker, more complex silhouettes.
     for (var fi = 0; fi < _fgTreeItems.length; fi++) {
       var ti = _fgTreeItems[fi];
       Forest.drawTrunk(sctx, ti.tree, ti.tx, W, H, time);
       Forest.drawCanopy(sctx, ti.tree, ti.tx, W, H, time, 1.0);
+      if (fi % 2 === 0) {
+        var co = ti.tree.trunkW * W * 1.2;
+        Forest.drawTrunk(sctx, ti.tree, ti.tx + co, W, H, time + 0.73);
+        Forest.drawCanopy(sctx, ti.tree, ti.tx + co, W, H, time + 0.73, 0.7);
+      }
     }
 
     // (end fg layer — directly rendered into sctx, no intermediate cache)
