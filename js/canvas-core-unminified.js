@@ -963,17 +963,6 @@ try {
       var ti = _fgTreeItems[fi];
       Forest.drawTrunk(sctx, ti.tree, ti.tx, W, H, time);
       Forest.drawCanopy(sctx, ti.tree, ti.tx, W, H, time, 1.0);
-      // Root flare mound — anchors tree to ground
-      var rfmW = ti.tree.trunkW * W * 2.5;
-      var rfmH = ti.tree.trunkW * W * 1.2;
-      sctx.beginPath();
-      sctx.ellipse(ti.tx, ti.y, rfmW, rfmH, 0, 0, 6.28);
-      sctx.fillStyle = 'rgba(18,14,10,0.32)';
-      sctx.fill();
-      sctx.beginPath();
-      sctx.ellipse(ti.tx, ti.y - 2, rfmW * 0.55, rfmH * 0.55, 0, 0, 6.28);
-      sctx.fillStyle = 'rgba(26,20,14,0.22)';
-      sctx.fill();
     }
 
     // (end fg layer — directly rendered into sctx, no intermediate cache)
@@ -981,10 +970,10 @@ try {
     // Dense canopy fill + hanging drips — drawn directly into scene cache.
     {
       var cR = Forest.mkRng(333);
-      for (var ci = 0; ci < 30; ci++) {
+      for (var ci = 0; ci < 18; ci++) {
         var cx = cR() * W * 1.3 - W * 0.15;
         var cy = cR() * H * 0.18 - H * 0.04;
-        var cr = H * (0.06 + cR() * 0.09);
+        var cr = H * (0.05 + cR() * 0.07);
         var col = Forest.CANOPY[Math.floor(cR() * Forest.CANOPY.length)];
         col = Forest.mix(col, [35, 60, 35], 0.2);
         var sway = Math.sin(time * 0.25 + ci * 0.9) * 1.2 + wind * 1.5;
@@ -994,7 +983,7 @@ try {
         sctx.fill();
       }
       cR = Forest.mkRng(444);
-      for (var ci = 0; ci < 50; ci++) {
+      for (var ci = 0; ci < 30; ci++) {
         var cx = cR() * W * 1.3 - W * 0.15;
         var cy = cR() * H * 0.22 - H * 0.02;
         var cr = H * (0.03 + cR() * 0.06);
@@ -1016,7 +1005,7 @@ try {
         sctx.fill();
       }
       cR = Forest.mkRng(555);
-      for (var ci = 0; ci < 35; ci++) {
+      for (var ci = 0; ci < 20; ci++) {
         var cx = cR() * W * 1.2 - W * 0.1;
         var cy = cR() * H * 0.12 - H * 0.01;
         var cr = H * (0.015 + cR() * 0.035);
@@ -1028,7 +1017,7 @@ try {
         sctx.fill();
       }
       cR = Forest.mkRng(666);
-      for (var di = 0; di < 20; di++) {
+      for (var di = 0; di < 12; di++) {
         var dx = cR() * W;
         var dy = H * (0.12 + cR() * 0.15);
         var dLen = H * (0.02 + cR() * 0.05);
