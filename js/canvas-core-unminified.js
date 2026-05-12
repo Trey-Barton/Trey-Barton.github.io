@@ -613,6 +613,17 @@ try {
       hc.width = W; hc.height = H;
       var hctx = hc.getContext('2d');
       var hillRng = Forest.mkRng(7777);
+      // Layer 0: deepest haze hills
+      hctx.beginPath();
+      hctx.moveTo(0, gY + 2);
+      for (var hx = 0; hx <= W; hx += 12) {
+        var hy = gY - H * 0.055 - Math.sin(hx * 0.0015 + 0.7) * H * 0.035 - Math.sin(hx * 0.004 + 2.4) * H * 0.018 - Math.sin(hx * 0.009 + 1.1) * H * 0.01;
+        hctx.lineTo(hx, hy);
+      }
+      hctx.lineTo(W, gY + 2);
+      hctx.closePath();
+      hctx.fillStyle = 'rgba(45,65,40,0.25)';
+      hctx.fill();
       // Layer 1: furthest hills
       hctx.beginPath();
       hctx.moveTo(0, gY + 2);
@@ -648,10 +659,10 @@ try {
       hctx.fill();
 
       // Distant tree line silhouette — denser crowd.
-      for (var dti = 0; dti < 200; dti++) {
+      for (var dti = 0; dti < 350; dti++) {
         var dtx = hillRng() * W;
         var dty = gY - H * 0.01 - hillRng() * H * 0.045;
-        var dth = H * (0.012 + hillRng() * 0.035);
+        var dth = H * (0.01 + hillRng() * 0.045);
         var dtw = H * (0.003 + hillRng() * 0.007);
         hctx.fillStyle = 'rgba(50,40,30,' + (0.12 + hillRng() * 0.18).toFixed(3) + ')';
         hctx.fillRect(dtx - dtw * 0.3, dty, dtw * 0.6, dth);
@@ -664,7 +675,7 @@ try {
       }
 
       // Tiny background "saplings" — thin strokes of bright foliage spots.
-      for (var sdi = 0; sdi < 80; sdi++) {
+      for (var sdi = 0; sdi < 130; sdi++) {
         var sdx = hillRng() * W;
         var sdy = gY + hillRng() * H * 0.025;
         var sdh = H * (0.01 + hillRng() * 0.02);
@@ -682,7 +693,7 @@ try {
       }
 
       // Scattered distant bushes — more variety.
-      for (var dbi = 0; dbi < 70; dbi++) {
+      for (var dbi = 0; dbi < 120; dbi++) {
         var dbx = hillRng() * W;
         var dby = gY + hillRng() * H * 0.035;
         var dbr = H * (0.004 + hillRng() * 0.013);
@@ -1080,6 +1091,34 @@ try {
       ctx.arc(glx, gly, glr, 0, 6.28);
       ctx.fillStyle = 'rgba(200,185,70,' + (glAlpha * 0.2).toFixed(3) + ')';
       ctx.fill();
+    }
+
+    // Birds circling in the far sky
+    for (var bi = 0; bi < 8; bi++) {
+      var bPhase = bi * 1.4;
+      var bRadius = W * (0.06 + bi * 0.012);
+      var bSpeed = 0.05 + bi * 0.007;
+      var bCenterX = W * (0.2 + bi * 0.08);
+      var bCenterY = H * (0.1 + bi * 0.022);
+      var bx = bCenterX + Math.cos(time * bSpeed + bPhase) * bRadius;
+      var by = bCenterY + Math.sin(time * bSpeed * 1.3 + bPhase) * bRadius * 0.35;
+      // Flight direction angle
+      var bdx = -Math.sin(time * bSpeed + bPhase) * bRadius * bSpeed;
+      var bdy = Math.cos(time * bSpeed * 1.3 + bPhase) * bRadius * 0.35 * bSpeed * 1.3;
+      var bAngle = Math.atan2(bdy, bdx);
+      var bWing = 4 + bi * 0.4;
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(bAngle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-bWing, -bWing * 0.35);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-bWing, bWing * 0.35);
+      ctx.lineWidth = 0.7;
+      ctx.strokeStyle = 'rgba(28,32,22,0.45)';
+      ctx.stroke();
+      ctx.restore();
     }
 
     // Mist puffs (drift horizontally)
