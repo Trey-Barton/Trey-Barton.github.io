@@ -802,7 +802,14 @@ try {
     }
     for (var i = 0; i < Forest.midTrees.length; i++) {
       if (_midPos[i] === null) continue;
-      Forest.drawCanopy(sctx, Forest.midTrees[i], _midPos[i], W, H, time, 0.82);
+      var mt = Forest.midTrees[i];
+      Forest.drawCanopy(sctx, mt, _midPos[i], W, H, time, 0.82);
+      // Companion tree for thicker mid silhouettes
+      if (i % 2 === 0) {
+        var mco = mt.trunkW * W * 1.1;
+        Forest.drawTrunk(sctx, mt, _midPos[i] + mco, W, H, time + 0.61);
+        Forest.drawCanopy(sctx, mt, _midPos[i] + mco, W, H, time + 0.61, 0.55);
+      }
     }
 
     // Golden atmosphere between mid and fg (cached on resize)
@@ -853,7 +860,7 @@ try {
       var ugRange = H - ugZoneTop;
 
       // Bushes
-      for (var ubi = 0; ubi < 8; ubi++) {
+      for (var ubi = 0; ubi < 14; ubi++) {
         var uby = ugZoneTop + fgU() * ugRange;
         var depthT = (uby - ugZoneTop) / ugRange;
         frame._fgUG.push({ type: 'bush', x: fgU() * W, y: uby, depth: depthT,
@@ -861,7 +868,7 @@ try {
           col: Forest.CANOPY[Math.floor(fgU() * Forest.CANOPY.length)], seed: fgU() * 9999 });
       }
       // Grass tufts
-      for (var ugi = 0; ugi < 74; ugi++) {
+      for (var ugi = 0; ugi < 110; ugi++) {
         var ugy = ugZoneTop + fgU() * ugRange;
         var depthT = (ugy - ugZoneTop) / ugRange;
         frame._fgUG.push({ type: 'grass', x: fgU() * W, y: ugy, depth: depthT,
@@ -869,7 +876,7 @@ try {
           col: Forest.FERN_COLORS[Math.floor(fgU() * Forest.FERN_COLORS.length)], idx: ugi });
       }
       // Sticks
-      for (var usi = 0; usi < 25; usi++) {
+      for (var usi = 0; usi < 40; usi++) {
         var usy = ugZoneTop + fgU() * ugRange;
         var depthT = (usy - ugZoneTop) / ugRange;
         frame._fgUG.push({ type: 'stick', x: fgU() * W, y: usy, depth: depthT,
@@ -877,7 +884,7 @@ try {
           lw: 0.8 + depthT * 2 + fgU() * 1, fork: fgU() < 0.4, fAngle: (fgU() - 0.5) * 1.5 });
       }
       // Fallen leaves
-      for (var uli = 0; uli < 35; uli++) {
+      for (var uli = 0; uli < 55; uli++) {
         var uly = ugZoneTop + fgU() * ugRange;
         var depthT = (uly - ugZoneTop) / ugRange;
         frame._fgUG.push({ type: 'leaf', x: fgU() * W, y: uly, depth: depthT,
@@ -885,14 +892,14 @@ try {
           col: Forest.LEAF_COLORS[Math.floor(fgU() * Forest.LEAF_COLORS.length)] });
       }
       // Rocks
-      for (var uri = 0; uri < 15; uri++) {
+      for (var uri = 0; uri < 25; uri++) {
         var ury = ugZoneTop + fgU() * ugRange;
         var depthT = (ury - ugZoneTop) / ugRange;
         frame._fgUG.push({ type: 'rock', x: fgU() * W, y: ury, depth: depthT,
           sz: (2 + depthT * 7 + fgU() * 4), aspect: 0.45 + fgU() * 0.3, rot: fgU() * 0.8 });
       }
       // Flowers
-      for (var ufi = 0; ufi < 10; ufi++) {
+      for (var ufi = 0; ufi < 22; ufi++) {
         var ufy = ugZoneTop + fgU() * ugRange * 0.8;
         var depthT = (ufy - ugZoneTop) / ugRange;
         var pC = fgU() < 0.3 ? [225,205,125] : (fgU() < 0.5 ? [205,180,218] : [218,178,158]);
@@ -900,7 +907,7 @@ try {
           sz: (2 + depthT * 3 + fgU() * 2), petalCol: pC });
       }
       // Jungle grass triangles — dense triangular blades
-      for (var jgi = 0; jgi < 90; jgi++) {
+      for (var jgi = 0; jgi < 150; jgi++) {
         var jgy = ugZoneTop + fgU() * ugRange;
         var depthT = (jgy - ugZoneTop) / ugRange;
         var jgcol = Forest.FERN_COLORS[Math.floor(fgU() * Forest.FERN_COLORS.length)];
@@ -1167,7 +1174,7 @@ try {
     }
 
     // Birds circling in the far sky
-    for (var bi = 0; bi < 8; bi++) {
+    for (var bi = 0; bi < 16; bi++) {
       var bPhase = bi * 1.4;
       var bRadius = W * (0.06 + bi * 0.012);
       var bSpeed = 0.05 + bi * 0.007;
