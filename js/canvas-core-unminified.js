@@ -1036,17 +1036,11 @@ try {
       }
     }
 
-    // Draw FG trees on top of undergrowth — every other tree gets a companion
-    // offset to the side for thicker, more complex silhouettes.
+    // Draw FG trees on top of undergrowth
     for (var fi = 0; fi < _fgTreeItems.length; fi++) {
       var ti = _fgTreeItems[fi];
       Forest.drawTrunk(sctx, ti.tree, ti.tx, W, H, time);
       Forest.drawCanopy(sctx, ti.tree, ti.tx, W, H, time, 1.0);
-      if (fi % 2 === 0) {
-        var co = ti.tree.trunkW * W * 1.2;
-        Forest.drawTrunk(sctx, ti.tree, ti.tx + co, W, H, time + 0.73);
-        Forest.drawCanopy(sctx, ti.tree, ti.tx + co, W, H, time + 0.73, 0.7);
-      }
     }
 
     // (end fg layer — directly rendered into sctx, no intermediate cache)
