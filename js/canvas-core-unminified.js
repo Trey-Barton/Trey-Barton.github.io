@@ -1048,7 +1048,7 @@ try {
     // Dense canopy fill + hanging drips — drawn directly into scene cache.
     {
       var cR = Forest.mkRng(333);
-      for (var ci = 0; ci < 18; ci++) {
+      for (var ci = 0; ci < 10; ci++) {
         var cx = cR() * W * 1.3 - W * 0.15;
         var cy = cR() * H * 0.18 - H * 0.04;
         var cr = H * (0.05 + cR() * 0.07);
@@ -1061,7 +1061,7 @@ try {
         sctx.fill();
       }
       cR = Forest.mkRng(444);
-      for (var ci = 0; ci < 30; ci++) {
+      for (var ci = 0; ci < 18; ci++) {
         var cx = cR() * W * 1.3 - W * 0.15;
         var cy = cR() * H * 0.22 - H * 0.02;
         var cr = H * (0.03 + cR() * 0.06);
@@ -1083,7 +1083,7 @@ try {
         sctx.fill();
       }
       cR = Forest.mkRng(555);
-      for (var ci = 0; ci < 20; ci++) {
+      for (var ci = 0; ci < 12; ci++) {
         var cx = cR() * W * 1.2 - W * 0.1;
         var cy = cR() * H * 0.12 - H * 0.01;
         var cr = H * (0.015 + cR() * 0.035);
@@ -1095,7 +1095,7 @@ try {
         sctx.fill();
       }
       cR = Forest.mkRng(666);
-      for (var di = 0; di < 12; di++) {
+      for (var di = 0; di < 8; di++) {
         var dx = cR() * W;
         var dy = H * (0.12 + cR() * 0.15);
         var dLen = H * (0.02 + cR() * 0.05);
