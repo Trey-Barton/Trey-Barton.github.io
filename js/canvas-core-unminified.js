@@ -54,6 +54,11 @@ try {
 
   var windPhase = 0;
 
+  // Precomputed alpha strings — allows array lookup instead of per-frame .toFixed(3).
+  var ALPHA_STR = [];
+  for (var _ai = 0; _ai <= 100; _ai++) ALPHA_STR[_ai] = (_ai / 100).toFixed(3);
+  function aStr(v) { var i = Math.round(v * 100); return i <= 0 ? '0.000' : i >= 100 ? '1.000' : ALPHA_STR[i]; }
+
   // ─── River + crocodile (distant) ────────────────────────────────────────
   // River shape: horizontal band with slight sinuous curvature at y ~gY.
   // Baked into hillCache; ripples + croc draw per-frame.
@@ -347,7 +352,6 @@ try {
     }
 
     // Ground texture (static parts cached to offscreen canvas)
-    var gRng = Forest.mkRng(999);
     var gBottom = H;
     var gDepth = gBottom - gY;
     var earthR = 95, earthG = 78, earthB = 45;
@@ -581,28 +585,40 @@ try {
         gctx.fillStyle = 'rgba(235,225,100,0.45)';
         gctx.fill();
       }
+      // Precompute grass tufts (positions/colors static, only sway computed per frame)
+      frame._grassTufts = [];
+      var _gtRng = Forest.mkRng(9997);
+      for (var gti = 0; gti < 70; gti++) {
+        var tuft = { bl: [] };
+        tuft.x = _gtRng() * W;
+        tuft.y = gY + _gtRng() * gDepth;
+        tuft.h = 8 + _gtRng() * 20;
+        tuft.col = Forest.FERN_COLORS[Math.floor(_gtRng() * Forest.FERN_COLORS.length)];
+        var nBl = 4 + Math.floor(_gtRng() * 5);
+        for (var gb = 0; gb < nBl; gb++) {
+          tuft.bl.push({ dx: (gb - nBl / 2) * 2.5, ba: (gb - nBl / 2) * 0.14 });
+        }
+        frame._grassTufts.push(tuft);
+      }
     }
     // Draw cached static ground
     sctx.drawImage(frame._groundCache, 0, 0);
 
-    // gRng skip loop eliminated -- ground is cached to offscreen canvas
-
-    // Animated grass tufts
-    for (var gti = 0; gti < 70; gti++) {
-      var gtx = gRng() * W;
-      var gty = gY + gRng() * gDepth;
-      var gtH = 8 + gRng() * 20;
-      var gtBl = 4 + Math.floor(gRng() * 5);
+    // Animated grass tufts (data precomputed, only sway + shimmer per frame)
+    var tufts = frame._grassTufts;
+    for (var gti = 0; gti < tufts.length; gti++) {
+      var t = tufts[gti];
       var gtSw = Math.sin(time * 0.6 + gti * 1.3) * 1.0;
-      var gtC = Forest.FERN_COLORS[Math.floor(gRng() * Forest.FERN_COLORS.length)];
-      for (var gb = 0; gb < gtBl; gb++) {
-        var gbx = gtx + (gb - gtBl / 2) * 2.5;
-        var gba = (gb - gtBl / 2) * 0.14 + gtSw * 0.06;
+      var shim = Math.sin(time * 0.8 + gti * 1.7) * 0.1;
+      for (var gb = 0; gb < t.bl.length; gb++) {
+        var b = t.bl[gb];
+        var gba = b.ba + gtSw * 0.06;
+        var gbx = t.x + b.dx;
         sctx.beginPath();
-        sctx.moveTo(gbx, gty);
-        sctx.quadraticCurveTo(gbx + gba * 4, gty - gtH * 0.6, gbx + Math.sin(gba) * gtH * 0.45, gty - gtH);
+        sctx.moveTo(gbx, t.y);
+        sctx.quadraticCurveTo(gbx + gba * 4, t.y - t.h * 0.6, gbx + Math.sin(gba) * t.h * 0.45, t.y - t.h);
         sctx.lineWidth = 1.2;
-        sctx.strokeStyle = Forest.rgb(gtC, 0.55 + gRng() * 0.2);
+        sctx.strokeStyle = Forest.rgb(t.col, 0.65 + shim);
         sctx.stroke();
       }
     }
@@ -749,11 +765,6 @@ try {
     sctx.drawImage(frame._hillCache, 0, 0);
     // (ripples + croc draw on the MAIN ctx after the scene cache blits —
     // they're animated, so they can't live inside the cache.)
-
-    // Camera pan removed (was shifting the scene 15% rightward which read as
-    // "zoomed in on the right" — trees got clipped at the right edge). save()
-    // kept as a paired no-op so the matching restore() later is harmless.
-    sctx.save();
 
     // FAR undergrowth + trees — drawn directly into the scene cache.
     // (Was: dedicated _farCache offscreen canvas then blitted. Dead level
@@ -1119,9 +1130,6 @@ try {
     sctx.fillRect(0, 0, W, H);
     sctx.restore();
 
-    // Close camera pan (scene shift). Vignette below covers full viewport.
-    sctx.restore();
-
     // Vignette (cached on resize)
     if (!frame._vig || frame._vigW !== W || frame._vigH !== H) {
       frame._vig = sctx.createRadialGradient(W/2, H*0.38, H*0.12, W/2, H*0.38, H*0.95);
@@ -1275,28 +1283,28 @@ try {
 
       if (p.type === 'firefly') {
         p.ph += p.fs;
-        p.vx += (Math.random()-0.5)*0.012 + wind * 0.003;
-        p.vy += (Math.random()-0.5)*0.008;
+        p.vx += (Math.random()-0.5)*0.018 + wind * 0.004;
+        p.vy += (Math.random()-0.5)*0.012;
         p.x += p.vx; p.y += p.vy;
         var fl = 0.25+Math.sin(p.ph)*0.6;
         // Faked glow (2-circle layered alpha). Previously used ctx.shadowBlur
         // on desktop, which is the priciest path in the per-particle loop —
         // swapping for alpha circles gave back several ms/frame on laptops.
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3.2, 0, 6.28);
-        ctx.fillStyle = 'rgba(200,255,100,' + (a*fl*0.14).toFixed(3) + ')';
+        ctx.fillStyle = 'rgba(200,255,100,' + aStr(a*fl*0.14) + ')';
         ctx.fill();
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 1.6, 0, 6.28);
-        ctx.fillStyle = 'rgba(220,255,130,' + (a*fl*0.35).toFixed(3) + ')';
+        ctx.fillStyle = 'rgba(220,255,130,' + aStr(a*fl*0.35) + ')';
         ctx.fill();
         ctx.beginPath(); ctx.arc(p.x,p.y,p.r*0.8,0,6.28);
-        ctx.fillStyle = 'rgba(240,255,180,'+(a*fl*0.9).toFixed(3)+')'; ctx.fill();
+        ctx.fillStyle = 'rgba(240,255,180,'+aStr(a*fl*0.9)+')'; ctx.fill();
       } else if (p.type === 'spore') {
-        p.x += p.vx+Math.sin(time*0.8+p.ph)*0.3 + wind * 0.2;
+        p.x += p.vx+Math.sin(time*0.8+p.ph)*0.45 + wind * 0.3;
         p.y += p.vy;
         ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.28);
-        ctx.fillStyle = 'rgba(225,225,180,'+(a*0.35).toFixed(3)+')'; ctx.fill();
+        ctx.fillStyle = 'rgba(225,225,180,'+aStr(a*0.35)+')'; ctx.fill();
       } else if (p.type === 'leaf') {
-        p.vx += wind * 0.008;
+        p.vx += wind * 0.012;
         p.x += p.vx + Math.sin(time * p.flutterSpeed + p.ph) * p.flutter;
         p.y += p.vy + Math.sin(time * 0.3 + p.ph * 2) * 0.15;
         p.rot += p.rs + Math.cos(time * p.flutterSpeed + p.ph) * 0.02;
@@ -1347,7 +1355,7 @@ try {
         p.y += p.vy + Math.sin(time * 0.25 + p.ph * 1.3) * 0.1;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, 6.28);
-        ctx.fillStyle = 'rgba(220,210,150,' + (a * 0.2).toFixed(3) + ')';
+        ctx.fillStyle = 'rgba(220,210,150,' + aStr(a * 0.2) + ')';
         ctx.fill();
       }
     }

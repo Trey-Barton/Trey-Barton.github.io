@@ -17,7 +17,7 @@ body{
  height:100dvh;
  pointer-events:none;
  will-change:contents;
- contain:strict;
+ contain:layout style paint;
 }
 #content-wrap{
  position:relative;
