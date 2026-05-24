@@ -26,8 +26,11 @@ try {
     var dpr = 1; // Background art; 1× is sharp enough.
     var w = window.innerWidth;
     var h = window.innerHeight;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
+    // On mobile, render at desktop-scale width for proper tree proportions
+    var bufW = Forest.isMobile ? Math.max(w, 1024) : w;
+    var bufH = Forest.isMobile ? Math.round(h * (bufW / w)) : h;
+    canvas.width = bufW * dpr;
+    canvas.height = bufH * dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
     // Invalidate every offscreen cache — they're keyed on W/H and will

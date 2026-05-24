@@ -18,6 +18,7 @@ body{
  pointer-events:none;
  will-change:contents;
  contain:layout style paint;
+ object-fit:cover;
 }
 #content-wrap{
  position:relative;
