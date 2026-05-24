@@ -6,6 +6,7 @@ body{
  color:#fff;
  background:var(--bg-primary);
  overflow-x:hidden;
+ touch-action:manipulation;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;
  padding-bottom:env(safe-area-inset-bottom);
 }
 #bg-canvas{
@@ -16,7 +17,9 @@ body{
  height:100vh;
  height:100dvh;
  pointer-events:none;
- will-change:contents;
+ will-change:transform;
+ transform:translateZ(0);
+ backface-visibility:hidden;
  contain:layout style paint;
  object-fit:cover;
 }
@@ -30,6 +33,7 @@ body{
  top:0;left:0;right:0;
  z-index:100;
  padding:clamp(12px, 2vw, 20px) 0;
+ padding-top:max(clamp(12px,2vw,20px),env(safe-area-inset-top));
  transition:background 0.4s, backdrop-filter 0.4s, padding 0.3s;
 }
 .nav.scrolled{
