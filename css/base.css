@@ -1,12 +1,12 @@
 /* Reset */
 *, *::before, *::after{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;overflow-x:hidden;}
+html{scroll-behavior:smooth;overflow-x:hidden;overscroll-behavior-y:none;}
 body{
  font-family:'Inter', system-ui, sans-serif;
  color:#fff;
  background:var(--bg-primary);
  overflow-x:hidden;
- -webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;
+ -webkit-tap-highlight-color:transparent;
  padding-bottom:env(safe-area-inset-bottom);
 }
 #bg-canvas{
