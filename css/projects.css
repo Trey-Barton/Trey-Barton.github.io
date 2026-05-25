@@ -130,6 +130,7 @@
  transition:background 0.25s, border-color 0.25s, transform 0.2s;
  text-shadow:0 1px 4px rgba(0,0,0,0.4);
  -webkit-user-select:none;user-select:none;
+ touch-action:manipulation;
 }
 .cube-arrow:hover{
  background:rgba(0,0,0,0.35);
@@ -147,7 +148,7 @@
  background:rgba(255,255,255,0.3);
  border:1px solid rgba(255,255,255,0.15);
  transition:background 0.3s, transform 0.3s;
- cursor:pointer;
+ cursor:pointer;touch-action:manipulation;
 }
 .cube-dot.active{
  background:rgba(255,255,255,0.85);
@@ -172,5 +173,5 @@
 .project-card h3{font-family:'Playfair Display', Georgia, serif;font-size:var(--card-h3);font-weight:700;}
 .project-card p{font-size:var(--card-body);line-height:1.7;color:#fff;flex:1;}
 .project-links{display:flex;justify-content:center;gap:20px;margin-top:4px;}
-.project-link{font-size:var(--card-link);font-weight:500;color:#fff;text-decoration:none;transition:color 0.2s;}
+.project-link{font-size:var(--card-link);font-weight:500;color:#fff;text-decoration:none;touch-action:manipulation;transition:color 0.2s;}
 .project-link:hover{color:#fff;}

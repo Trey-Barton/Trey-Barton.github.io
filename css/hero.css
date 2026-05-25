@@ -59,6 +59,7 @@
 	background:var(--glass-bg);
 	text-shadow:0 1px 4px rgba(0,0,0,0.4);
 	transition:background 0.25s, border-color 0.25s, transform 0.2s;
+	touch-action:manipulation;
 }
 .hero-cta:hover{
 	background:rgba(20, 115, 140, 0.74);

@@ -5,6 +5,7 @@
 .contact-email{
  display:inline-block;font-size:clamp(0.95rem, 0.8rem + 0.5vw, 1.25rem);font-weight:500;color:#fff;text-decoration:none;
  border-bottom:1px solid rgba(255,255,255,0.3);padding-bottom:4px;margin-bottom:36px;transition:border-color 0.2s;
+ touch-action:manipulation;
 }
 .contact-email:hover{border-color:rgba(255,255,255,0.8);}
 .social-links{display:flex;justify-content:center;gap:clamp(10px, 3vw, 24px);flex-wrap:wrap;}
@@ -13,6 +14,7 @@
  border:1px solid rgba(255,255,255,0.15);border-radius:50%;
  color:rgba(255,255,255,0.6);text-decoration:none;
  transition:color 0.2s, border-color 0.2s, background 0.2s;
+ touch-action:manipulation;
 }
 .social-link svg{width:18px;height:18px;}
 .social-link:hover{color:#fff;border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.08);}

@@ -6,7 +6,7 @@ body{
  color:#fff;
  background:var(--bg-primary);
  overflow-x:hidden;
- touch-action:manipulation;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;
+ -webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;
  padding-bottom:env(safe-area-inset-bottom);
 }
 #bg-canvas{
@@ -80,6 +80,7 @@ body{
  letter-spacing:0.04em;
  transition:color 0.2s;
  text-shadow:0 1px 4px rgba(0,0,0,0.5);
+ touch-action:manipulation;
 }
 .nav-links a:hover{color:#fff;}
 /* Glass card — base panel shared by about/contact/project cards.
