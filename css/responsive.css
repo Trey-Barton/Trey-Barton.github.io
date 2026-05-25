@@ -19,7 +19,6 @@
  .skill-tag{padding:4px 12px;font-size:0.72rem;}
  .photo-ring{--photo-ring-size:120px;width:var(--photo-ring-size);height:var(--photo-ring-size);}
  .biome-label{display:none;}
- #bg-canvas{contain:none;}
  .cube-viewport{transform-origin:center top;margin-top:5px;overflow:visible;}
  .project-card{padding:clamp(14px,2vw,20px) clamp(12px,2vw,16px);}
  .project-card p{line-height:1.6;color:#fff;}

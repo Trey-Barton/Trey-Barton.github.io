@@ -20,7 +20,6 @@ body{
  will-change:transform;
  transform:translateZ(0);
  backface-visibility:hidden;
- contain:layout style paint;
  object-fit:cover;
 }
 #content-wrap{
