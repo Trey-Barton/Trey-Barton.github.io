@@ -15,30 +15,30 @@
 	gap:16px;
 	padding:0 24px;
 }
-	.hero-eyebrow, .hero-name, .hero-title{text-shadow:0 3px 20px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);}
+.hero-eyebrow, .hero-name, .hero-title{text-shadow:0 3px 20px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);}
 .hero-eyebrow{
-	font-family:'Playfair Display', Georgia, serif;
-	font-size:clamp(1rem, 2.5vw, 1.25rem);
+	font-family:var(--font-serif);
+	font-size:var(--hero-eyebrow);
 	font-weight:700;
 	letter-spacing:0.2em;
 	text-transform:uppercase;
-	color:#fff;
+	color:var(--color-white);
 	margin-bottom:-6px;
 }
 .hero-name{
-	font-family:'Playfair Display', Georgia, serif;
-	font-size:clamp(3rem, 8vw, 6.5rem);
+	font-family:var(--font-serif);
+	font-size:var(--hero-name);
 	font-weight:700;
 	line-height:1.05;
 	letter-spacing:-0.02em;
 	margin-top:-6px;
 }
 .hero-title{
-	font-family:'Playfair Display', Georgia, serif;
-	font-size:clamp(1rem, 2.5vw, 1.25rem);
+	font-family:var(--font-serif);
+	font-size:var(--hero-title);
 	font-weight:700;
 	margin-top:6px;
-	color:#fff;
+	color:var(--color-white);
 	letter-spacing:0.2em;
 }
 /* Hero CTAs — equal width, consistent spacing, match the About-panel teal. */
@@ -51,9 +51,9 @@
 	text-align:center;
 	border:1px solid var(--glass-border);
 	border-radius:50px;
-	color:#fff;
+	color:var(--color-white);
 	text-decoration:none;
-	font-size:0.875rem;
+	font-size:var(--hero-cta-font);
 	font-weight:500;
 	letter-spacing:0.06em;
 	background:var(--glass-bg);
@@ -62,7 +62,7 @@
 	touch-action:manipulation;
 }
 .hero-cta:hover{
-	background:rgba(20, 115, 140, 0.74);
+	background:var(--hero-cta-hover);
 	border-color:rgba(255,255,255,0.32);
 	transform:translateY(-2px);
 }
@@ -77,10 +77,10 @@
 	gap:8px;
 }
 .hero-scroll-text{
-	font-size:0.65rem;
+	font-size:var(--hero-scroll-font);
 	letter-spacing:0.18em;
 	text-transform:uppercase;
-	color:rgba(255,255,255,0.75);
+	color:var(--color-text-secondary);
 	text-shadow:0 1px 6px rgba(0,0,0,0.6);
 }
 .hero-scroll-line{
@@ -93,14 +93,20 @@
 	0%, 100%{opacity:0.5;transform:scaleY(1);}
 	50%{opacity:1;transform:scaleY(1.1);}
 }
+/* --- Mobile (≤ 768px) --- */
+@media (max-width:768px){
+ .hero-name{font-size:clamp(2.2rem, 10vw, 3.5rem);}
+ .hero-cta{padding:12px 24px;min-width:150px;font-size:0.8rem;}
+ .biome-label{display:none;}
+}
 .biome-label{
 	position:absolute;
 	bottom:36px;
 	right:40px;
-	font-size:0.65rem;
+	font-size:var(--biome-label-font);
 	letter-spacing:0.18em;
 	text-transform:uppercase;
-	color:rgba(255,255,255,0.75);
+	color:var(--color-text-secondary);
 	font-weight:500;
 	text-shadow:0 1px 6px rgba(0,0,0,0.6);
 }

@@ -1,20 +1,26 @@
 #contact{margin-top:10px;position:relative;z-index:3;}
 .contact-card{padding:clamp(28px, 6vw, 64px);text-align:center;max-width:min(480px, 90vw);margin:0 auto;background:var(--glass-bg);backdrop-filter:none;-webkit-backdrop-filter:none;}
-.contact-card h2{font-family:'Playfair Display', Georgia, serif;font-size:var(--contact-h2);margin-bottom:16px;}
-.contact-card p{font-size:var(--contact-body);line-height:1.7;color:rgba(255,255,255,0.65);margin-bottom:32px;}
+.contact-card h2{font-family:var(--font-serif);font-size:var(--contact-h2);margin-bottom:16px;}
+.contact-card p{font-size:var(--contact-body);line-height:1.7;color:var(--color-text-dim);margin-bottom:32px;}
 .contact-email{
- display:inline-block;font-size:clamp(0.95rem, 0.8rem + 0.5vw, 1.25rem);font-weight:500;color:#fff;text-decoration:none;
- border-bottom:1px solid rgba(255,255,255,0.3);padding-bottom:4px;margin-bottom:36px;transition:border-color 0.2s;
+ display:inline-block;font-size:var(--contact-email-font);font-weight:500;color:var(--color-white);text-decoration:none;
+ border-bottom:1px solid var(--color-border-medium);padding-bottom:4px;margin-bottom:36px;transition:border-color 0.2s;
  touch-action:manipulation;
 }
 .contact-email:hover{border-color:rgba(255,255,255,0.8);}
 .social-links{display:flex;justify-content:center;gap:clamp(10px, 3vw, 24px);flex-wrap:wrap;}
 .social-link{
  width:40px;height:40px;display:flex;align-items:center;justify-content:center;
- border:1px solid rgba(255,255,255,0.15);border-radius:50%;
+ border:1px solid var(--color-border-subtle);border-radius:50%;
  color:rgba(255,255,255,0.6);text-decoration:none;
  transition:color 0.2s, border-color 0.2s, background 0.2s;
  touch-action:manipulation;
 }
 .social-link svg{width:18px;height:18px;}
 .social-link:hover{color:#fff;border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.08);}
+/* --- Mobile (≤ 768px) --- */
+@media (max-width:768px){
+ .contact-card{padding:clamp(20px,4vw,32px) clamp(16px,3vw,24px);}
+ .contact-email{font-size:0.85rem;word-break:break-all;}
+ #contact{margin-top:22px;}
+}

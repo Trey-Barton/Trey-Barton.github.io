@@ -9,9 +9,9 @@ specific files and variables.
 
 ## Orientation
 
-- `index.html` — Markup only. Loads 7 CSS files and 11 JS files in a fixed
+- `index.html` — Markup only. Loads 7 CSS files and 7 JS files + Three.js CDN in a fixed
   order via `<link>` and `<script defer>`. Order matters (tokens first;
-  scheduler → palette → generators → drawers → scene → core → ui).
+  Three.js → scheduler → palette → generators → scene → GL → ui).
 - `bounce_loop.mp4` — Profile video loop in the About photo-ring.
 - `bounce_loop.jpg` — Poster frame if autoplay is blocked (iOS cold starts).
 
@@ -21,16 +21,15 @@ footer), `hero.css`, `about.css`, `projects.css` (cube, wires, chandelier),
 `contact.css`, `responsive.css`.
 
 ### `js/`
-- `scheduler.js` — single master RAF + dirty-flag coalescer.
-- `forest-palette.js` — BARK / CANOPY / LEAF / FERN colors + utils.
-- `forest-tree-gen.js`, `forest-undergrowth-gen.js` — procedural generation.
-- `forest-draw-trunk.js`, `forest-draw-canopy.js`, `forest-draw-undergrowth.js`
-  — rendering.
-- `forest-particles.js` — ring-buffer particle pool.
-- `forest-scene.js` — instantiates far/mid/fg tree layers.
-- `canvas-core.js` — canvas setup, scene caches, sky/ground/hills/river,
-  critters (jaguar, snake, crocodile), vines, light rays, grading, vignette,
-  master render loop.
+- `scheduler.js` — single master RAF + dirty-flag coalescer for UI callbacks.
+- `forest-palette.js` — BARK / CANOPY / LEAF / FERN colors + mkRng/rgb/mix utils.
+- `forest-tree-gen.js`, `forest-undergrowth-gen.js` — procedural generation kept as-is.
+- `forest-scene.js` — instantiates far/mid/fg tree layers at boot.
+- `forest-gl.js` — Three.js WebGL renderer: sky gradient shader, star points, sun glow,
+  hill silhouette meshes, ground plane with gradient, river plane, tree InstancedMesh layers
+  (far/mid/fg), undergrowth instances, single Points object for firefly/leaf/spore/petal/dust
+  particles, CSS vignette overlay. Owns its own RAF loop (does not use scheduler.js).
+  Exposes `Forest.initGL()`, `Forest.render(ts)`, `Forest.resize()`.
 - `ui.js` — nav scroll state, smooth-scroll, year, profile-video autoplay
   fallback, reveal animations, cube carousel, `WIRE_CONFIG`, and chandelier-
   wire positioning math.
@@ -41,23 +40,28 @@ Edits are grep → edit in the relevant `css/` or `js/` file. For the full
 mapping of "when you say X, change Y," see the knobs cheat sheet in
 `ARCHITECTURE.md`.
 
-- **Change a color** — palette arrays in `js/forest-palette.js`, or sky
-  gradient `addColorStop` calls in `js/canvas-core.js`.
+- **Change a color** — palette arrays in `js/forest-palette.js`, sky gradient
+  stops in the sky ShaderMaterial inside `js/forest-gl.js` `_buildSky()`.
 - **Change text sizes** — `clamp()` values in `css/tokens.css`.
 - **Adjust cube / wires** — `WIRE_CONFIG` at the top of `js/ui.js` (wire
   attachment points use `t/m/b` × `l/c/r`).
 - **Add a project card** — add another `<div class="cube-face">…</div>` in
   `#cube-scene` in `index.html` and bump the dot count.
-- **Tune sway / branch density** — `js/forest-tree-gen.js` (generation) and
-  `js/forest-draw-trunk.js` (drawing). Layer-aware sway amplitude is driven
-  by `tree.layer` (`fg`/`mid`/`far`).
+- **Tune sway / branch density** — `js/forest-tree-gen.js` (generation);
+  sway amplitude per layer is in `Forest.render()` in `js/forest-gl.js`.
+- **Adjust particle behavior** — spawn rates and per-type physics are in
+  `Forest.render()` in `js/forest-gl.js`. Max counts are in `Forest.resize()`.
+- **Resize behavior** — `Forest.resize()` in `js/forest-gl.js` tears down the
+  entire Three.js scene and rebuilds at the new viewport. Debounced at 300ms.
 
 ## Key conventions
 
-- **Canvas buffer is locked at init.** Never set `canvas.width` /
-  `canvas.height` after load — CSS `object-fit: cover` handles reshape.
-  Writing to those caused a blue/green flash mid-scroll/resize.
+- **Three.js WebGL renderer** (r128 CDN). No Canvas 2D. `#bg-canvas` is the
+  `<canvas>` created by the WebGLRenderer at init. Vignette is a CSS
+  `radial-gradient` overlay on `#bg-vignette` — no per-frame gradient draw.
 - **Render loop never skips frames based on scroll position** (same flash).
+- **Avoid per-frame allocations** in `Forest.render()`. All temp matrices,
+  vectors, particle buffers, and quaternions are pre-allocated at init.
 - All sizing uses CSS `clamp()`. No per-breakpoint magic numbers.
 - One tokens file (`css/tokens.css`) drives every color and fluid size.
 - iOS-safe primitives: `100dvh` hero with `100vh` fallback, `100lvh` canvas,

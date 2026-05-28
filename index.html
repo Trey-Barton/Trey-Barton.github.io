@@ -18,21 +18,45 @@
   <link rel="stylesheet" href="css/about.css" />
   <link rel="stylesheet" href="css/projects.css" />
   <link rel="stylesheet" href="css/contact.css" />
-  <link rel="stylesheet" href="css/responsive.css" />
 
-  <!-- Script bundle — `defer` preserves order but doesn't block parsing.
-       Load order: scheduler → palette → generators → drawers → scene → core → ui. -->
-  <script src="js/scheduler.js" defer></script>
-  <script src="js/forest-palette.js" defer></script>
-  <script src="js/forest-tree-gen.js" defer></script>
-  <script src="js/forest-undergrowth-gen.js" defer></script>
-  <script src="js/forest-draw-trunk.js" defer></script>
-  <script src="js/forest-draw-canopy.js" defer></script>
-  <script src="js/forest-draw-undergrowth.js" defer></script>
-  <script src="js/forest-particles.js" defer></script>
-  <script src="js/forest-scene.js" defer></script>
-  <script src="js/canvas-core.js" defer></script>
-  <script src="js/ui.js" defer></script>
+  <!-- WebGL detection + lazy Three.js load.
+       If WebGL is unavailable, falls back to a static dark background. -->
+  <script>
+    (function () {
+      var hasGL = false;
+      try {
+        var c = document.createElement('canvas');
+        hasGL = !!(c.getContext('webgl') || c.getContext('experimental-webgl'));
+      } catch (e) {}
+      if (!hasGL) {
+        document.body.style.background = '#1a2e20';
+        document.body.style.background = 'linear-gradient(180deg, #1c3044 0%, #28443b 30%, #3a5034 70%, #1e2618 100%)';
+        return;
+      }
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+      s.onload = function () {
+        var scripts = [
+          'js/scheduler.js',
+          'js/forest-palette.js',
+          'js/forest-tree-gen.js',
+          'js/forest-undergrowth-gen.js',
+          'js/forest-scene.js',
+          'js/forest-gl.js',
+          'js/ui.js'
+        ];
+        function loadNext() {
+          if (!scripts.length) return;
+          var ns = document.createElement('script');
+          ns.src = scripts.shift();
+          ns.onload = loadNext;
+          document.head.appendChild(ns);
+        }
+        loadNext();
+      };
+      document.head.appendChild(s);
+    })();
+  </script>
 </head>
 <body>
 
