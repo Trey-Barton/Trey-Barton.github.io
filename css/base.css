@@ -9,6 +9,7 @@ body{
  -webkit-tap-highlight-color:transparent;
  padding-bottom:env(safe-area-inset-bottom);
 }
+.skip-nav:focus{top:0;}
 #bg-canvas{
  position:fixed;
  top:0;

@@ -164,6 +164,12 @@
     }
   })();
 
+  // ── Reduced motion — skip animations for accessibility ──────────────────
+  var _prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', function (e) {
+    _prefersReducedMotion = e.matches;
+  });
+
   // ── Page visibility — full pause when tab hidden, resume on return ──────
   var _playing = true;
   var _rafId = null;
@@ -952,7 +958,7 @@
     var wind = Math.sin(_windPhase) * 0.5 + Math.sin(_windPhase * 2.3) * 0.2;
 
     // ── Update star alpha pulse ─────────────────────────────────────────
-    if (_3d.starColors) {
+    if (_3d.starColors && !_prefersReducedMotion) {
       var sc = _3d.starColors;
       var stars = Forest.stars;
       for (var si = 0; si < stars.length; si++) {
@@ -974,22 +980,28 @@
       var canopyT = layerInst.canopy;
       var data    = trunkT.data;
 
-      var swayBase;
-      if (ln === 'fg')  swayBase = 0.12;
-      else if (ln === 'mid') swayBase = 0.09;
-      else /* far */        swayBase = 0.05;
-
       for (var j = 0; j < data.length; j++) {
         var d = data[j];
-        var phase = d.nx * 6.28;
-        var sway  = Math.sin(_time * 0.15 + phase) * swayBase
-                  + Math.sin(_time * 0.15 * 2.3 + phase * 1.7) * swayBase * 0.3;
-        sway += wind * (ln === 'fg' ? 0.035 : ln === 'mid' ? 0.018 : 0.008);
+        var sway, trunkLean;
+        if (_prefersReducedMotion) {
+          sway = 0;
+          trunkLean = 0;
+        } else {
+          var swayBase;
+          if (ln === 'fg')  swayBase = 0.12;
+          else if (ln === 'mid') swayBase = 0.09;
+          else /* far */        swayBase = 0.05;
+
+          var phase = d.nx * 6.28;
+          sway  = Math.sin(_time * 0.15 + phase) * swayBase
+                + Math.sin(_time * 0.15 * 2.3 + phase * 1.7) * swayBase * 0.3;
+          sway += wind * (ln === 'fg' ? 0.035 : ln === 'mid' ? 0.018 : 0.008);
+          trunkLean = d.lean * 0.5;
+        }
 
         var trunkX     = d.tx + sway;
         var trunkCY    = d.trunkCY;
         var trunkH     = d.trunkH;
-        var trunkLean  = d.lean * 0.5;
 
         _setInstance(trunkT.inst, j,
           trunkX, trunkCY, 0,
@@ -1007,6 +1019,7 @@
     }
 
     // ── Update undergrowth transforms ───────────────────────────────────
+    if (!_prefersReducedMotion) {
     if (_3d.ugFerns) {
       var fInst = _3d.ugFerns.inst;
       var fData = _3d.ugFerns.data;
@@ -1035,6 +1048,7 @@
       }
       bInst.instanceMatrix.needsUpdate = true;
     }
+    } // end reduced-motion guard for undergrowth sway
 
     if (_3d.ugMushrooms) {
       var mInst = _3d.ugMushrooms.inst;
@@ -1049,7 +1063,8 @@
       mInst.instanceMatrix.needsUpdate = true;
     }
 
-    // ── Particles — update physics, write into pre-allocated buffers ────
+    // ── Particles — spawn + update (skip when reduced motion) ──────────
+    if (!_prefersReducedMotion) {
     // Spawn at original rates
     if (Math.random() < 0.05) Forest.spawnP('firefly', W, H);
     if (Math.random() < 0.10) Forest.spawnP('spore',   W, H);
@@ -1135,6 +1150,7 @@
         }
       }
     }
+    } // end reduced-motion guard for particles
 
     // Update particle buffer attributes — direct Float32Array writes, no allocation
     if (_3d.particles) {

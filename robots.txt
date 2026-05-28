@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://trey-barton.clodhost.com/sitemap.xml
