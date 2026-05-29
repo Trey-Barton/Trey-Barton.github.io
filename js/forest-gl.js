@@ -342,8 +342,8 @@
       canvas.parentNode.insertBefore(vignette, canvas.nextSibling);
     }
 
-    // Camera — orthographic, maps screen pixels 1:1 with Y downward
-    _3d.camera = new THREE.OrthographicCamera(0, W, H, 0, 0.1, 100);
+    // Camera — orthographic, Y-down to match Canvas 2D coordinates
+    _3d.camera = new THREE.OrthographicCamera(0, W, 0, H, 0.1, 100);
     _3d.camera.position.z = 50;
 
     // Scene
@@ -378,9 +378,8 @@
     var fragShader =
       'varying vec2 vUv;\n' +
       'void main() {\n' +
-      // Canvas 2D Y=0 is at top, but our orthographic camera has Y=H at top.
-      // Invert: t runs 0 (screen top) to 1 (screen bottom).
-      '  float t = clamp(1.0 - vUv.y, 0.0, 1.0);\n' +
+      // t runs 0 (screen top) to 1 (screen bottom), matching Canvas 2D.
+      '  float t = clamp(vUv.y, 0.0, 1.0);\n' +
       '  vec3 col;\n' +
       '  if (t < 0.2) {\n' +
       '    col = mix(vec3(28.0/255.0, 48.0/255.0, 68.0/255.0), vec3(38.0/255.0, 68.0/255.0, 75.0/255.0), t / 0.2);\n' +
@@ -1178,8 +1177,7 @@
     H = window.innerHeight;
     gY = H * 0.58;
     _3d.camera.right = W;
-    _3d.camera.top = H;
-    _3d.camera.bottom = 0;
+    _3d.camera.bottom = H;
     _3d.camera.updateProjectionMatrix();
     _3d.renderer.setSize(W, H, false);
   }
