@@ -1178,7 +1178,8 @@
     H = window.innerHeight;
     gY = H * 0.58;
     _3d.camera.right = W;
-    _3d.camera.bottom = H;
+    _3d.camera.top = H;
+    _3d.camera.bottom = 0;
     _3d.camera.updateProjectionMatrix();
     _3d.renderer.setSize(W, H, false);
   }

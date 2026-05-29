@@ -10,7 +10,7 @@
 .contact-email:hover{border-color:rgba(255,255,255,0.8);}
 .social-links{display:flex;justify-content:center;gap:clamp(10px, 3vw, 24px);flex-wrap:wrap;}
 .social-link{
- width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+ width:44px;height:44px;display:flex;align-items:center;justify-content:center;
  border:1px solid var(--color-border-subtle);border-radius:50%;
  color:rgba(255,255,255,0.6);text-decoration:none;
  transition:color 0.2s, border-color 0.2s, background 0.2s;
