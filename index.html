@@ -47,21 +47,23 @@
        If WebGL is unavailable, falls back to a static dark background. -->
   <script>
     (function () {
+      var GRADIENT = 'linear-gradient(180deg, #1c3044 0%, #28443b 30%, #3a5034 70%, #1e2618 100%)';
+      function setFallbackBg() {
+        var b = document.body || document.documentElement;
+        b.style.background = GRADIENT;
+      }
       var hasGL = false;
       try {
         var c = document.createElement('canvas');
         hasGL = !!(c.getContext('webgl') || c.getContext('experimental-webgl'));
       } catch (e) {}
       if (!hasGL) {
-        document.body.style.background = '#1a2e20';
-        document.body.style.background = 'linear-gradient(180deg, #1c3044 0%, #28443b 30%, #3a5034 70%, #1e2618 100%)';
+        document.addEventListener('DOMContentLoaded', setFallbackBg);
         return;
       }
       var s = document.createElement('script');
       s.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';
-      s.onerror = function () {
-        document.body.style.background = 'linear-gradient(180deg, #1c3044 0%, #28443b 30%, #3a5034 70%, #1e2618 100%)';
-      };
+      s.onerror = setFallbackBg;
       s.onload = function () {
         var scripts = [
           'js/scheduler.js',
