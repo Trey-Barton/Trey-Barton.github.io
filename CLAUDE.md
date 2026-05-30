@@ -80,19 +80,19 @@ Canvas 2D, no WebGL, no Three.js**. Structure:
   heavy ground-detail scatter baked into `_groundCache` (clumps, roots,
   pebbles, twigs, leaf litter, debris, small plants/flowers, grass tufts),
   layered hill silhouettes with tree-line texture baked into `_hillCache`
-  (uses `Forest.CANOPY` + `Forest.mix`), a sub-canopy river band, atmospheric
+  (uses `Forest.CANOPY` + `Forest.mix`), atmospheric
   haze/fog/mid-glow gradients, the far/mid/fg tree layers
   (`Forest.drawTrunk` + `Forest.drawCanopy`), the foreground undergrowth set
   (`_fgUG`: bushes/grass/sticks/leaves/rocks/flowers/jungle-grass, y-sorted),
   overhanging top-canopy blobs, an `overlay` color wash, and finally the
   vignette radial gradient (`_vig`) — **drawn in-canvas, there is no
   `#bg-vignette` DOM element**.
-- **Animated overlays** — `Forest.drawUndergrowth`, grass-tuft sway, the
-  overhanging canopy blobs, and the river/hill animation read a per-frame wind
+- **Animated overlays** — `Forest.drawUndergrowth`, grass-tuft sway, and the
+  overhanging canopy blobs read a per-frame wind
   value `f` (`0.5*sin(i) + 0.2*sin(2.3*i)`). The cached scene is then composited
   each frame and overlaid with animated-only elements: foreground fireflies,
   drifting light dots, light shafts (`screen` blend), `Forest.mistPuffs`,
-  river ripples, a small foreground animal/leaf flourish, and the particle
+  a small foreground leaf flourish, and the particle
   system.
 - **Particles** — each frame randomly calls `Forest.spawnP("firefly"|"spore"|
   "leaf"|"petal"|"dust", W, H)`, then iterates `Forest.particles` backward,
