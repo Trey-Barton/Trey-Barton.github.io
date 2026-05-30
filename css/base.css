@@ -46,14 +46,7 @@ body{
  border-bottom:1px solid rgba(255,255,255,0.07);
 }
 /* Tablet + Desktop: frosted nav with blur (too expensive on mobile) */
-@media (min-width:769px) and (max-width:1024px){
- .nav.scrolled{
-  background:var(--nav-scrolled-bg-desktop);
-  backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);
- }
-}
-@media (min-width:1025px){
+@media (min-width:769px){
  .nav.scrolled{
   background:var(--nav-scrolled-bg-desktop);
   backdrop-filter:blur(12px);

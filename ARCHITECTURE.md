@@ -11,7 +11,7 @@ portfolio/
 ├── index.html            Markup only; <link>/<script> references below.
 ├── ARCHITECTURE.md       This file.
 ├── CLAUDE.md             Quick dev guide (common tasks).
-├── bounce_loop.mp4       1.5 MB profile video (H.264 baseline, muted).
+├── bounce_loop.mp4       ~4.5 MB profile video (muted, lazy-loaded).
 ├── bounce_loop.jpg       Poster frame shown if autoplay is blocked.
 ├── css/
 │   ├── tokens.css        :root variables — all sizing/color tokens.
@@ -19,24 +19,23 @@ portfolio/
 │   ├── hero.css          Hero section + CTAs.
 │   ├── about.css         About card, photo ring, skills tags.
 │   ├── projects.css      Cube, wires, chandelier, heading cube, carousel.
-│   ├── contact.css       Contact card + social links.
-│   └── responsive.css    @media breakpoint overrides.
+│   └── contact.css       Contact card + social links.
 └── js/
-    ├── scheduler.js                  One master RAF + dirty-flag coalescer.
+    ├── scheduler.js                  UI.scheduler: dirty-flag RAF coalescer (used by ui.js only).
     ├── forest-palette.js             BARK / CANOPY / LEAF_COLORS / FERN_COLORS + utils.
     ├── forest-tree-gen.js            Tree generation (trunk/branch/root/canopy params).
     ├── forest-undergrowth-gen.js     Undergrowth generation (ferns, bushes, grass, mushrooms).
     ├── forest-draw-trunk.js          Trunk + branch + root rendering; sway math.
     ├── forest-draw-canopy.js         Canopy blob rendering.
     ├── forest-draw-undergrowth.js    Undergrowth rendering.
-    ├── forest-particles.js           Ring-buffer particle pool.
+    ├── forest-particles.js           Recycling particle pool + stars + mistPuffs; spawnP/MAX_PARTICLES.
     ├── forest-scene.js               Tree layer instances (far/mid/fg).
     ├── canvas-core.js                Canvas setup + scene cache + render loop.
-    │                                 Also hosts critters (jaguar, snake, crocodile),
-    │                                 river, big vines, light rays, vignette.
-    └── ui.js                         Nav, smooth-scroll, video autoplay, reveals.
-                                      Also hosts cube carousel, WIRE_CONFIG, and
-                                      chandelier wire geometry/positioning.
+    │                                 Also hosts light rays, golden glow spots,
+    │                                 mist, fog band, color grading, and vignette.
+    └── ui.js                         Nav, smooth-scroll, footer year, video autoplay, reveals.
+                                      Also hosts the cube carousel and the
+                                      chandelier/heading wire positioning math.
 ```
 
 All modules hang off the `window.UI` and `window.Forest` namespaces. No
@@ -77,25 +76,26 @@ bundler, no build step — plain `<script defer>` tags.
 |---|---|---|
 | **Sky gradient** | `frame._skyGrad` | Dark navy → teal → green → gold |
 | **Stars** | `Forest.stars` | Tiny flickering dots |
-| **Horizon glows** | `frame._cenGlow`, `_sideGlows` | Warm radial glows |
+| **Horizon glows** | `frame._cenGlow`, `_sideGlows`, `_hBand` | Warm radial glows + horizon band |
 | **Ground gradient** | `frame._groundGrd` | Yellow-green → dark earth |
-| **Ground cache** | `frame._groundCache` | Dirt/rocks/leaves/sticks/roots/etc |
-| **Hill cache** | `frame._hillCache` | 3 hill layers + tree line + saplings + river base |
-| **River ripples** | `drawRiverRipples` | Animated shimmer |
-| **Crocodile** | `drawCroc` | Jaw opens/closes in river |
-| **Far trees** | `Forest.farTrees` (45) | Distant tree silhouettes |
-| **Mid trees** | `Forest.midTrees` (24) | Middle-ground |
-| **Jaguar** | `_jag` + `_jagSprite` | Walking cat, mid-ground layer |
-| **Golden glow spots** | inline in frame | 5 pulsing orbs |
-| **Mist puffs** | `Forest.mistPuffs` | Low-opacity roamers |
-| **Ground fog band** | `frame._fogG` | Horizontal haze |
-| **FG trees** | `Forest.fgTrees` (22, last 4 front-left) | Biggest trunks |
-| **FG undergrowth** | `_fgUG` | Bushes, grass, sticks, leaves, rocks, flowers |
-| **Snake** | `_snake` | Continuous slither |
-| **Big vines** | `_bigVines` (6) | Hanging swaying vines |
-| **Dense canopy** | 3 passes | Overlapping top blobs |
-| **Light rays** | inline | 8 volumetric triangle rays |
-| **Color grading** | inline | Warm gold wash |
+| **Floor glow spots** | inline in frame | 10 warm pulsing arcs along the horizon |
+| **Ground cache** | `frame._groundCache` | Dirt/rocks/leaves/sticks/roots/mushrooms/flowers/grass |
+| **Grass tufts** | `frame._grassTufts` | Swaying foreground grass blades |
+| **Hill cache** | `frame._hillCache` | 4 hill silhouette layers + tree line + saplings |
+| **Far undergrowth** | `Forest.drawUndergrowth(..,"far")` | Distant ferns/grass/bushes |
+| **Far trees** | `Forest.farTrees` (45 desktop / 18 mobile) | Distant tree silhouettes |
+| **Atmospheric haze** | `frame._hazeG` | Mid-depth warm haze gradient |
+| **Mid undergrowth** | `Forest.drawUndergrowth(..,"mid")` | Middle-ground undergrowth |
+| **Mid trees** | `Forest.midTrees` (24 desktop / 10 mobile) | Middle-ground |
+| **Mid glow** | `frame._midGlow` | Screen-blended golden mid-band glow |
+| **Ground fog band** | `frame._fogG` | Horizontal haze near the horizon |
+| **FG undergrowth (layer)** | `Forest.drawUndergrowth(..,"fg")` | Foreground undergrowth layer |
+| **FG scatter** | `frame._fgUG` | Bushes, grass, sticks, leaves, rocks, flowers, jungle-grass (y-sorted) |
+| **FG trees** | `Forest.fgTrees` (12 + 2 front-left = 14 desktop / 5+2 mobile) | Biggest trunks |
+| **Dense canopy** | 4 passes (seeds 333/444/555/666) | Overlapping top blobs (last pass = hanging clumps) |
+| **Mist puffs** | `Forest.mistPuffs` | Low-opacity roamers (drawn to the live ctx) |
+| **Light rays** | inline | 8 volumetric triangle rays (screen blend) |
+| **Color grading** | inline | Warm gold overlay wash |
 | **Vignette** | `frame._vig` | Edge darkening |
 | **Particles** | `Forest.particles` | Fireflies, spores, leaves, petals, dust |
 
@@ -103,45 +103,38 @@ bundler, no build step — plain `<script defer>` tags.
 
 | Name | Data | Description |
 |---|---|---|
-| **Trunk** | `tree.trunkW`, `tree.taper`, `tree.lean`, `tree.curve`, `tree.curveFreq` | Shape params |
-| **Bark stripes** | `tree.stripes[]` | Vertical color bands |
-| **Roots** | `tree.roots[]` | Each has dir/spread/height/yOffset/angle/splitAt/splitAngle/splitLen/fibers/fiberSeed |
-| **Primary branch** | `tree.branches[i]` | Main bough |
-| **Secondary branch** | `sub*` siblings in branches[i] | First fork |
-| **Tertiary branch** | `tert*` siblings in branches[i] | Second fork |
-| **Tuft** | tertiary-tip ellipse cluster | Big foliage clump at each twig tip |
-| **Canopy blobs** | `tree.canopy[]` | Per-tree top-canopy ellipses |
-| **Vines** | `tree.vines[]` | Hanging vines from primary branches |
+| **Trunk** | `tree.trunkW`, `tree.taper`, `tree.lean`, `tree.curve`, `tree.curveFreq`, `tree.baseY`, `tree.topY` | Shape params |
+| **Bark stripes** | `tree.stripes[]` | Each has pos/w/ci/phase/amp/freq/alpha |
+| **Roots** | `tree.roots[]` | Each has dir/spread/length/width/taper/ci/snakePhase/snakeFreq + `subRoots[]` (tFrac/dir/len/width/snakePhase) |
+| **Primary branch** | `tree.branches[i]` | Main bough (yFrac/dir/angle/len/w/stripeCI/subCount) |
+| **Secondary branch** | `sub*` arrays in `branches[i]` (subAngles/subLens/subDirs/subStripes) | First fork |
+| **Tertiary branch** | `tert*` arrays in `branches[i]` (tertAngles/tertLens/tertDirs/tertStripes) | Second fork |
+| **Canopy blobs** | `tree.canopy[]` | Per-tree top ellipses (ox/oy/r/ci/isAccent/swayPhase/swayAmp/squash/rot/depth) |
+| **Vines** | `tree.vines[]` | Hanging vines from branches (branchIdx/tFrac/len/swayPhase/swayAmp/thickness/segments) |
 
 ## Knobs cheat sheet
 
 When you say…                          | …I'll change:
 ---|---
-"make the project cube bigger"        | `.cube-viewport { width: clamp(...) }` in `css/projects.css`
+"make the project cube bigger"        | `.cube-viewport` `width` in `css/projects.css`
 "wires too thin"                      | `.chandelier-wire`/`.heading-wire`/`.chandelier-wire-bottom` widths in `css/projects.css`
-"top wires: T-point out"              | `WIRE_CONFIG.topWires.tPointSpreadDeg`  (spread UPPER end of each wire)
-"top wires: B-point out"              | `WIRE_CONFIG.topWires.bPointSpreadDeg`  (spread LOWER end / corner side)
-"mini wires land too far outside"     | `WIRE_CONFIG.miniWires.cornerSpread` in `js/ui.js`
-"bottom wires land too far outside"   | `WIRE_CONFIG.bottomWires.cornerSpread` in `js/ui.js`
-/* T-point = TOP of the wire (upper end in space, higher on page).
-   B-point = BOTTOM of the wire (lower end in space, lower on page). */
-"move the project cube down"          | `#projects { margin-top: ... }` in `css/projects.css`
-"trees smaller"                       | `genTree` `trunkW` ranges in `js/forest-tree-gen.js`
-"fewer trees"                         | Counts in `js/forest-scene.js`
-"roots longer/flatter"                | Root `spread`/`height` in `js/forest-tree-gen.js`
-"branches sway less"                  | `swayAmpBase` in `js/forest-draw-trunk.js` drawTrunk
-"bigger leaf tufts"                   | `lclR` in `js/forest-draw-trunk.js` tertiary-tip block
-"jaguar smaller/faster"               | `_jagSprite` size OR `_jag.vx` in `js/canvas-core.js`
-"snake thicker"                       | `bodyW(t)` in `js/canvas-core.js`
-"river higher/lower"                  | `rivY` constant in `js/canvas-core.js` drawRiverBase
-"about card less transparent"         | `--glass-bg` in `css/tokens.css`
-"hero text bigger"                    | `--h1` in `css/tokens.css`
+"wire corners land too far out"       | `cornerSpread` on the wire config objects in `js/ui.js` (positioning routine)
+"wire corners sit too high/low"       | `cornerYShift`/`bCornerDropPx` on the wire config objects in `js/ui.js`
+"move the project cube down"          | `#projects` `margin-top` in `css/projects.css`
+"trees smaller"                       | `trunkW` ranges in `Forest.genTree` in `js/forest-tree-gen.js`
+"fewer trees"                         | Layer counts in `js/forest-scene.js`
+"roots longer/flatter"                | Root params in `Forest.genTree` in `js/forest-tree-gen.js`
+"branches sway less"                  | Sway math in `Forest.drawTrunk` in `js/forest-draw-trunk.js`
+"more/fewer particles"                | `Forest.MAX_PARTICLES` (`js/forest-particles.js`); spawn rates in the `v()` loop in `js/canvas-core.js`
+"light rays brighter/more"            | The 8-ray `for` loop (screen blend) in the `v()` loop in `js/canvas-core.js`
+"glass cards less transparent"        | The `glass` background tokens in `css/tokens.css`
+"hero text bigger"                    | Hero `clamp()` size tokens in `css/tokens.css`
 
 ## Conventions
 
-- **Canvas buffer is locked at load.** Never set `canvas.width` or `canvas.height` after init. CSS `object-fit: cover` handles viewport reshape.
+- **Canvas backing store resizes on (debounced) resize.** The `l()` resize handler in `js/canvas-core.js` resets `canvas.width`/`height` ~300ms after a resize (and widens to ≥1024px on mobile), then nulls every cached layer so the scene rebuilds. `object-fit: cover` on `#bg-canvas` handles the in-between reshape.
+- **Two independent RAF loops.** The canvas renderer owns its own loop (the `v()` function in `js/canvas-core.js`); `UI.scheduler` (in `js/scheduler.js`) is a separate dirty-flag RAF coalescer used only by `js/ui.js` for cube/wire/scroll/resize work. The renderer does **not** use the scheduler.
 - **All sizing uses CSS `clamp()`.** No per-breakpoint magic numbers.
 - **One CSS custom properties file** (`css/tokens.css`) drives every color + every fluid size.
-- **Single master RAF** coalesces resize/scroll/canvas/cube/wire work.
-- **iOS-safe primitives**: `100dvh`/`100lvh`, `env(safe-area-inset-*)`, `overscroll-behavior-y: none`, `-webkit-tap-highlight-color: transparent`, GPU-layered `#bg-canvas`.
+- **iOS-safe primitives**: `100dvh`/`100vh` fallback, `env(safe-area-inset-*)`, `overscroll-behavior-y: none`, `-webkit-tap-highlight-color: transparent`, GPU-layered `#bg-canvas` (`translateZ(0)` + `backface-visibility: hidden`).
 - **No backdrop-filter on anything that scrolls over the canvas** — only the nav when scrolled.
