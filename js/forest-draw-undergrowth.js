@@ -1,1 +1,52 @@
-!function(){"use strict";var e=Forest.FERN_COLORS,i=Forest.CANOPY,s=Forest.rgb,l=Forest.mix;Forest.drawUndergrowth=function(a,r,t,h,o){for(var f=Forest.undergrowth,n=0;n<f.length;n++){var b=f[n];if(b.layer===o){var y=b.nx*r,g=b.baseY*t;if("fern"===b.type)for(var z=Math.sin(.6*h+b.swayPhase)*b.swayAmp,v=e[b.ci],P=0;P<b.fronds;P++){var u=.15*-Math.PI+P/(b.fronds-1)*Math.PI*.3-.5*Math.PI;u+=.03*z,a.save(),a.translate(y,g),a.rotate(u),a.beginPath(),a.moveTo(0,0),a.quadraticCurveTo(.3*b.size,.1*-b.size,.8*b.size,.05*-b.size),a.lineWidth=1.5,a.strokeStyle=s(l(v,[30,50,25],.3),.7),a.stroke();for(var p=0;p<5;p++){var d=(p+1)/6,S=.8*b.size*d,c=.05*-b.size*d;a.beginPath(),a.ellipse(S,c-3,3+.04*b.size,1.5,-.3,0,6.28),a.fillStyle=s(v,.6),a.fill(),a.beginPath(),a.ellipse(S,c+3,3+.04*b.size,1.5,.3,0,6.28),a.fillStyle=s(l(v,[20,40,20],.15),.6),a.fill()}a.restore()}else if("mushroom"===b.type){var m=[[180,50,40],[200,170,60],[160,130,90]][b.ci];a.beginPath(),a.moveTo(y-.15*b.size,g),a.lineTo(y-.1*b.size,g-.6*b.size),a.lineTo(y+.1*b.size,g-.6*b.size),a.lineTo(y+.15*b.size,g),a.fillStyle="rgba(220,210,180,0.6)",a.fill(),a.beginPath(),a.ellipse(y,g-.6*b.size,.4*b.size,.25*b.size,0,Math.PI,0),a.fillStyle=s(m,.7),a.fill(),a.beginPath(),a.arc(y-.1*b.size,g-.7*b.size,.06*b.size,0,6.28),a.fillStyle="rgba(255,255,240,0.4)",a.fill()}else if("grass"===b.type){z=Math.sin(.8*h+b.swayPhase)*b.swayAmp,v=e[b.ci];for(var w=0;w<b.blades;w++){var q=y+3*(w-b.blades/2),M=(u=.08*(w-b.blades/2)+.04*z,q+Math.sin(u)*b.height),T=g-b.height;a.beginPath(),a.moveTo(q,g),a.quadraticCurveTo(q+5*u,g-.6*b.height,M,T),a.lineWidth=1.2,a.strokeStyle=s(v,.5),a.stroke()}}else if("bush"===b.type){z=Math.sin(.45*h+b.swayPhase)*b.swayAmp;for(var F=0;F<b.blobs.length;F++){var k=b.blobs[F],A=y+k.ox+z,C=g+k.oy;v=i[k.ci];a.beginPath(),a.ellipse(A+2,C+2,1.05*k.r,k.r*k.squash*1.05,0,0,6.28),a.fillStyle=s(l(v,[15,25,15],.5),.2),a.fill(),a.beginPath(),a.ellipse(A,C,k.r,k.r*k.squash,0,0,6.28),a.fillStyle=s(v,.82),a.fill(),a.beginPath(),a.ellipse(A-.2*k.r,C-k.r*k.squash*.2,.45*k.r,k.r*k.squash*.35,0,0,6.28),a.fillStyle=s(l(v,[150,200,110],.2),.35),a.fill(),a.beginPath(),a.ellipse(A+.15*k.r,C+k.r*k.squash*.15,.4*k.r,k.r*k.squash*.3,0,0,6.28),a.fillStyle=s(l(v,[20,35,18],.3),.25),a.fill()}}}}}}();
+! function() {
+    "use strict";
+    var e = Forest.FERN_COLORS,
+        i = Forest.CANOPY,
+        s = Forest.rgb,
+        l = Forest.mix;
+    Forest.drawUndergrowth = function(a, r, t, h, o) {
+        for (var f = Forest.undergrowth, n = 0; n < f.length; n++) {
+            var b = f[n];
+            if (b.layer === o) {
+                var y = b.nx * r,
+                    g = b.baseY * t;
+                if ("fern" === b.type)
+                    for (var z = Math.sin(.6 * h + b.swayPhase) * b.swayAmp, v = e[b.ci], P = 0; P < b.fronds; P++) {
+                        var u = .15 * -Math.PI + P / (b.fronds - 1) * Math.PI * .3 - .5 * Math.PI;
+                        u += .03 * z, a.save(), a.translate(y, g), a.rotate(u), a.beginPath(), a.moveTo(0, 0), a.quadraticCurveTo(.3 * b.size, .1 * -b.size, .8 * b.size, .05 * -b.size), a.lineWidth = 1.5, a.strokeStyle = s(l(v, [30, 50, 25], .3), .7), a.stroke();
+                        for (var p = 0; p < 5; p++) {
+                            var d = (p + 1) / 6,
+                                S = .8 * b.size * d,
+                                c = .05 * -b.size * d;
+                            a.beginPath(), a.ellipse(S, c - 3, 3 + .04 * b.size, 1.5, -.3, 0, 6.28), a.fillStyle = s(v, .6), a.fill(), a.beginPath(), a.ellipse(S, c + 3, 3 + .04 * b.size, 1.5, .3, 0, 6.28), a.fillStyle = s(l(v, [20, 40, 20], .15), .6), a.fill()
+                        }
+                        a.restore()
+                    } else if ("mushroom" === b.type) {
+                        var m = [
+                            [180, 50, 40],
+                            [200, 170, 60],
+                            [160, 130, 90]
+                        ][b.ci];
+                        a.beginPath(), a.moveTo(y - .15 * b.size, g), a.lineTo(y - .1 * b.size, g - .6 * b.size), a.lineTo(y + .1 * b.size, g - .6 * b.size), a.lineTo(y + .15 * b.size, g), a.fillStyle = "rgba(220,210,180,0.6)", a.fill(), a.beginPath(), a.ellipse(y, g - .6 * b.size, .4 * b.size, .25 * b.size, 0, Math.PI, 0), a.fillStyle = s(m, .7), a.fill(), a.beginPath(), a.arc(y - .1 * b.size, g - .7 * b.size, .06 * b.size, 0, 6.28), a.fillStyle = "rgba(255,255,240,0.4)", a.fill()
+                    } else if ("grass" === b.type) {
+                    z = Math.sin(.8 * h + b.swayPhase) * b.swayAmp, v = e[b.ci];
+                    for (var w = 0; w < b.blades; w++) {
+                        var q = y + 3 * (w - b.blades / 2),
+                            M = (u = .08 * (w - b.blades / 2) + .04 * z, q + Math.sin(u) * b.height),
+                            T = g - b.height;
+                        a.beginPath(), a.moveTo(q, g), a.quadraticCurveTo(q + 5 * u, g - .6 * b.height, M, T), a.lineWidth = 1.2, a.strokeStyle = s(v, .5), a.stroke()
+                    }
+                } else if ("bush" === b.type) {
+                    z = Math.sin(.45 * h + b.swayPhase) * b.swayAmp;
+                    for (var F = 0; F < b.blobs.length; F++) {
+                        var k = b.blobs[F],
+                            A = y + k.ox + z,
+                            C = g + k.oy;
+                        v = i[k.ci];
+                        a.beginPath(), a.ellipse(A + 2, C + 2, 1.05 * k.r, k.r * k.squash * 1.05, 0, 0, 6.28), a.fillStyle = s(l(v, [15, 25, 15], .5), .2), a.fill(), a.beginPath(), a.ellipse(A, C, k.r, k.r * k.squash, 0, 0, 6.28), a.fillStyle = s(v, .82), a.fill(), a.beginPath(), a.ellipse(A - .2 * k.r, C - k.r * k.squash * .2, .45 * k.r, k.r * k.squash * .35, 0, 0, 6.28), a.fillStyle = s(l(v, [150, 200, 110], .2), .35), a.fill(), a.beginPath(), a.ellipse(A + .15 * k.r, C + k.r * k.squash * .15, .4 * k.r, k.r * k.squash * .3, 0, 0, 6.28), a.fillStyle = s(l(v, [20, 35, 18], .3), .25), a.fill()
+                    }
+                }
+            }
+        }
+    }
+}();

@@ -1,1 +1,75 @@
-!function(){"use strict";var r=Forest.mkRng,a=Forest.FERN_COLORS,s=Forest.CANOPY,o=[];!function(){var e=r(777);function t(r,a){return"far"===r?.62+.08*a:"mid"===r?.74+.1*a:.88+.12*a}for(var f=0;f<40;f++){var h=e()<.3?"far":e()<.6?"mid":"fg";o.push({type:"fern",nx:e(),baseY:t(h,e()),size:15+35*e(),fronds:4+Math.floor(5*e()),ci:Math.floor(e()*a.length),swayPhase:6.28*e(),swayAmp:1+2*e(),layer:h})}for(f=0;f<15;f++){h=e()<.4?"mid":"fg";o.push({type:"mushroom",nx:e(),baseY:t(h,e()),size:4+10*e(),ci:Math.floor(3*e()),layer:h})}for(f=0;f<60;f++){h=e()<.25?"far":e()<.55?"mid":"fg";o.push({type:"grass",nx:e(),baseY:t(h,e()),blades:5+Math.floor(8*e()),height:10+25*e(),ci:Math.floor(e()*a.length),swayPhase:6.28*e(),swayAmp:1+3*e(),layer:h})}for(f=0;f<15;f++){h=e()<.3?"far":e()<.6?"mid":"fg";for(var n=2+Math.floor(3*e()),i=[],l=0;l<n;l++)i.push({ox:16*(e()-.5),oy:8*-e(),r:5+10*e(),ci:Math.floor(e()*s.length),squash:.55+.35*e()});o.push({type:"bush",nx:e(),baseY:t(h,e()),blobs:i,swayPhase:6.28*e(),swayAmp:.8+1.5*e(),layer:h})}o.sort(function(r,a){return r.baseY-a.baseY})}(),Forest.undergrowth=o}();
+! function() {
+    "use strict";
+    var r = Forest.mkRng,
+        a = Forest.FERN_COLORS,
+        s = Forest.CANOPY,
+        o = [];
+    ! function() {
+        var e = r(777);
+
+        function t(r, a) {
+            return "far" === r ? .62 + .08 * a : "mid" === r ? .74 + .1 * a : .88 + .12 * a
+        }
+        for (var f = 0; f < 40; f++) {
+            var h = e() < .3 ? "far" : e() < .6 ? "mid" : "fg";
+            o.push({
+                type: "fern",
+                nx: e(),
+                baseY: t(h, e()),
+                size: 15 + 35 * e(),
+                fronds: 4 + Math.floor(5 * e()),
+                ci: Math.floor(e() * a.length),
+                swayPhase: 6.28 * e(),
+                swayAmp: 1 + 2 * e(),
+                layer: h
+            })
+        }
+        for (f = 0; f < 15; f++) {
+            h = e() < .4 ? "mid" : "fg";
+            o.push({
+                type: "mushroom",
+                nx: e(),
+                baseY: t(h, e()),
+                size: 4 + 10 * e(),
+                ci: Math.floor(3 * e()),
+                layer: h
+            })
+        }
+        for (f = 0; f < 60; f++) {
+            h = e() < .25 ? "far" : e() < .55 ? "mid" : "fg";
+            o.push({
+                type: "grass",
+                nx: e(),
+                baseY: t(h, e()),
+                blades: 5 + Math.floor(8 * e()),
+                height: 10 + 25 * e(),
+                ci: Math.floor(e() * a.length),
+                swayPhase: 6.28 * e(),
+                swayAmp: 1 + 3 * e(),
+                layer: h
+            })
+        }
+        for (f = 0; f < 15; f++) {
+            h = e() < .3 ? "far" : e() < .6 ? "mid" : "fg";
+            for (var n = 2 + Math.floor(3 * e()), i = [], l = 0; l < n; l++) i.push({
+                ox: 16 * (e() - .5),
+                oy: 8 * -e(),
+                r: 5 + 10 * e(),
+                ci: Math.floor(e() * s.length),
+                squash: .55 + .35 * e()
+            });
+            o.push({
+                type: "bush",
+                nx: e(),
+                baseY: t(h, e()),
+                blobs: i,
+                swayPhase: 6.28 * e(),
+                swayAmp: .8 + 1.5 * e(),
+                layer: h
+            })
+        }
+        o.sort(function(r, a) {
+            return r.baseY - a.baseY
+        })
+    }(), Forest.undergrowth = o
+}();
