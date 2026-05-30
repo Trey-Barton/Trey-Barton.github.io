@@ -14,3 +14,8 @@ Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
   ExpiresByType image/png "access plus 1 year"
   ExpiresByType video/mp4 "access plus 1 year"
 </IfModule>
+
+# Keep dev docs private
+<FilesMatch "\.md$">
+  Require all denied
+</FilesMatch>

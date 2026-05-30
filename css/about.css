@@ -19,11 +19,11 @@
  -webkit-backdrop-filter:none;
 }
 /* --- Tablet (769px – 1024px) --- */
-@media (min-width:769px) and (max-width:1024px){
+@media (min-width:768px) and (max-width:1024px){
  .about-card{gap:clamp(20px, 3vw, 36px);padding:clamp(24px, 3vw, 40px);}
 }
 /* --- Mobile (≤ 768px) --- */
-@media (max-width:768px){
+@media (max-width:767px){
  .about-card{grid-template-columns:1fr;text-align:center;max-width:min(90vw, 400px);margin:0 auto;padding:clamp(16px,3vw,24px) clamp(12px,3vw,20px);gap:16px;}
  .about-text h2{text-align:center;}
  .about-text p{text-align:left;line-height:1.6;}

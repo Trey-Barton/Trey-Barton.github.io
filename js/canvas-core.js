@@ -7,6 +7,17 @@ try {
             }),
             t = 0,
             a = null;
+        var _reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        if (window.matchMedia) {
+            try {
+                window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', function(e) {
+                    _reduceMotion = e.matches;
+                    if (!_reduceMotion) {
+                        requestAnimationFrame(v)
+                    }
+                })
+            } catch (e) {}
+        }
 
         function l() {
             Forest.isMobile = window.innerWidth <= 768, Forest.MAX_PARTICLES = Forest.isMobile ? 150 : 400;
@@ -620,7 +631,7 @@ try {
                     } else "spore" === ia.type ? (ia.x += ia.vx + .45 * Math.sin(.8 * t + ia.ph) + .3 * f, ia.y += ia.vy, r.beginPath(), r.arc(ia.x, ia.y, ia.r, 0, 6.28), r.fillStyle = "rgba(225,225,180," + h(.35 * na) + ")", r.fill()) : "leaf" === ia.type ? (ia.vx += .012 * f, ia.x += ia.vx + Math.sin(t * ia.flutterSpeed + ia.ph) * ia.flutter, ia.y += ia.vy + .15 * Math.sin(.3 * t + 2 * ia.ph), ia.rot += ia.rs + .02 * Math.cos(t * ia.flutterSpeed + ia.ph), ia.y > n + 20 && (ia.life = 0), r.save(), r.translate(ia.x, ia.y), r.rotate(ia.rot), 0 === ia.leafType ? (r.beginPath(), r.ellipse(0, 0, ia.sz, .4 * ia.sz, 0, 0, 6.28), r.fillStyle = Forest.rgb(ia.c, .75 * na), r.fill(), r.beginPath(), r.moveTo(.7 * -ia.sz, 0), r.lineTo(.7 * ia.sz, 0), r.lineWidth = .5, r.strokeStyle = Forest.rgb(Forest.mix(ia.c, [255, 255, 200], .3), .3 * na), r.stroke()) : 1 === ia.leafType ? (r.beginPath(), r.moveTo(-ia.sz, 0), r.quadraticCurveTo(.3 * -ia.sz, .45 * -ia.sz, ia.sz, 0), r.quadraticCurveTo(.3 * -ia.sz, .45 * ia.sz, -ia.sz, 0), r.fillStyle = Forest.rgb(ia.c, .75 * na), r.fill()) : (r.beginPath(), r.arc(0, 0, .5 * ia.sz, 0, 6.28), r.fillStyle = Forest.rgb(ia.c, .7 * na), r.fill()), r.restore()) : "petal" === ia.type ? (ia.x += ia.vx + .8 * Math.sin(.4 * t + ia.ph) + .3 * f, ia.y += ia.vy, ia.rot += ia.rs, ia.y > n + 10 && (ia.life = 0), r.save(), r.translate(ia.x, ia.y), r.rotate(ia.rot), r.beginPath(), r.ellipse(0, 0, ia.sz, .55 * ia.sz, 0, 0, 6.28), r.fillStyle = Forest.rgb(ia.c, .45 * na), r.fill(), r.restore()) : "dust" === ia.type && (ia.x += ia.vx + .15 * Math.sin(.3 * t + ia.ph) + .1 * f, ia.y += ia.vy + .1 * Math.sin(.25 * t + 1.3 * ia.ph), r.beginPath(), r.arc(ia.x, ia.y, ia.r, 0, 6.28), r.fillStyle = "rgba(220,210,150," + h(.2 * na) + ")", r.fill())
                 }
             }
-            requestAnimationFrame(v)
+            if (!_reduceMotion || !v._sceneCache) requestAnimationFrame(v)
         }
         requestAnimationFrame(v)
     }()

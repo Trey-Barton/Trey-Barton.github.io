@@ -19,7 +19,7 @@
 .social-link svg{width:18px;height:18px;}
 .social-link:hover{color:var(--color-white);border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.08);}
 /* --- Mobile (≤ 768px) --- */
-@media (max-width:768px){
+@media (max-width:767px){
  .contact-card{padding:clamp(20px,4vw,32px) clamp(16px,3vw,24px);}
  .contact-email{font-size:0.85rem;word-break:break-all;}
  #contact{margin-top:22px;}
